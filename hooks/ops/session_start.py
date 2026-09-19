@@ -127,7 +127,28 @@ def _section_config(root: Path):
     return (
         "## Navigator Config (.agent/.nav-config.json)\n\n"
         f"```json\n{json.dumps(summary, indent=2)}\n```"
+        + _judge_notice(cfg.get("judge"))
     )
+
+
+def _judge_notice(block) -> str:
+    """One line (or a setup hint) when the typed judge is enabled (TASK-79).
+
+    Silent unless the raw config enables the judge, so the v6 config bytes are
+    untouched for everyone else. Names the key *source*, never the key.
+    """
+    if not isinstance(block, dict) or not block.get("enabled"):
+        return ""
+    try:
+        from nav_hook_lib import judge
+        cfg_settings = judge.settings({"judge": block})
+        source = judge.key_source(cfg_settings)
+        if source:
+            return f"\n\nTyped judge: on ({cfg_settings.get('model')}, key from {source})."
+        return ("\n\n⚠️  Typed judge is enabled but no API key was found — the keyword "
+                "heuristics are answering. " + judge.setup_hint(cfg_settings))
+    except Exception:
+        return ""
 
 
 def _section_user_profile(root: Path):

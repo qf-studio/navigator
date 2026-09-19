@@ -201,6 +201,17 @@ FEATURES = {
         "default": False,
         "type": "config"
     },
+    "judge": {
+        "name": "judge",
+        "display_name": "Typed Prompt Judge",
+        "version": "7.7.0",
+        "description": "Typed judge (TypeSafe Jev) behind the loop/complexity/ambiguity keyword scorers; decisive axes override, the rest fall back. Prompt leaves the machine when on.",
+        "short_desc": "Jev judgments overlay the prompt scorers",
+        "config_key": "judge",
+        "enabled_key": "enabled",
+        "default": False,
+        "type": "config"
+    },
     "tier1": {
         "name": "tier1",
         "display_name": "Tier-1 Answers",
@@ -430,6 +441,15 @@ def toggle_feature(config: Dict, feature_name: str, enable: bool) -> Tuple[Dict,
     status = "✅" if enable else "⏸ Off"
 
     message = f"{status} {feature['display_name']} {action}"
+    if feature_name == "judge" and enable:
+        message += (
+            "\n\n🔑 The judge needs a TypeSafe API key (the prompt text is sent to "
+            "api.typesafe.ai). Get one at https://console.typesafe.ai/keys, then export "
+            "TYPESAFE_API_KEY in the environment Claude Code runs in, or write it to "
+            "~/.config/typesafe/api_key (chmod 600). Never put it in .nav-config.json — "
+            "that file is committed. Verify: python3 hooks/nav_hook_lib/judge.py --check "
+            "from the plugin root. Without a key the keyword heuristics keep answering."
+        )
 
     return config, message
 

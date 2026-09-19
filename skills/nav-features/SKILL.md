@@ -60,6 +60,7 @@ v<version> Features:
 │ jit_memory              │ [ ]    │ Injects relevant memories after tool use      │
 │ subagent_context        │ [ ]    │ Injects project context into subagents (2k)   │
 │ failure_diagnosis       │ [ ]    │ Surfaces graph pitfalls on tool failures      │
+│ judge                   │ [ ]    │ Jev judgments overlay the prompt scorers      │
 │ config_guard            │ [x]    │ Warns when .nav-config.json edits break JSON  │
 │ setup_hook              │ [x]    │ One-line runtime status on the Setup event    │
 └─────────────────────────┴────────┴───────────────────────────────────────────────┘
@@ -111,6 +112,10 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
 - `subagent_context` - Project context injection into subagents
   (`subagent_context.budget_chars`, default 2000)
 - `failure_diagnosis` - Graph-pitfall injection on PostToolUseFailure (ships OFF)
+- `judge` - Typed prompt judge (TypeSafe Jev) behind the loop/complexity/ambiguity
+  scorers (ships OFF). Needs a key: `TYPESAFE_API_KEY` or `~/.config/typesafe/api_key`,
+  never inside `.nav-config.json`. After `enable judge`, show the key hint the toggle
+  prints and point to `.agent/sops/integrations/typesafe-judge-setup.md`
 - `config_guard` - systemMessage warning on invalid `.nav-config.json` edits
   (safety surface, ON by default)
 - `setup_hook` - One-line runtime status on the Setup event (safety surface,

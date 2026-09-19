@@ -400,3 +400,38 @@ class MemoriesGateAndOrderingTest(SessionStartOpTestBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SectionJudgeNoticeTest(SessionStartOpTestBase):
+    """TASK-79: the config section names the judge key source, or warns (no secrets)."""
+
+    def _config_with_judge(self, **judge_block):
+        cfg = json.loads((self.agent / ".nav-config.json").read_text(encoding="utf-8"))
+        cfg["judge"] = judge_block
+        self.write_config(cfg)
+
+    def test_no_judge_block_no_notice(self):
+        body = self.run_op()["additional_context"]
+        self.assertNotIn("Typed judge", body)
+
+    def test_disabled_judge_no_notice(self):
+        self._config_with_judge(enabled=False)
+        body = self.run_op()["additional_context"]
+        self.assertNotIn("Typed judge", body)
+
+    def test_enabled_with_key_file_names_source_not_key(self):
+        key_file = self.root / "judge.key"
+        key_file.write_text("super-secret-key\n", encoding="utf-8")
+        self._config_with_judge(enabled=True, api_key_env="NAV_TEST_NO_SUCH_ENV",
+                                api_key_file=str(key_file))
+        body = self.run_op()["additional_context"]
+        self.assertIn(f"Typed judge: on (jev-latest, key from file:{key_file})", body)
+        self.assertNotIn("super-secret-key", body)
+
+    def test_enabled_without_key_warns_with_hint(self):
+        self._config_with_judge(enabled=True, api_key_env="NAV_TEST_NO_SUCH_ENV",
+                                api_key_file=str(self.root / "missing.key"))
+        body = self.run_op()["additional_context"]
+        self.assertIn("Typed judge is enabled but no API key was found", body)
+        self.assertIn("console.typesafe.ai/keys", body)
+        self.assertIn("--check", body)
