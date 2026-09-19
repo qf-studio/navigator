@@ -6,6 +6,29 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v7.7.0] — 2026-09-19 — "Judge, Then Fall Back"
+
+The prompt-time keyword scorers get a typed judge behind them (TASK-79). One request per
+prompt to TypeSafe's Jev answers eight typed questions; each axis overrides its heuristic
+only when decisive and falls back otherwise. Ships OFF.
+→ [Full release notes](./releases/RELEASE-NOTES-v7.7.0.md)
+
+- **`nav_hook_lib/judge.py`**: stdlib client, secret redaction before send, head cap,
+  1.5 s fuse, fail-open to `None`; one cached call per dispatch via `judge.for_ctx`.
+- **Blend points** `scoring.detect_workflow`, `score_ambiguity`, `score` accept
+  `judgment=`; `None` keeps the exact heuristic bytes (v6 parity tests unchanged).
+- **prompt_gate / prompt_brief** consume the judgment; the WORKFLOW CHECK block gains a
+  "Judged by <model> (<ms>)" line only when a judgment was used.
+- **Config block `judge`** (`enabled: false`, `model`, `timeout_ms`, `min_confidence`,
+  `noul_low` / `noul_high`, key env/file, `max_state_chars`); listed by `show features`.
+- **Eval harness** `scripts/judge_eval.py` + 60 labeled prompts with recorded responses:
+  tier 38 → 53/60, task-shaped 43 → 54/60; thresholds set from the sweep.
+- **Setup path**: `enable judge` prints the key hint; `python3 hooks/nav_hook_lib/judge.py
+  --check` verifies key source + a live round trip; session start names the key source
+  or warns when none is found; SOP `sops/integrations/typesafe-judge-setup.md`.
+
+---
+
 ## [v7.6.0] — 2026-09-14 — "Provenance, Not Reputation"
 
 Deep research now records which search lens found each source and refuses to let a

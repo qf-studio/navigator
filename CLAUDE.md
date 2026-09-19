@@ -52,9 +52,10 @@ with a config off-switch in `.agent/.nav-config.json`:
 | Completion gate (forced continuation) | stop_completion | `stop_completion.continue_enabled` |
 | Tier-1 instant answers | prompt_tier1 | `tier1.enabled`, per rule via `tier1.rules` |
 | Context markers around compaction | compact_marker | `compact_hook.enabled` |
+| Typed judge behind the prompt scorers | judge (lib, used by prompt_gate + prompt_brief) | `judge.enabled` |
 
-`stop_completion.continue_enabled` and `tier1.enabled` ship OFF (new blocking features seed
-off). Setting the `PILOT_EXECUTOR` environment variable disables interactive/blocking hook
+`stop_completion.continue_enabled`, `tier1.enabled` and `judge.enabled` ship OFF (new blocking
+or outbound features seed off). Setting the `PILOT_EXECUTOR` environment variable disables interactive/blocking hook
 behavior across all ops (single policy point: `nav_hook_lib.config.is_pilot_executor`).
 
 The sections below describe those behaviors so humans and models know what to expect.
@@ -210,6 +211,27 @@ unaffected. `scripts/agent_tool_counts.py` gives real per-tool counts from a tra
 
 ---
 
+### Typed Prompt Judge (v7.7.0)
+
+The loop-trigger, complexity and ambiguity scorers are keyword matchers, and they misfire
+on text that merely contains a trigger phrase (a pasted report header reading "Loop mode"
+put a session into Loop Mode on 2026-09-19). With `judge.enabled`, one request per prompt
+to a typed-decision model (TypeSafe Jev, `POST /v1/systemone`) answers eight questions at
+once: is this a task, does it ask for autonomous iteration, complexity on a four-level
+rubric, ambiguity on three, and whether scope / limits / approach / verification are
+stated. Each axis overrides its heuristic only when decisive (noul outside the
+`[noul_low, noul_high]` band, score confidence at `min_confidence` or above); undecided
+axes, timeouts, a missing key or any error leave the heuristic in charge, byte for byte.
+Measured on 60 labeled prompts (TASK-79): tier accuracy 38 → 53 of 60, task-shapedness
+43 → 54, at ~0.7 s and ~$0.00003 per prompt. Ships OFF: the prompt leaves the machine
+(secret-redacted, head-capped to `max_state_chars`). Enable with "enable judge"; the key
+comes from `TYPESAFE_API_KEY` or `~/.config/typesafe/api_key`, never from the committed
+config. Verify with `python3 hooks/nav_hook_lib/judge.py --check`; session start names the
+key source or warns when none is found. Setup SOP:
+`.agent/sops/integrations/typesafe-judge-setup.md`. Replay the eval with `scripts/judge_eval.py`.
+
+---
+
 ## Agents vs Skills - Token Optimization Strategy
 
 - **Agents** = research and exploration (separate context, 60-80% token savings):
@@ -349,7 +371,8 @@ the `*_hook` toggle blocks; missing blocks default safe via `nav_hook_lib.config
   "dispatcher": { "enabled": true },
   "tier1": { "enabled": false, "rules": {} },
   "stop_completion": { "enabled": false, "continue_enabled": false, "max_continues": 2 },
-  "deep_research": { "enabled": false }
+  "deep_research": { "enabled": false },
+  "judge": { "enabled": false, "model": "jev-latest", "timeout_ms": 1500 }
 }
 ```
 
@@ -368,5 +391,5 @@ the `*_hook` toggle blocks; missing blocks default safe via `nav_hook_lib.config
 
 **For complete Navigator documentation**: See `.agent/DEVELOPMENT-README.md`
 
-**Last Updated**: 2026-09-14
-**Navigator Version**: 7.6.0
+**Last Updated**: 2026-09-19
+**Navigator Version**: 7.7.0

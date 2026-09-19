@@ -1,6 +1,6 @@
 {
   "name": "navigator",
-  "version": "7.6.0",
+  "version": "7.7.0",
   "description": "Finish What You Start - Sessions that last, AI that learns, Features that ship. Context engineering + Theory of Mind + Knowledge Graph + Loop Mode + Task Mode. Features Project Knowledge Graph (unified search, experiential memory), unified workflow orchestration, auto-update on session start, ToM-based verification checkpoints, bilateral modeling, quality detection, enhanced context markers, and Loop Mode. 92% token reduction with proven strategies. Based on Riedl & Weidmann 2025 Human-AI Synergy research.",
   "author": {
     "name": "Aleks Petrov",

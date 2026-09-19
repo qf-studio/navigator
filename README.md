@@ -5,7 +5,7 @@
 Sessions that last. AI that learns. Features that ship.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-7.6.0-blue.svg)](https://github.com/alekspetrov/navigator/releases)
+[![Version](https://img.shields.io/badge/version-7.7.0-blue.svg)](https://github.com/alekspetrov/navigator/releases)
 
 ---
 
@@ -174,6 +174,22 @@ That's it. Navigator handles the rest.
 
 ---
 
+### Optional: Typed Prompt Judge
+
+Navigator's loop-trigger, complexity and ambiguity detectors are keyword matchers. With a
+[TypeSafe](https://docs.typesafe.ai/) key they get a typed judge behind them (v7.7.0): one
+request per prompt, decisive answers override, everything else falls back to the keywords.
+Measured on 60 labeled prompts, tier accuracy went from 38 to 53. Off by default because
+the prompt text is sent to the API.
+
+```bash
+export TYPESAFE_API_KEY=...      # or: write it to ~/.config/typesafe/api_key (chmod 600)
+```
+Then say `enable judge` and verify with `python3 hooks/nav_hook_lib/judge.py --check`
+from the plugin root. Setup and tuning: `.agent/sops/integrations/typesafe-judge-setup.md`.
+
+---
+
 ## What You Get
 
 **Skills** that auto-invoke on natural language:
@@ -185,6 +201,7 @@ That's it. Navigator handles the rest.
 "Create context marker: checkpoint"       → 97% context compression
 "Run until done: add dark mode"           → Loop mode completion
 "Deep research on WebGPU browser support"  → Cited report + graph memories
+"Enable judge"                             → Typed Jev judgments behind the prompt gates
 ```
 
 **No commands to memorize.** Skills detect intent and execute.

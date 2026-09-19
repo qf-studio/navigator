@@ -145,7 +145,7 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
-Current active threads (as of 2026-09-13; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14 — docs site synced through v7.4.0, later sync pending):
+Current active threads (as of 2026-09-13; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19 — docs site synced through v7.4.0, later sync pending):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
 day; local testing phase, no release tagged; critical path 57→59→60→61→62→64 all landed, 58/63
@@ -176,6 +176,10 @@ parallel both landed):
   dropped — block reasons render as plain text, so Tier-1 is self-safe via exact-match rail
 
 Other threads:
+- **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight
+  typed questions per prompt; decisive axes override the loop-trigger / complexity /
+  ambiguity keyword scorers in prompt_gate + prompt_brief, everything else falls back.
+  60-prompt eval: tier 38 → 53/60. Ships OFF (`judge.enabled`), ON in this repo (v7.7.0)
 - **TASK-78** ✅ — source lens + corroboration: the search lens (canonical/breadth/
   adversarial/gap) travels from the queue into the note, the digest and the Sources
   table; thirteenth gate check rejects a finding resting on a single breadth source;
@@ -224,6 +228,7 @@ For shipped scope, query the knowledge graph or browse `CHANGELOG.md` / `release
 
 **Integrations**:
 - [OpenTelemetry Setup](./sops/integrations/opentelemetry-setup.md) — real-time session metrics, ROI measurement
+- [Typed Prompt Judge Setup](./sops/integrations/typesafe-judge-setup.md) — TypeSafe key, `enable judge`, `--check`, config keys, troubleshooting (v7.7.0)
 
 **Deployment**:
 - [Plugin Release](./sops/deployment/plugin-release.md) — pre-release checklist, tag → CI workflow, post-release verification
@@ -353,6 +358,7 @@ cd ~/Projects/tmp/nav-test
 "What do we know about <topic>?"
 "Deep research on <topic>"            # web research → cited report → graph memories
 "Find a better solution for <X>"      # nav-triz, when a contradiction is declared
+"Enable judge"                        # typed prompt judge; needs TYPESAFE_API_KEY (sops/integrations/typesafe-judge-setup.md)
 "Remember this pitfall: ..."
 "Clear context and preserve markers"
 "Release plugin"
@@ -360,5 +366,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-09-14 (v7.6.0 — LSP-aware codebase research TASK-76 v7.5.0; deep-research provenance tags TASK-77 v7.5.1; source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-09-19 (v7.7.0 — typed prompt judge behind the keyword scorers TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)
