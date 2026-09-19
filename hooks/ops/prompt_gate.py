@@ -128,6 +128,7 @@ def run(ctx):
     # heuristics). Cached on ctx so prompt_brief reuses the same answer.
     judgment = judge.for_ctx(ctx, message)
     result = scoring.detect_workflow(message, judgment=judgment)
+    judge.record_axes(ctx.state, (result.get("judge") or {}).get("axes"))
 
     # Decide block first; the soft warn is suppressed when blocking so the
     # only emitted text is the sentinel-wrapped stderr (mem-034).

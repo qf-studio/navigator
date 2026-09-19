@@ -427,6 +427,87 @@ def main(argv=None, opener=None, out=print) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Telemetry (TASK-80 B): counters only, never prompt text (mem-034)
+# ---------------------------------------------------------------------------
+
+STATE_SECTION = "judge"
+AXES = ("loop", "complexity", "task", "ambiguity")
+OUTCOMES = ("overridden", "agreed", "undecided")
+
+
+def _section(state):
+    if not isinstance(state, dict):
+        return None
+    block = state.get(STATE_SECTION)
+    if not isinstance(block, dict):
+        block = {}
+        state[STATE_SECTION] = block
+    return block
+
+
+def record_call(state, judgment, enabled: bool):
+    """Count one judge attempt on this dispatch. No-op when the judge is off."""
+    if not enabled:
+        return
+    block = _section(state)
+    if block is None:
+        return
+    block["calls"] = int(block.get("calls", 0) or 0) + 1
+    if judgment is None:
+        block["failed"] = int(block.get("failed", 0) or 0) + 1
+        return
+    block["model"] = judgment.model
+    block["latency_last_ms"] = int(judgment.latency_ms)
+    block["latency_max_ms"] = max(int(block.get("latency_max_ms", 0) or 0),
+                                  int(judgment.latency_ms))
+
+
+def record_axes(state, axes):
+    """Bump per-axis outcome counters from a scorer's ``judge.axes`` dict."""
+    if not isinstance(axes, dict) or not axes:
+        return
+    block = _section(state)
+    if block is None:
+        return
+    table = block.get("axes")
+    if not isinstance(table, dict):
+        table = {}
+        block["axes"] = table
+    for axis, outcome in axes.items():
+        if axis not in AXES or outcome not in OUTCOMES:
+            continue
+        row = table.get(axis)
+        if not isinstance(row, dict):
+            row = {}
+            table[axis] = row
+        row[outcome] = int(row.get(outcome, 0) or 0) + 1
+
+
+def summary_lines(state) -> list:
+    """Two short ``nav stats`` card lines, or ``[]`` when the judge never ran.
+
+    Kept under the card's ~56-column body width: the card truncates, it
+    does not wrap.
+    """
+    block = state.get(STATE_SECTION) if isinstance(state, dict) else None
+    if not isinstance(block, dict) or not block.get("calls"):
+        return []
+    table = block.get("axes") if isinstance(block.get("axes"), dict) else {}
+    totals = {o: 0 for o in OUTCOMES}
+    for row in table.values():
+        if isinstance(row, dict):
+            for o in OUTCOMES:
+                totals[o] += int(row.get(o, 0) or 0)
+    return [
+        "judge: {} calls / {} failed · {} ms last, {} ms max".format(
+            block.get("calls", 0), block.get("failed", 0),
+            block.get("latency_last_ms", 0), block.get("latency_max_ms", 0)),
+        "judge axes: {} overridden / {} agreed / {} undecided".format(
+            totals["overridden"], totals["agreed"], totals["undecided"]),
+    ]
+
+
 _CACHE_ATTR = "_judgment"
 _UNSET = object()
 
@@ -440,11 +521,14 @@ def for_ctx(ctx, message: str, opener=None):
     cached = getattr(ctx, _CACHE_ATTR, _UNSET)
     if cached is not _UNSET:
         return cached
-    judgment = judge_prompt(message, getattr(ctx, "config", None), opener=opener)
+    cfg = getattr(ctx, "config", None)
+    judgment = judge_prompt(message, cfg, opener=opener)
     try:
         setattr(ctx, _CACHE_ATTR, judgment)
     except Exception:
         pass
+    enabled = bool(settings(cfg).get("enabled")) and not config.is_pilot_executor()
+    record_call(getattr(ctx, "state", None), judgment, enabled)
     return judgment
 
 

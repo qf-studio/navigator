@@ -41,7 +41,7 @@ from __future__ import annotations
 import json
 import os
 
-from nav_hook_lib import config, hio, memory, sentinels, signals
+from nav_hook_lib import config, hio, judge, memory, sentinels, signals
 
 ESCAPE_LINE = "reply 'ask claude' to run the model"
 MAX_PROMPT_CHARS = 48  # post-strip guard: longer prompts are never matched
@@ -192,7 +192,7 @@ def _answer_nav_stats(ctx) -> str:
         "tier1: {} hits / {} suspected false positives".format(
             tier1.get("hits", 0), tier1.get("false_positives", 0)),
         f"recent op errors: {len(op_errors)}",
-    ], ESCAPE_LINE)
+    ] + judge.summary_lines(ctx.state), ESCAPE_LINE)
 
 
 def _answer_show_features(ctx) -> str:

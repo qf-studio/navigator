@@ -142,6 +142,21 @@ Your context window is 65% available for actual work.
 Share your efficiency: Take a screenshot! #ContextEfficiency
 ```
 
+### Step 4.4: Judge Telemetry Row (v7.7.1+)
+
+If `.agent/.nav-runtime-state.json` carries a `judge` section with `calls > 0`, append one row:
+
+```
+Typed judge ({model}): {calls} calls | {failed} failed | {latency_last_ms} ms last, {latency_max_ms} ms max
+  axes: {overridden} overridden / {agreed} agreed / {undecided} undecided
+```
+
+Sum the per-axis `axes.<axis>.<outcome>` counters for the three outcome totals. "Overridden"
+means the judge changed a decision the keyword heuristic had made; "undecided" means the
+answer fell inside the noul band or below the confidence floor and the heuristic answered.
+Many undecided → the band is too wide for this project; many overrides on an axis that keeps
+being wrong → tighten it or disable. Omit the row when the section is absent or `calls` is 0.
+
 ### Step 4.5: Tier-1 Telemetry Row (v7.0.0+)
 
 If `.agent/.nav-runtime-state.json` (schema 2) carries a `tier1` section, append one row to the

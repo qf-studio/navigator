@@ -124,6 +124,7 @@ def run(ctx):
     # TASK-79: same cached judgment prompt_gate used (None when disabled).
     judgment = judge.for_ctx(ctx, message)
     result = scoring.score_ambiguity(message, judgment=judgment)
+    judge.record_axes(ctx.state, (result.get("judge") or {}).get("axes"))
     if not result["task_shaped"] or result["score"] < threshold:
         return None
 

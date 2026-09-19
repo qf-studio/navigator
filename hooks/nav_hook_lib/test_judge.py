@@ -354,3 +354,64 @@ class TestSetupPath(JudgeTestBase):
         rc = judge.main(["--check"], opener=fake_opener(api_doc()), out=lines.append)
         self.assertIn(rc, (0, 1))  # 0 with this env's key, 1 without — never a crash
         self.assertTrue(lines)
+
+
+class TestTelemetry(JudgeTestBase):
+    """TASK-80 B: counters only, never prompt text; nav stats line."""
+
+    def test_record_call_counts_calls_failures_latency(self):
+        state = {}
+        judge.record_call(state, None, enabled=False)
+        self.assertEqual(state, {})  # judge off -> nothing recorded
+        judge.record_call(state, None, enabled=True)
+        j = judge.parse_response(api_doc()); j.latency_ms = 640
+        judge.record_call(state, j, enabled=True)
+        j2 = judge.parse_response(api_doc()); j2.latency_ms = 710
+        judge.record_call(state, j2, enabled=True)
+        block = state["judge"]
+        self.assertEqual((block["calls"], block["failed"]), (3, 1))
+        self.assertEqual((block["latency_last_ms"], block["latency_max_ms"]), (710, 710))
+        self.assertEqual(block["model"], "jev-1.13.0")
+
+    def test_record_axes_accumulates_known_axes_only(self):
+        state = {}
+        judge.record_axes(state, {"loop": "overridden", "complexity": "undecided", "bogus": "agreed",
+                                  "task": "nonsense"})
+        judge.record_axes(state, {"loop": "agreed", "complexity": "undecided"})
+        judge.record_axes(state, None)
+        table = state["judge"]["axes"]
+        self.assertEqual(table["loop"], {"overridden": 1, "agreed": 1})
+        self.assertEqual(table["complexity"], {"undecided": 2})
+        self.assertNotIn("bogus", table)
+        self.assertNotIn("task", table)
+
+    def test_summary_lines_empty_until_a_call(self):
+        self.assertEqual(judge.summary_lines({}), [])
+        self.assertEqual(judge.summary_lines({"judge": {"axes": {"loop": {"agreed": 1}}}}), [])
+
+    def test_summary_line_totals(self):
+        state = {}
+        j = judge.parse_response(api_doc()); j.latency_ms = 662
+        judge.record_call(state, j, enabled=True)
+        judge.record_call(state, None, enabled=True)
+        judge.record_axes(state, {"loop": "overridden", "complexity": "agreed",
+                                  "task": "undecided", "ambiguity": "agreed"})
+        lines = judge.summary_lines(state)
+        self.assertEqual(lines, ["judge: 2 calls / 1 failed · 662 ms last, 662 ms max",
+                                 "judge axes: 1 overridden / 2 agreed / 1 undecided"])
+        self.assertTrue(all(len(line) <= 56 for line in lines))
+
+    def test_for_ctx_records_call_when_enabled(self):
+        ctx = types.SimpleNamespace(event="UserPromptSubmit", payload={"prompt": "x"},
+                                    config={"judge": enabled_settings()}, state={},
+                                    pilot_executor=False, now=0.0)
+        judge.for_ctx(ctx, "refactor everything", opener=fake_opener(api_doc()))
+        judge.for_ctx(ctx, "refactor everything", opener=fake_opener(api_doc()))  # cached
+        self.assertEqual(ctx.state["judge"]["calls"], 1)
+
+    def test_for_ctx_records_nothing_when_disabled(self):
+        ctx = types.SimpleNamespace(event="UserPromptSubmit", payload={"prompt": "x"},
+                                    config=copy.deepcopy(nav_config.DEFAULTS), state={},
+                                    pilot_executor=False, now=0.0)
+        judge.for_ctx(ctx, "refactor everything", opener=fake_opener(api_doc()))
+        self.assertNotIn("judge", ctx.state)

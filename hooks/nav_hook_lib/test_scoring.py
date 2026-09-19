@@ -547,3 +547,33 @@ class TestJudgeBlend(unittest.TestCase):
         self.assertNotIn("scope", result["undefined_dimensions"])     # undecided -> heuristic
         self.assertNotIn("approach", result["undefined_dimensions"])  # decided defined
         self.assertIn("verification", result["undefined_dimensions"])
+
+
+class TestJudgeAxes(unittest.TestCase):
+    """TASK-80 B: per-axis outcome bookkeeping on the blend points."""
+
+    def test_detect_workflow_axes(self):
+        r = scoring.detect_workflow("run until done: x", judgment=_judgment(
+            wants_loop=0.9, complexity=0.9, complexity_confidence=0.9))
+        self.assertEqual(r["judge"]["axes"], {"loop": "agreed", "complexity": "overridden"})
+        r = scoring.detect_workflow("run until done: x", judgment=_judgment(
+            wants_loop=0.5, complexity_confidence=0.1))
+        self.assertEqual(r["judge"]["axes"], {"loop": "undecided", "complexity": "undecided"})
+        r = scoring.detect_workflow("## Loop mode header", judgment=_judgment(
+            wants_loop=0.1, complexity=0.05, complexity_confidence=0.9))
+        self.assertEqual(r["judge"]["axes"]["loop"], "overridden")
+        self.assertEqual(r["judge"]["axes"]["complexity"], "agreed")  # both below 0.5
+        self.assertNotIn("judge", scoring.detect_workflow("x"))
+
+    def test_score_ambiguity_axes(self):
+        r = scoring.score_ambiguity("what is this?", judgment=_judgment(is_task=0.05))
+        self.assertEqual(r["judge"]["axes"], {"task": "agreed"})
+        r = scoring.score_ambiguity("refactor the onboarding", judgment=_judgment(
+            is_task=0.95, ambiguity=0.9, ambiguity_confidence=0.9))
+        heuristic = scoring.score_ambiguity("refactor the onboarding")["score"]
+        expected = "agreed" if heuristic >= 0.5 else "overridden"
+        self.assertEqual(r["judge"]["axes"], {"task": "agreed", "ambiguity": expected})
+        r = scoring.score_ambiguity("refactor the onboarding", judgment=_judgment(
+            is_task=0.5, ambiguity_confidence=0.1))
+        self.assertEqual(r["judge"]["axes"], {"task": "undecided", "ambiguity": "undecided"})
+        self.assertNotIn("judge", scoring.score_ambiguity("refactor the onboarding"))

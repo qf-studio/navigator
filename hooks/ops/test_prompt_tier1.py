@@ -409,3 +409,27 @@ class DispatchContractTest(Tier1TestBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNavStatsJudgeLine(unittest.TestCase):
+    """TASK-80 B: the nav stats card carries a judge line only after a call."""
+
+    def _ctx(self, state):
+        import copy as _copy
+        from nav_hook_lib import config as _cfg
+        cfg = _copy.deepcopy(_cfg.DEFAULTS)
+        cfg["tier1"]["enabled"] = True
+        return types.SimpleNamespace(event="UserPromptSubmit", payload={"prompt": "nav stats"},
+                                     config=cfg, state=state, pilot_executor=False, now=0.0)
+
+    def test_absent_without_calls(self):
+        text = prompt_tier1._answer_nav_stats(self._ctx({}))
+        self.assertNotIn("judge:", text)
+
+    def test_present_after_calls(self):
+        state = {"judge": {"calls": 3, "failed": 0, "model": "jev-1.13.0",
+                           "latency_last_ms": 650, "latency_max_ms": 720,
+                           "axes": {"loop": {"overridden": 1, "agreed": 2}}}}
+        text = prompt_tier1._answer_nav_stats(self._ctx(state))
+        self.assertIn("judge: 3 calls / 0 failed · 650 ms last, 720 ms max", text)
+        self.assertIn("judge axes: 1 overridden / 2 agreed / 0 undecided", text)

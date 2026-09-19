@@ -590,23 +590,41 @@ def detect_workflow(message: str, judgment=None) -> Dict:
 JUDGE_LOOP_PHRASE = "judged: autonomous iteration requested"
 
 
-def _apply_judgment(judgment, loop_triggered, loop_phrase, complexity, indicators):
+AXIS_OVERRIDDEN, AXIS_AGREED, AXIS_UNDECIDED = "overridden", "agreed", "undecided"
+
+
+def _apply_judgment(judgment, loop_triggered, loop_phrase, complexity, indicators,
+                    threshold: float = 0.5):
     """Overlay decisive judge axes on the heuristic answers (TASK-79).
 
     Returns (loop_triggered, loop_phrase, complexity, indicators, judge_info);
     ``judge_info`` is None when no judgment was supplied, so callers can tell
-    "heuristic only" from "judged, nothing overridden".
+    "heuristic only" from "judged, nothing overridden". ``judge_info.axes``
+    records one outcome per axis (TASK-80 B): ``overridden`` when the judge
+    changed the decision, ``agreed`` when it was decisive and matched,
+    ``undecided`` when the heuristic answered. For complexity the decision
+    compared is the Task Mode side of ``threshold``.
     """
     if judgment is None:
         return loop_triggered, loop_phrase, complexity, indicators, None
     overrides = []
+    axes = {}
     verdict = judgment.loop_verdict()
-    if verdict is not None and verdict != loop_triggered:
+    if verdict is None:
+        axes["loop"] = AXIS_UNDECIDED
+    elif verdict != loop_triggered:
         loop_triggered = verdict
         loop_phrase = JUDGE_LOOP_PHRASE if verdict else None
         overrides.append("loop")
+        axes["loop"] = AXIS_OVERRIDDEN
+    else:
+        axes["loop"] = AXIS_AGREED
     judged_complexity = judgment.complexity_if_confident()
-    if judged_complexity is not None:
+    if judged_complexity is None:
+        axes["complexity"] = AXIS_UNDECIDED
+    else:
+        same_side = (judged_complexity >= threshold) == (complexity >= threshold)
+        axes["complexity"] = AXIS_AGREED if same_side else AXIS_OVERRIDDEN
         complexity = judged_complexity
         indicators = [f"judge:{judgment.complexity_level()}"]
         overrides.append("complexity")
@@ -614,6 +632,7 @@ def _apply_judgment(judgment, loop_triggered, loop_phrase, complexity, indicator
         "model": judgment.model,
         "latency_ms": judgment.latency_ms,
         "overrides": overrides,
+        "axes": axes,
     }
     return loop_triggered, loop_phrase, complexity, indicators, judge_info
 
@@ -1110,9 +1129,17 @@ def score_ambiguity(prompt: str, judgment=None) -> dict:
 
     task_verdict = judgment.task_verdict()
     task_shaped = heuristic["task_shaped"] if task_verdict is None else task_verdict
+    axes = {}
+    if task_verdict is None:
+        axes["task"] = AXIS_UNDECIDED
+    elif task_verdict == heuristic["task_shaped"]:
+        axes["task"] = AXIS_AGREED
+    else:
+        axes["task"] = AXIS_OVERRIDDEN
     if not task_shaped:
         return {"score": 0.0, "task_shaped": False,
-                "undefined_dimensions": [], "matched_signals": []}
+                "undefined_dimensions": [], "matched_signals": [],
+                "judge": {"axes": axes}}
 
     signals = list(heuristic["matched_signals"])
     if heuristic["task_shaped"]:
@@ -1126,7 +1153,12 @@ def score_ambiguity(prompt: str, judgment=None) -> dict:
         heuristic_undefined = set(AMBIGUITY_DIMENSIONS)
 
     judged_ambiguity = judgment.ambiguity_if_confident()
-    if judged_ambiguity is not None:
+    if judged_ambiguity is None:
+        axes["ambiguity"] = AXIS_UNDECIDED
+    else:
+        # Decision compared: the brief's default 0.5 threshold side.
+        same_side = (judged_ambiguity >= 0.5) == (score_value >= 0.5)
+        axes["ambiguity"] = AXIS_AGREED if same_side else AXIS_OVERRIDDEN
         score_value = judged_ambiguity
         signals.append("judge:ambiguity")
 
@@ -1142,6 +1174,7 @@ def score_ambiguity(prompt: str, judgment=None) -> dict:
         "task_shaped": True,
         "undefined_dimensions": undefined,
         "matched_signals": signals,
+        "judge": {"axes": axes},
     }
 
 
@@ -1218,7 +1251,7 @@ def score(prompt: str, config: dict = None, judgment=None) -> ScoreCard:
     loop_triggered, loop_phrase = detect_loop_trigger(text)
     complexity, indicator_tags = unified_complexity(text)
     loop_triggered, loop_phrase, complexity, indicator_tags, _info = _apply_judgment(
-        judgment, loop_triggered, loop_phrase, complexity, indicator_tags)
+        judgment, loop_triggered, loop_phrase, complexity, indicator_tags, threshold)
     intent_match = detect_skill_match(text)
     ambiguity = score_ambiguity(text, judgment=judgment)["score"]
 

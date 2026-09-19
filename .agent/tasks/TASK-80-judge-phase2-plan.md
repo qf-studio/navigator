@@ -1,6 +1,6 @@
 # TASK-80: Typed judge, phase 2 — evidence first, then one more surface
 
-**Status**: 📐 Plan — 2026-09-19 (no code yet; confirm scope before implementation)
+**Status**: 🚧 In Progress — approved 2026-09-19; B done (telemetry), A + C pending
 
 ## Framing constraint
 
@@ -53,6 +53,14 @@ feature can be judged in use rather than on a fixture.
 - mem-034 applies: counters and model id only, never prompt text.
 
 Size: half a day. Depends on nothing; makes A's band question answerable from live use.
+
+**Done 2026-09-19**: `state["judge"]` section (30-day TTL, not session-scoped, like tier1):
+`calls`, `failed`, `model`, `latency_last_ms`, `latency_max_ms`, `axes.<loop|complexity|
+task|ambiguity>.<overridden|agreed|undecided>`. Recorded by `judge.for_ctx` (calls) and the
+two prompt ops via `judge.record_axes` from the scorers' new `judge.axes` outcome dicts.
+"Agreed/overridden" for the score axes compares the decision side (Task Mode 0.5, brief
+0.5), not the raw number. Surfaced as one line on the Tier-1 `nav stats` card
+(`judge.summary_line`) and as a row in the nav-stats skill report.
 
 ## Workstream C — memory relevance rerank (the one new surface)
 

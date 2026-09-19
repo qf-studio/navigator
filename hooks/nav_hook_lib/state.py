@@ -98,6 +98,7 @@ KNOWN_SECTIONS = (
     "tier1",
     "profile",
     "compact",
+    "judge",
 )
 
 _HOUR = 3600.0
@@ -116,6 +117,7 @@ SECTION_TTLS_SECONDS = {
     "tier1": 30 * _DAY,
     "profile": 30 * _DAY,
     "compact": 30 * _DAY,
+    "judge": 30 * _DAY,  # cumulative override telemetry (TASK-80 B), like tier1
 }
 
 # Sections dropped on load when the stored session.id differs from the

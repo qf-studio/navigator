@@ -233,3 +233,17 @@ class TestGateJudge(GateTestBase):
         self.assertIn("TASK MODE RECOMMENDED: complexity=0.67", text)
         self.assertIn("Judged by jev-test (412 ms)", text)
         self.assertIn("│ Mode: TASK", text)
+
+
+class TestGateJudgeTelemetry(GateTestBase):
+    def test_axes_recorded_into_state(self):
+        ctx = make_ctx("clean up the hooks")
+        ctx._judgment = _judgment(wants_loop=0.05, complexity=0.67)
+        prompt_gate.run(ctx)
+        self.assertEqual(ctx.state["judge"]["axes"]["loop"], {"agreed": 1})
+        self.assertEqual(ctx.state["judge"]["axes"]["complexity"], {"overridden": 1})
+
+    def test_nothing_recorded_without_judgment(self):
+        ctx = make_ctx("clean up the hooks")
+        prompt_gate.run(ctx)
+        self.assertNotIn("judge", ctx.state)
