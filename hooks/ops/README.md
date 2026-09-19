@@ -21,6 +21,10 @@ imports cheap (UserPromptSubmit dispatch must stay ≤200ms p95).
 
 ### ctx (types.SimpleNamespace)
 
+Ops may cache per-dispatch derived values on ``ctx`` under a leading-underscore
+attribute; ``nav_hook_lib.judge.for_ctx`` stores ``ctx._judgment`` so prompt_gate and
+prompt_brief share one judge call (TASK-79).
+
 | Field | Meaning |
 |---|---|
 | `ctx.event` | Hook event name, e.g. `"UserPromptSubmit"` |

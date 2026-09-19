@@ -186,3 +186,52 @@ class ConceptExtractionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# TASK-79 — judge overlay on the brief
+# ---------------------------------------------------------------------------
+
+from nav_hook_lib import judge as nav_judge  # noqa: E402
+
+
+def _judgment(**kw):
+    base = dict(is_task=0.9, wants_loop=0.05, complexity=0.6, complexity_confidence=0.9,
+                ambiguity=0.9, ambiguity_confidence=0.9,
+                dimensions={"scope": 0.1, "limits": 0.1, "approach": 0.1, "verification": 0.1},
+                model="jev-test", latency_ms=7,
+                thresholds={"min_confidence": 0.6, "noul_low": 0.3, "noul_high": 0.7})
+    base.update(kw)
+    return nav_judge.Judgment(**base)
+
+
+class TestBriefJudge(BriefTestBase):
+    def test_disabled_by_default_makes_no_call(self):
+        calls = []
+        real = nav_judge.call
+        nav_judge.call = lambda *a, **k: calls.append(a) or None
+        try:
+            prompt_brief.run(make_ctx("make the onboarding better"))
+        finally:
+            nav_judge.call = real
+        self.assertEqual(calls, [])
+
+    def test_judged_not_a_task_silences_brief(self):
+        ctx = make_ctx("refactor the onboarding")
+        self.assertIsNotNone(prompt_brief.run(make_ctx("refactor the onboarding")))
+        ctx._judgment = _judgment(is_task=0.05)
+        self.assertIsNone(prompt_brief.run(ctx))
+
+    def test_judged_task_briefs_a_question_shaped_prompt(self):
+        prompt = "could you add retries to the fetcher?"
+        self.assertIsNone(prompt_brief.run(make_ctx(prompt)))
+        ctx = make_ctx(prompt)
+        ctx._judgment = _judgment()
+        out = prompt_brief.run(ctx)
+        self.assertIsNotNone(out)
+        self.assertIn("NAV-BRIEF", out["additional_context"])
+
+    def test_judged_clear_prompt_below_threshold_is_silent(self):
+        ctx = make_ctx("refactor the onboarding")
+        ctx._judgment = _judgment(ambiguity=0.1, ambiguity_confidence=0.95)
+        self.assertIsNone(prompt_brief.run(ctx))

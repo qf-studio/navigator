@@ -1,5 +1,5 @@
 {
-  "version": "7.6.0",
+  "version": "7.7.0",
   "project_management": "none",
   "task_prefix": "TASK",
   "team_chat": "none",
@@ -179,5 +179,14 @@
       "critic": "opus",
       "patcher": "opus"
     }
+  },
+  "judge": {
+    "enabled": true,
+    "provider": "typesafe",
+    "model": "jev-latest",
+    "timeout_ms": 1500,
+    "min_confidence": 0.4,
+    "noul_low": 0.4,
+    "noul_high": 0.6
   }
 }

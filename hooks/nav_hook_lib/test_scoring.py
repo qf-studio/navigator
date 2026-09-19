@@ -442,3 +442,108 @@ if __name__ == "__main__":
         print_corpus_diff()
     else:
         unittest.main(verbosity=2)
+
+
+# ---------------------------------------------------------------------------
+# TASK-79 — judge blending (judgment=None must stay byte-identical heuristics)
+# ---------------------------------------------------------------------------
+
+from nav_hook_lib import judge as nav_judge  # noqa: E402
+
+
+def _judgment(**kw):
+    base = dict(is_task=0.95, wants_loop=0.05, complexity=0.67, complexity_confidence=0.9,
+                ambiguity=0.5, ambiguity_confidence=0.9,
+                dimensions={"scope": 0.9, "limits": 0.1, "approach": 0.5, "verification": 0.1},
+                model="jev-test", latency_ms=7,
+                thresholds={"min_confidence": 0.6, "noul_low": 0.3, "noul_high": 0.7})
+    base.update(kw)
+    return nav_judge.Judgment(**base)
+
+
+class TestJudgeBlend(unittest.TestCase):
+    FALSE_FIRE = "## F. Loop mode\n| F1 | phase_detector.py | detect_phase |"
+
+    def test_none_judgment_is_pure_heuristic(self):
+        for prompt in ("run until done: build it", "fix the typo", "make it better"):
+            self.assertEqual(scoring.detect_workflow(prompt),
+                             scoring.detect_workflow(prompt, judgment=None))
+            self.assertEqual(scoring.score_ambiguity(prompt),
+                             scoring.score_ambiguity(prompt, judgment=None))
+            self.assertEqual(scoring.score(prompt), scoring.score(prompt, judgment=None))
+        self.assertNotIn("judge", scoring.detect_workflow("run until done: x"))
+
+    def test_decisive_loop_no_overrides_keyword_false_fire(self):
+        result = scoring.detect_workflow(self.FALSE_FIRE, judgment=_judgment(
+            wants_loop=0.14, complexity=0.31, complexity_confidence=0.95))
+        self.assertFalse(result["loop_mode"])
+        self.assertIsNone(result["loop_trigger"])
+        self.assertEqual(result["recommended_mode"], "DIRECT")
+        self.assertEqual(result["judge"]["overrides"], ["loop", "complexity"])
+        self.assertEqual(result["judge"]["model"], "jev-test")
+
+    def test_undecided_loop_keeps_heuristic(self):
+        result = scoring.detect_workflow(self.FALSE_FIRE, judgment=_judgment(
+            wants_loop=0.5, complexity_confidence=0.1))
+        self.assertTrue(result["loop_mode"])
+        self.assertEqual(result["loop_trigger"], "loop mode")
+        self.assertEqual(result["judge"]["overrides"], [])
+
+    def test_decisive_loop_yes_without_phrase(self):
+        result = scoring.detect_workflow("please just get all of it finished without asking",
+                                         judgment=_judgment(wants_loop=0.9))
+        self.assertTrue(result["loop_mode"])
+        self.assertEqual(result["loop_trigger"], scoring.JUDGE_LOOP_PHRASE)
+        self.assertEqual(result["recommended_mode"], "LOOP")
+
+    def test_confident_complexity_replaces_indicators(self):
+        result = scoring.detect_workflow("clean up the hooks",
+                                         judgment=_judgment(complexity=0.67))
+        self.assertEqual(result["complexity"], 0.67)
+        self.assertEqual(result["complexity_indicators"], ["judge:substantial"])
+        self.assertTrue(result["task_mode"])
+
+    def test_low_confidence_complexity_keeps_heuristic(self):
+        heuristic = scoring.detect_workflow("clean up the hooks")
+        result = scoring.detect_workflow("clean up the hooks",
+                                         judgment=_judgment(complexity_confidence=0.2))
+        self.assertEqual(result["complexity"], heuristic["complexity"])
+        self.assertEqual(result["complexity_indicators"], heuristic["complexity_indicators"])
+
+    def test_scorecard_uses_judgment(self):
+        card = scoring.score("what does loop mode do?", judgment=_judgment(
+            wants_loop=0.02, complexity=0.05, is_task=0.03))
+        self.assertEqual(card.tier, "DIRECT")
+        self.assertEqual(card.ambiguity, 0.0)
+        card = scoring.score("what does loop mode do?")
+        self.assertEqual(card.tier, "LOOP")
+
+    def test_ambiguity_task_verdict_no_silences(self):
+        result = scoring.score_ambiguity("make the onboarding better",
+                                         judgment=_judgment(is_task=0.05))
+        self.assertFalse(result["task_shaped"])
+        self.assertEqual(result["undefined_dimensions"], [])
+
+    def test_ambiguity_task_verdict_yes_on_question_shaped_prompt(self):
+        prompt = "could you add retries to the fetcher?"
+        self.assertFalse(scoring.score_ambiguity(prompt)["task_shaped"])
+        result = scoring.score_ambiguity(prompt, judgment=_judgment(
+            is_task=0.9, ambiguity=0.8,
+            dimensions={"scope": 0.9, "limits": 0.1, "approach": 0.5, "verification": 0.1}))
+        self.assertTrue(result["task_shaped"])
+        self.assertEqual(result["score"], 0.8)
+        self.assertIn("judge:task", result["matched_signals"])
+        # scope decided defined, approach undecided -> "all undefined" fallback keeps it
+        self.assertEqual(result["undefined_dimensions"], ["limits", "approach", "verification"])
+
+    def test_ambiguity_dimensions_blend_with_heuristic(self):
+        prompt = "refactor hooks/ops/read_guard.py"
+        heuristic = scoring.score_ambiguity(prompt)
+        self.assertNotIn("scope", heuristic["undefined_dimensions"])  # file path credit
+        result = scoring.score_ambiguity(prompt, judgment=_judgment(
+            ambiguity_confidence=0.1,
+            dimensions={"scope": 0.5, "limits": 0.5, "approach": 0.9, "verification": 0.5}))
+        self.assertEqual(result["score"], heuristic["score"])  # not confident -> heuristic
+        self.assertNotIn("scope", result["undefined_dimensions"])     # undecided -> heuristic
+        self.assertNotIn("approach", result["undefined_dimensions"])  # decided defined
+        self.assertIn("verification", result["undefined_dimensions"])

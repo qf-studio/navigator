@@ -554,15 +554,17 @@ def calculate_message_complexity(message: str) -> Tuple[float, List[str]]:
     return score, matched
 
 
-def detect_workflow(message: str) -> Dict:
+def detect_workflow(message: str, judgment=None) -> Dict:
     """Full v6 workflow detection - Loop Mode and Task Mode.
 
     Returns:
         Complete detection result as dict
     """
     loop_triggered, loop_phrase = detect_loop_trigger(message)
-
     complexity, indicators = calculate_message_complexity(message)
+
+    judged = _apply_judgment(judgment, loop_triggered, loop_phrase, complexity, indicators)
+    loop_triggered, loop_phrase, complexity, indicators, judge_info = judged
     task_mode = complexity >= 0.5
 
     if loop_triggered:
@@ -572,7 +574,7 @@ def detect_workflow(message: str) -> Dict:
     else:
         mode = "DIRECT"
 
-    return {
+    result = {
         "loop_mode": loop_triggered,
         "loop_trigger": loop_phrase,
         "task_mode": task_mode,
@@ -580,6 +582,40 @@ def detect_workflow(message: str) -> Dict:
         "complexity_indicators": indicators,
         "recommended_mode": mode,
     }
+    if judge_info is not None:
+        result["judge"] = judge_info
+    return result
+
+
+JUDGE_LOOP_PHRASE = "judged: autonomous iteration requested"
+
+
+def _apply_judgment(judgment, loop_triggered, loop_phrase, complexity, indicators):
+    """Overlay decisive judge axes on the heuristic answers (TASK-79).
+
+    Returns (loop_triggered, loop_phrase, complexity, indicators, judge_info);
+    ``judge_info`` is None when no judgment was supplied, so callers can tell
+    "heuristic only" from "judged, nothing overridden".
+    """
+    if judgment is None:
+        return loop_triggered, loop_phrase, complexity, indicators, None
+    overrides = []
+    verdict = judgment.loop_verdict()
+    if verdict is not None and verdict != loop_triggered:
+        loop_triggered = verdict
+        loop_phrase = JUDGE_LOOP_PHRASE if verdict else None
+        overrides.append("loop")
+    judged_complexity = judgment.complexity_if_confident()
+    if judged_complexity is not None:
+        complexity = judged_complexity
+        indicators = [f"judge:{judgment.complexity_level()}"]
+        overrides.append("complexity")
+    judge_info = {
+        "model": judgment.model,
+        "latency_ms": judgment.latency_ms,
+        "overrides": overrides,
+    }
+    return loop_triggered, loop_phrase, complexity, indicators, judge_info
 
 
 def workflow_detector_main():
@@ -985,8 +1021,8 @@ def _has_file_reference(text: str) -> bool:
     return bool(PATH_RE.search(text) or FILE_RE.search(text))
 
 
-def score_ambiguity(prompt: str) -> dict:
-    """Score a prompt's ambiguity.
+def _score_ambiguity_heuristic(prompt: str) -> dict:
+    """Score a prompt's ambiguity (keyword heuristic).
 
     Returns {"score": float, "task_shaped": bool,
              "undefined_dimensions": [str], "matched_signals": [str]}.
@@ -1056,6 +1092,59 @@ def score_ambiguity(prompt: str) -> dict:
     }
 
 
+AMBIGUITY_DIMENSIONS = ("scope", "limits", "approach", "verification")
+
+
+def score_ambiguity(prompt: str, judgment=None) -> dict:
+    """Ambiguity result, judge-blended when a decisive judgment is supplied.
+
+    With ``judgment=None`` this is exactly the heuristic (deterministic). With
+    a judgment (TASK-79): ``is_task`` decides task-shapedness when decisive;
+    the ambiguity score replaces the heuristic's when confident; each
+    undefined dimension follows its noul when decisive. Undecided axes keep
+    the heuristic answer.
+    """
+    heuristic = _score_ambiguity_heuristic(prompt)
+    if judgment is None:
+        return heuristic
+
+    task_verdict = judgment.task_verdict()
+    task_shaped = heuristic["task_shaped"] if task_verdict is None else task_verdict
+    if not task_shaped:
+        return {"score": 0.0, "task_shaped": False,
+                "undefined_dimensions": [], "matched_signals": []}
+
+    signals = list(heuristic["matched_signals"])
+    if heuristic["task_shaped"]:
+        score_value = heuristic["score"]
+        heuristic_undefined = set(heuristic["undefined_dimensions"])
+    else:
+        # Heuristic saw no task; the judge did. Start from the base and let
+        # the dimension nouls (or, undecided, "all undefined") fill the rows.
+        signals.append("judge:task")
+        score_value = BASE_SCORE
+        heuristic_undefined = set(AMBIGUITY_DIMENSIONS)
+
+    judged_ambiguity = judgment.ambiguity_if_confident()
+    if judged_ambiguity is not None:
+        score_value = judged_ambiguity
+        signals.append("judge:ambiguity")
+
+    undefined = []
+    for name in AMBIGUITY_DIMENSIONS:
+        verdict = judgment.dimension_verdict(name)
+        is_undefined = (name in heuristic_undefined) if verdict is None else (not verdict)
+        if is_undefined:
+            undefined.append(name)
+
+    return {
+        "score": round(max(0.0, min(1.0, score_value)), 2),
+        "task_shaped": True,
+        "undefined_dimensions": undefined,
+        "matched_signals": signals,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Unified model — ScoreCard + score()
 # ---------------------------------------------------------------------------
@@ -1110,13 +1199,15 @@ def unified_complexity(message: str) -> Tuple[float, List[str]]:
     return min(round(score_value, 2), 1.0), matched
 
 
-def score(prompt: str, config: dict = None) -> ScoreCard:
+def score(prompt: str, config: dict = None, judgment=None) -> ScoreCard:
     """Unified prompt scorer: one call, four v6 axes.
 
     Args:
         prompt: raw user prompt (None tolerated -> empty).
         config: optional loaded nav-config dict; only
             task_mode.complexity_threshold is consulted (default 0.5).
+        judgment: optional nav_hook_lib.judge.Judgment; decisive axes
+            override the heuristics (TASK-79), None keeps pure heuristics.
 
     Returns:
         ScoreCard(complexity, tier, intent, ambiguity, triggers)
@@ -1126,8 +1217,10 @@ def score(prompt: str, config: dict = None) -> ScoreCard:
 
     loop_triggered, loop_phrase = detect_loop_trigger(text)
     complexity, indicator_tags = unified_complexity(text)
+    loop_triggered, loop_phrase, complexity, indicator_tags, _info = _apply_judgment(
+        judgment, loop_triggered, loop_phrase, complexity, indicator_tags)
     intent_match = detect_skill_match(text)
-    ambiguity = score_ambiguity(text)["score"]
+    ambiguity = score_ambiguity(text, judgment=judgment)["score"]
 
     if loop_triggered:
         tier = "LOOP"

@@ -181,3 +181,55 @@ class HygieneTest(GateTestBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# TASK-79 — judge overlay on the gate
+# ---------------------------------------------------------------------------
+
+from nav_hook_lib import judge as nav_judge  # noqa: E402
+
+
+def _judgment(**kw):
+    base = dict(is_task=0.9, wants_loop=0.05, complexity=0.2, complexity_confidence=0.95,
+                ambiguity=0.3, ambiguity_confidence=0.9, dimensions={},
+                model="jev-test", latency_ms=7,
+                thresholds={"min_confidence": 0.6, "noul_low": 0.3, "noul_high": 0.7})
+    base.update(kw)
+    return nav_judge.Judgment(**base)
+
+
+class TestGateJudge(GateTestBase):
+    def test_disabled_by_default_no_call_and_v6_bytes(self):
+        ctx = make_ctx(LOOP_PROMPT)
+        calls = []
+        real = nav_judge.call
+        nav_judge.call = lambda *a, **k: calls.append(a) or None
+        try:
+            out = prompt_gate.run(ctx)
+        finally:
+            nav_judge.call = real
+        self.assertEqual(calls, [])
+        self.assertIn("LOOP MODE TRIGGER DETECTED: 'run until done'", out["additional_context"])
+        self.assertNotIn("Judged by", out["additional_context"])
+
+    def test_judged_no_silences_false_fire(self):
+        ctx = make_ctx("## F. Loop mode\n| F1 | phase_detector.py |", check_shown=False)
+        ctx._judgment = _judgment(wants_loop=0.1)  # pre-cached judgment
+        self.assertIsNone(prompt_gate.run(ctx))    # no warn, and no strict block either
+
+    def test_judged_yes_blocks_like_a_phrase(self):
+        ctx = make_ctx("get every one of them finished, no check-ins", check_shown=False)
+        ctx._judgment = _judgment(wants_loop=0.95)
+        out = prompt_gate.run(ctx)
+        self.assertEqual(out["exit_code"], 2)
+        self.assertIn(prompt_gate.BLOCK_TAG, out["stderr"])
+
+    def test_judged_warn_carries_model_line(self):
+        ctx = make_ctx("clean up the hooks")
+        ctx._judgment = _judgment(complexity=0.67, latency_ms=412)
+        out = prompt_gate.run(ctx)
+        text = out["additional_context"]
+        self.assertIn("TASK MODE RECOMMENDED: complexity=0.67", text)
+        self.assertIn("Judged by jev-test (412 ms)", text)
+        self.assertIn("│ Mode: TASK", text)

@@ -129,6 +129,7 @@ FEATURE_BLOCKS = (
     "failure_diagnosis",
     "config_guard",
     "setup_hook",
+    "judge",
 )
 
 

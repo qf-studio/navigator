@@ -1,0 +1,4082 @@
+[
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.69,
+     "confidence": 0.69,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.31,
+      "3": 0.69
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.33,
+     "confidence": 0.51,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.67,
+      "2": 0.33
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.74
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.58
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.43
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 716
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.59
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.73,
+     "confidence": 0.21,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.18,
+      "1": 0.16,
+      "2": 0.4,
+      "3": 0.26
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.17,
+     "confidence": 0.75,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.83,
+      "2": 0.17
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.53
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.93
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.95
+    }
+   },
+   "usage": {
+    "input_tokens": 694,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 674
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.89
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.31,
+     "confidence": 0.67,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.69,
+      "2": 0.27,
+      "3": 0.03
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.66,
+     "confidence": 0.45,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.35,
+      "1": 0.64,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.29
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.75
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.9
+    }
+   },
+   "usage": {
+    "input_tokens": 703,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 603
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.45
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.32,
+     "confidence": 0.67,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.66,
+      "3": 0.33
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.06,
+     "confidence": 0.88,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.92,
+      "2": 0.07
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.84
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.74
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.12
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 708
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.65
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.9
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.15,
+     "confidence": 0.45,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.02,
+      "1": 0.16,
+      "2": 0.47,
+      "3": 0.35
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.53,
+     "confidence": 0.3,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.47,
+      "2": 0.53
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.71
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.14
+    }
+   },
+   "usage": {
+    "input_tokens": 694,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 606
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.59
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.62
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.98,
+     "confidence": 0.36,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.1,
+      "1": 0.14,
+      "2": 0.45,
+      "3": 0.31
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.02,
+     "confidence": 0.95,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.97,
+      "2": 0.03
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.83
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.7
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.91
+    }
+   },
+   "usage": {
+    "input_tokens": 699,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 622
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.94,
+     "confidence": 0.06,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.45,
+      "1": 0.24,
+      "2": 0.23,
+      "3": 0.08
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.77,
+     "confidence": 0.65,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.04,
+      "1": 0.15,
+      "2": 0.81
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.81
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.26
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.44
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.2
+    }
+   },
+   "usage": {
+    "input_tokens": 715,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 720
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.14
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.03,
+     "confidence": 0.0,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.52,
+      "1": 0.09,
+      "2": 0.23,
+      "3": 0.16
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.86,
+     "confidence": 0.78,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.14,
+      "2": 0.86
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.25
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.06
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 644
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.4
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.15,
+     "confidence": 0.85,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.86,
+      "1": 0.12,
+      "2": 0.02,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.08,
+     "confidence": 0.67,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.07,
+      "1": 0.78,
+      "2": 0.15
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.23
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.36
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 702,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 663
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.06,
+     "confidence": 0.94,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.96,
+      "1": 0.04,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.88,
+     "confidence": 0.82,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.12,
+      "2": 0.88
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.18
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 689,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 610
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.29
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.03,
+     "confidence": 0.97,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.98,
+      "1": 0.02,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.12,
+     "confidence": 0.64,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.06,
+      "1": 0.76,
+      "2": 0.18
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.61
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.8
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.48
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 695,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 641
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.12,
+     "confidence": 0.46,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.12,
+      "1": 0.64,
+      "2": 0.24
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.21
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.12
+    }
+   },
+   "usage": {
+    "input_tokens": 694,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 676
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.88,
+     "confidence": 0.71,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.16,
+      "1": 0.8,
+      "2": 0.04
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.87
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.21
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.23
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.07
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 650
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.09,
+     "confidence": 0.91,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.91,
+      "1": 0.09,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.91,
+     "confidence": 0.84,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.1,
+      "1": 0.89,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.31
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.06
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 610
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.68,
+     "confidence": 0.52,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.32,
+      "1": 0.68,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.3
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 695,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 722
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.93
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.02,
+     "confidence": 0.98,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.98,
+      "1": 0.02,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.05,
+     "confidence": 0.92,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.95,
+      "2": 0.05
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.24
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 693,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 719
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.01,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.99,
+      "1": 0.01,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.75,
+     "confidence": 0.59,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.26,
+      "1": 0.73,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.23
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.21
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 692,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 669
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.13,
+     "confidence": 0.87,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.91,
+      "1": 0.07,
+      "2": 0.02,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.9,
+     "confidence": 0.85,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.1,
+      "2": 0.9
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.42
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 688,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 660
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.01,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.31
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.24
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.44
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.3
+    }
+   },
+   "usage": {
+    "input_tokens": 683,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 680
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.19
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.13,
+     "confidence": 0.87,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.92,
+      "1": 0.04,
+      "2": 0.04,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.96,
+     "confidence": 0.94,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.04,
+      "2": 0.96
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.48
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 689,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 664
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.01,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.94,
+     "confidence": 0.9,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.02,
+      "1": 0.03,
+      "2": 0.95
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.31
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.15
+    }
+   },
+   "usage": {
+    "input_tokens": 686,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 658
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.21,
+     "confidence": 0.79,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.82,
+      "1": 0.14,
+      "2": 0.03,
+      "3": 0.01
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.57,
+     "confidence": 0.36,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.42,
+      "2": 0.58
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.3
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.3
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.12
+    }
+   },
+   "usage": {
+    "input_tokens": 692,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 656
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.94,
+     "confidence": 0.5,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.28,
+      "1": 0.52,
+      "2": 0.18,
+      "3": 0.02
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.47,
+     "confidence": 0.3,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.53,
+      "2": 0.47
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.52
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.12
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.24
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.11
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 657
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.19,
+     "confidence": 0.81,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.81,
+      "1": 0.19,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.38,
+     "confidence": 0.43,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.62,
+      "2": 0.38
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.4
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.07
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.18
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 693,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 684
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.05,
+     "confidence": 0.95,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.95,
+      "1": 0.05,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.98,
+     "confidence": 0.96,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.01,
+      "2": 0.98
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.57
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.2
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.18
+    }
+   },
+   "usage": {
+    "input_tokens": 720,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 613
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.0,
+     "confidence": 0.99,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 1.0,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.66
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.32
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.7
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.7
+    }
+   },
+   "usage": {
+    "input_tokens": 709,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 661
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.97,
+     "confidence": 0.96,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.04,
+      "2": 0.96,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.99,
+     "confidence": 0.97,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.02,
+      "1": 0.98,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.26
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.79
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.91
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.69
+    }
+   },
+   "usage": {
+    "input_tokens": 712,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 668
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.9
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.98,
+     "confidence": 0.94,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.04,
+      "2": 0.94,
+      "3": 0.02
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.12,
+     "confidence": 0.81,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.88,
+      "2": 0.12
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.37
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.46
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.6
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 706,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 670
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.03,
+     "confidence": 0.9,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.03,
+      "2": 0.9,
+      "3": 0.07
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.0,
+     "confidence": 0.97,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.98,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.37
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.84
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.13
+    }
+   },
+   "usage": {
+    "input_tokens": 698,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 664
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.01,
+     "confidence": 0.97,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.97,
+      "2": 0.02,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.0,
+     "confidence": 0.99,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 1.0,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.34
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.31
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 638
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.62
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.1,
+     "confidence": 0.47,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.09,
+      "1": 0.04,
+      "2": 0.56,
+      "3": 0.31
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.89,
+     "confidence": 0.84,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.11,
+      "2": 0.89
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.33
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 689,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 675
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.8
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.14,
+     "confidence": 0.4,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.23,
+      "1": 0.39999999999999997,
+      "2": 0.36,
+      "3": 0.01
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.74,
+     "confidence": 0.61,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.26,
+      "2": 0.74
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.42
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.3
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 686,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 690
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.58
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.39,
+     "confidence": 0.0,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.39,
+      "1": 0.06,
+      "2": 0.32,
+      "3": 0.23
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.75,
+     "confidence": 0.63,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.25,
+      "2": 0.75
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.07
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.18
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.07
+    }
+   },
+   "usage": {
+    "input_tokens": 685,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 624
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.52
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.28,
+     "confidence": 0.17,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.27,
+      "1": 0.24,
+      "2": 0.43,
+      "3": 0.06
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.64,
+     "confidence": 0.46,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.36,
+      "2": 0.64
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.37
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 692,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 673
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.9
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.83,
+     "confidence": 0.83,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.0,
+      "2": 0.14,
+      "3": 0.85
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.79,
+     "confidence": 0.69,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.21,
+      "2": 0.79
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.57
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.04
+    }
+   },
+   "usage": {
+    "input_tokens": 688,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 703
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.88
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.03,
+     "confidence": 0.95,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.95,
+      "3": 0.04
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.12,
+     "confidence": 0.82,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.88,
+      "2": 0.12
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.46
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.07
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 692,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 624
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.13,
+     "confidence": 0.86,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.87,
+      "2": 0.12,
+      "3": 0.01
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.13,
+     "confidence": 0.81,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.87,
+      "2": 0.13
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.25
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.62
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.07
+    }
+   },
+   "usage": {
+    "input_tokens": 690,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 664
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.41,
+     "confidence": 0.57,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.57,
+      "2": 0.42,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.07,
+     "confidence": 0.9,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.93,
+      "2": 0.07
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.83
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.48
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 700,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 636
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.87
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.09,
+     "confidence": 0.86,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.02,
+      "2": 0.86,
+      "3": 0.12
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.01,
+     "confidence": 0.98,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.99,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.69
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.2
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.22
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 688
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.41,
+     "confidence": 0.59,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.59,
+      "3": 0.41
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.01,
+     "confidence": 0.97,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.98,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.6
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.4
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.55
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.27
+    }
+   },
+   "usage": {
+    "input_tokens": 702,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 655
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.99,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.99,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.61,
+     "confidence": 0.41,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.39,
+      "1": 0.61,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.21
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.56
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.54
+    }
+   },
+   "usage": {
+    "input_tokens": 713,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 696
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.21,
+     "confidence": 0.79,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.79,
+      "1": 0.21,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.49,
+     "confidence": 0.26,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.51,
+      "1": 0.49,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.14
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.65
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.11
+    }
+   },
+   "usage": {
+    "input_tokens": 705,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 621
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.54,
+     "confidence": 0.54,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.46,
+      "1": 0.54,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.52,
+     "confidence": 0.28,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.48,
+      "1": 0.52,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.64
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.31
+    }
+   },
+   "usage": {
+    "input_tokens": 705,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 623
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.84
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.61,
+     "confidence": 0.59,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.4,
+      "1": 0.59,
+      "2": 0.01,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.24,
+     "confidence": 0.64,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.76,
+      "2": 0.24
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.71
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.2
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.06
+    }
+   },
+   "usage": {
+    "input_tokens": 688,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 645
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.58
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.43,
+     "confidence": 0.57,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.72,
+      "1": 0.16,
+      "2": 0.1,
+      "3": 0.02
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.8,
+     "confidence": 0.7,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.2,
+      "2": 0.8
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.41
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.17
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.31
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 674
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.16
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.24,
+     "confidence": 0.76,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.84,
+      "1": 0.09,
+      "2": 0.06,
+      "3": 0.01
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.82,
+     "confidence": 0.73,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.17,
+      "2": 0.83
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.41
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.16
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.04
+    }
+   },
+   "usage": {
+    "input_tokens": 686,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 678
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.22
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.84,
+     "confidence": 0.84,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.13,
+      "3": 0.86
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.58,
+     "confidence": 0.38,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.41,
+      "2": 0.59
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.53
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.23
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.52
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 699
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.47,
+     "confidence": 0.53,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.68,
+      "1": 0.21,
+      "2": 0.07,
+      "3": 0.04
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.95,
+     "confidence": 0.92,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.05,
+      "2": 0.95
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.46
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.36
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.21
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.11
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 671
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.16
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.07,
+     "confidence": 0.93,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.9299999999999999,
+      "1": 0.06,
+      "2": 0.01,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.43,
+     "confidence": 0.25,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.03,
+      "1": 0.5,
+      "2": 0.47
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.68
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.85
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.47
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.16
+    }
+   },
+   "usage": {
+    "input_tokens": 708,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 623
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.99,
+     "confidence": 0.99,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.01,
+      "3": 0.99
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.99,
+     "confidence": 0.98,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.99,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.44
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.55
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.83
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.24
+    }
+   },
+   "usage": {
+    "input_tokens": 709,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 628
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 2.64,
+     "confidence": 0.64,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.35,
+      "3": 0.65
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.12,
+     "confidence": 0.82,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.88,
+      "2": 0.12
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.46
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.41
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 691,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 639
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.91,
+     "confidence": 0.9,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.09,
+      "2": 0.91,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.98,
+     "confidence": 0.93,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.03,
+      "1": 0.96,
+      "2": 0.01
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.79
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.89
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.23
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 708
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.97,
+     "confidence": 0.34,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.08,
+      "1": 0.19,
+      "2": 0.41,
+      "3": 0.32
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.07,
+     "confidence": 0.89,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.93,
+      "2": 0.07
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.16
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.09
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.16
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 696,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 712
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.17
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.23,
+     "confidence": 0.77,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.8099999999999999,
+      "1": 0.14,
+      "2": 0.04,
+      "3": 0.01
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.85,
+     "confidence": 0.77,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.15,
+      "2": 0.85
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.45
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.3
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 692,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 709
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.25
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.26,
+     "confidence": 0.21,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.23,
+      "1": 0.31,
+      "2": 0.44,
+      "3": 0.02
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.79,
+     "confidence": 0.69,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.21,
+      "2": 0.79
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.36
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.35
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 705,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 662
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.81
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.56,
+     "confidence": 0.44,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.51,
+      "1": 0.43,
+      "2": 0.06,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 0.95,
+     "confidence": 0.91,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.05,
+      "1": 0.95,
+      "2": 0.0
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.57
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.26
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 704,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 657
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.46
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.23,
+     "confidence": 0.77,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.82,
+      "1": 0.14,
+      "2": 0.04,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.28,
+     "confidence": 0.52,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.02,
+      "1": 0.68,
+      "2": 0.3
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.93
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.13
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.35
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.06
+    }
+   },
+   "usage": {
+    "input_tokens": 701,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 625
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.1,
+     "confidence": 0.9,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.91,
+      "1": 0.09,
+      "2": 0.0,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.01,
+     "confidence": 0.9,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.03,
+      "1": 0.93,
+      "2": 0.04
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.12
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.49
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 697,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 633
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.93
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.07
+    },
+    "complexity": {
+     "type": "score",
+     "score": 1.79,
+     "confidence": 0.74,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.02,
+      "1": 0.19,
+      "2": 0.77,
+      "3": 0.02
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.07,
+     "confidence": 0.66,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.08,
+      "1": 0.77,
+      "2": 0.15
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.92
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.74
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.89
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.87
+    }
+   },
+   "usage": {
+    "input_tokens": 704,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 682
+ },
+ {
+  "_doc": {
+   "model": "jev-1.13.0",
+   "answers": {
+    "is_task": {
+     "type": "noul",
+     "noul": 0.17
+    },
+    "wants_loop": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "complexity": {
+     "type": "score",
+     "score": 0.18,
+     "confidence": 0.82,
+     "legend": {
+      "0": "trivial: a one-line answer or a single small edit",
+      "1": "small: one file, under an hour of work",
+      "2": "substantial: several files, a new feature, or a refactor of one module",
+      "3": "large: a cross-cutting refactor, a new subsystem, or multi-day work"
+     },
+     "probabilities": {
+      "0": 0.84,
+      "1": 0.15,
+      "2": 0.01,
+      "3": 0.0
+     }
+    },
+    "ambiguity": {
+     "type": "score",
+     "score": 1.07,
+     "confidence": 0.88,
+     "legend": {
+      "0": "clear: scope, target files or components, and done-criteria are explicit",
+      "1": "partly: the goal is clear but scope, limits, or done-criteria are missing",
+      "2": "vague: the goal itself is open to interpretation"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.92,
+      "2": 0.07
+     }
+    },
+    "scope_defined": {
+     "type": "noul",
+     "noul": 0.27
+    },
+    "limits_defined": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "approach_defined": {
+     "type": "noul",
+     "noul": 0.39
+    },
+    "verification_defined": {
+     "type": "noul",
+     "noul": 0.76
+    }
+   },
+   "usage": {
+    "input_tokens": 687,
+    "output_tokens": 139
+   }
+  },
+  "_latency_ms": 616
+ }
+]

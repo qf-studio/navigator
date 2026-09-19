@@ -23,6 +23,11 @@ mem-034 discipline, both halves:
   - the block stderr is sentinel-wrapped AND redact_phrases()'d against
     LOOP_TRIGGERS, so no trigger phrase can leave through stderr.
 
+TASK-79: when ``judge.enabled`` (ships OFF) a typed judgment overlays the
+loop-trigger and complexity heuristics per axis when decisive; the WORKFLOW
+CHECK block then carries one extra "Judged by" line. Disabled or failed judge
+== the exact v6 bytes.
+
 State source is the schema-2 runtime state (turn.signals.check_shown)
 instead of v6's .nav-workflow-state.json — the one sanctioned parity delta.
 The block message names the v7 file/keys accordingly.
@@ -31,7 +36,7 @@ from __future__ import annotations
 
 import os
 
-from nav_hook_lib import config, scoring, sentinels
+from nav_hook_lib import config, judge, scoring, sentinels
 
 BLOCK_TAG = "nav-workflow-block"
 
@@ -88,6 +93,11 @@ def _warn_lines(result: dict, task_mode_enabled: bool) -> list:
         warnings.append("   Show phase tracking (RESEARCH → IMPL → VERIFY → COMPLETE).")
     if not warnings:
         return []
+    judge_info = result.get("judge")
+    if judge_info:
+        warnings.append(
+            f"ℹ️  Judged by {judge_info.get('model') or 'judge'} "
+            f"({judge_info.get('latency_ms', 0)} ms)")
     return warnings + [
         "",
         "Remember to show WORKFLOW CHECK block!",
@@ -114,7 +124,10 @@ def run(ctx):
         config.get(ctx.config, "workflow_enforcer_hook.strict_block", True))
     task_mode_enabled = bool(config.get(ctx.config, "task_mode.enabled", True))
 
-    result = scoring.detect_workflow(message)
+    # TASK-79: typed judge overlay (judge.enabled ships OFF -> None -> pure
+    # heuristics). Cached on ctx so prompt_brief reuses the same answer.
+    judgment = judge.for_ctx(ctx, message)
+    result = scoring.detect_workflow(message, judgment=judgment)
 
     # Decide block first; the soft warn is suppressed when blocking so the
     # only emitted text is the sentinel-wrapped stderr (mem-034).

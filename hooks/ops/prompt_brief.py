@@ -15,6 +15,10 @@ non-blocking, byte-identical v6 behavior:
 
 Runs in the injectors phase: a prompt_gate block short-circuits this op —
 same observable composition as v6 (a blocked prompt surfaced no brief).
+TASK-79: with ``judge.enabled`` (ships OFF) the typed judgment decides
+task-shapedness, ambiguity and the undefined rows when decisive; otherwise
+the heuristic answers, byte-for-byte as before.
+
 ``brief.pending`` exists in the schema-2 state but is NOT populated here
 (TASK-56 deferral recorded in the task doc); the op stays stateless.
 """
@@ -23,7 +27,7 @@ from __future__ import annotations
 import os
 import re
 
-from nav_hook_lib import config, hio, memory, scoring, sentinels
+from nav_hook_lib import config, hio, judge, memory, scoring, sentinels
 
 RECALL_TIMEOUT = 3
 RECALL_LIMIT = 5
@@ -117,7 +121,9 @@ def run(ctx):
         config.get(ctx.config, "brief_hook.memory_budget_chars",
                    DEFAULT_MEMORY_BUDGET))
 
-    result = scoring.score_ambiguity(message)
+    # TASK-79: same cached judgment prompt_gate used (None when disabled).
+    judgment = judge.for_ctx(ctx, message)
+    result = scoring.score_ambiguity(message, judgment=judgment)
     if not result["task_shaped"] or result["score"] < threshold:
         return None
 

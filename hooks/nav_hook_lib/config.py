@@ -198,6 +198,23 @@ DEFAULTS = {
         "critic_enabled": True,
         "models": {"fetcher": "sonnet", "writer": "opus", "critic": "opus", "patcher": "opus"},
     },
+    # ---- v7.7 typed prompt judge (TASK-79) — ships OFF, opt-in ----
+    # The prompt leaves the machine when enabled (secret-redacted, head-capped).
+    # Per axis: nouls decide outside [noul_low, noul_high]; scores decide at
+    # min_confidence or above; anything else keeps the keyword heuristic.
+    "judge": {
+        "enabled": False,
+        "provider": "typesafe",
+        "endpoint": "https://api.typesafe.ai/v1/systemone",
+        "model": "jev-latest",
+        "timeout_ms": 1500,
+        "min_confidence": 0.4,
+        "noul_low": 0.4,
+        "noul_high": 0.6,
+        "api_key_env": "TYPESAFE_API_KEY",
+        "api_key_file": "~/.config/typesafe/api_key",
+        "max_state_chars": 4000,
+    },
 }
 
 
