@@ -1,6 +1,6 @@
 # TASK-80: Typed judge, phase 2 — evidence first, then one more surface
 
-**Status**: 🚧 In Progress — approved 2026-09-19; B done (telemetry), A + C pending
+**Status**: 🚧 In Progress — approved 2026-09-19; B done (telemetry), A tooling done (labeling pending, user), C pending
 
 ## Framing constraint
 
@@ -39,6 +39,14 @@ ambiguity numbers are calibrated rather than directional.
   coin flips).
 
 Size: 1 day incl. labeling time. Depends on nothing.
+
+**Tooling done 2026-09-19**: `scripts/judge_label.py extract|label|status`. Extracted 365
+prompts from 16 projects (60 per project cap, secret-redacted, 1500-char cap, deduped,
+subagent transcripts and hook/command echoes skipped) into
+`hooks/nav_hook_lib/fixtures/judge_eval_real.json` — **gitignored, private, never commit**.
+`scripts/judge_eval.py --fixture <that file> --live` skips unlabeled rows, so partial
+labeling already yields numbers. Labeling is the user's job (independence from the
+question author): `python3 scripts/judge_label.py label`, ~1 min per 10 prompts.
 
 ## Workstream B — override telemetry (no model changes)
 

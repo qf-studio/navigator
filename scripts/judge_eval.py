@@ -100,7 +100,10 @@ def main(argv=None) -> int:
     parser.add_argument("--show-misses", action="store_true")
     args = parser.parse_args(argv)
 
-    prompts = json.loads(Path(args.fixture).read_text())["prompts"]
+    prompts = [p for p in json.loads(Path(args.fixture).read_text())["prompts"]
+               if p.get("tier") in ("DIRECT", "TASK", "LOOP")]  # unlabeled rows skipped
+    if not prompts:
+        parser.error("fixture has no labeled prompts")
     cfg = dict(judge.DEFAULTS)
     cfg["enabled"] = True
     for name in ("min_confidence", "noul_low", "noul_high"):

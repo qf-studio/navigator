@@ -76,3 +76,6 @@ workshop/
 .agent/.features-shown-*
 # nav-deep-research fetched bodies (third-party text; rebuild with source_store.py refetch)
 .agent/research/*/sources/
+
+# Real-session judge eval prompts (TASK-80 A): private, never commit
+hooks/nav_hook_lib/fixtures/judge_eval_real*.json
