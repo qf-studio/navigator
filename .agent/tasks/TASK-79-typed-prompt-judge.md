@@ -1,6 +1,6 @@
 # TASK-79: Typed prompt judge — Jev behind the keyword scorers
 
-**Status**: ✅ Implemented — 2026-09-19 (ships in v7.7.0, dogfooding ON in this repo)
+**Status**: ✅ Released v7.7.0 — 2026-09-19 (tag v7.7.0 published by release.yml; docs site synced same day; dogfooding ON in this repo)
 
 ## Context
 

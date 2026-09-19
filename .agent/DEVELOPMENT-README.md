@@ -145,7 +145,7 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
-Current active threads (as of 2026-09-13; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19 — docs site synced through v7.4.0, later sync pending):
+Current active threads (as of 2026-09-19; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19 — docs site synced through v7.7.0):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
 day; local testing phase, no release tagged; critical path 57→59→60→61→62→64 all landed, 58/63
@@ -179,7 +179,8 @@ Other threads:
 - **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight
   typed questions per prompt; decisive axes override the loop-trigger / complexity /
   ambiguity keyword scorers in prompt_gate + prompt_brief, everything else falls back.
-  60-prompt eval: tier 38 → 53/60. Ships OFF (`judge.enabled`), ON in this repo (v7.7.0)
+  60-prompt eval: tier 38 → 53/60. Ships OFF (`judge.enabled`), ON in this repo. Released
+  v7.7.0 2026-09-19; next surface (own task): memory relevance rerank in memory_recall.py
 - **TASK-78** ✅ — source lens + corroboration: the search lens (canonical/breadth/
   adversarial/gap) travels from the queue into the note, the digest and the Sources
   table; thirteenth gate check rejects a finding resting on a single breadth source;
