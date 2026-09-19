@@ -78,4 +78,4 @@ workshop/
 .agent/research/*/sources/
 
 # Real-session judge eval prompts (TASK-80 A): private, never commit
-hooks/nav_hook_lib/fixtures/judge_eval_real*.json
+hooks/nav_hook_lib/fixtures/judge_eval_real*
