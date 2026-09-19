@@ -2,7 +2,9 @@
 """judge_label — build and label a real-session prompt set for the judge eval (TASK-80 A).
 
     python3 scripts/judge_label.py extract [--limit 400] [--per-project 60] [--out PATH]
-    python3 scripts/judge_label.py label   [--fixture PATH]
+    python3 scripts/judge_label.py label   [--fixture PATH]     # one key per prompt, TTY
+    python3 scripts/judge_label.py sheet   [--out PATH]         # markdown sheet for an editor
+    python3 scripts/judge_label.py import  [--sheet PATH]       # read the filled sheet back
     python3 scripts/judge_label.py status  [--fixture PATH]
 
 ``extract`` walks ~/.claude/projects/*/*.jsonl, keeps genuine user prompts (no tool
@@ -116,31 +118,86 @@ def cmd_extract(args) -> int:
     return 0
 
 
-TIER_KEYS = {"d": "DIRECT", "t": "TASK", "l": "LOOP"}
+# One keystroke per prompt. TASK/LOOP imply task-shaped; "ambiguous" only
+# matters for task-shaped prompts.
+KEYS = {
+    "n": ("DIRECT", False, False),  # not a task: question, reply, chat, pasted log
+    "d": ("DIRECT", True, False),   # small, clear task
+    "t": ("TASK", True, False),     # substantial, clear
+    "a": ("TASK", True, True),      # substantial, needs a brief
+    "l": ("LOOP", True, False),     # asks for autonomous iteration
+}
+KEY_HELP = ("n = not a task   d = small clear task   t = substantial   "
+            "a = substantial + needs brief   l = loop   s = skip   q = quit")
+
+
+def apply_key(item: dict, key: str) -> bool:
+    if key not in KEYS:
+        return False
+    item["tier"], item["task"], item["ambiguous"] = KEYS[key]
+    return True
 
 
 def cmd_label(args) -> int:
     path = Path(args.fixture)
     doc = load(path)
+    if not sys.stdin.isatty():
+        print("label needs a terminal (stdin is not a TTY). Run it in a normal shell, "
+              "or use: judge_label.py sheet  -> edit the markdown -> judge_label.py import")
+        return 2
     todo = [p for p in doc["prompts"] if p.get("tier") is None]
-    print(f"{len(todo)} unlabeled of {len(doc['prompts'])}. "
-          "Keys: tier d/t/l, then task y/n, then ambiguous y/n. s = skip, q = quit.\n")
-    for index, item in enumerate(todo, 1):
-        print("─" * 72)
-        print(f"[{index}/{len(todo)}] ({item['project'][:40]})")
-        print(item["text"][:600] + ("…" if len(item["text"]) > 600 else ""))
+    print(f"{len(todo)} unlabeled of {len(doc['prompts'])}.\n{KEY_HELP}\n")
+    done = 0
+    try:
+        for index, item in enumerate(todo, 1):
+            print("─" * 72)
+            print(f"[{index}/{len(todo)}]  {item['text'][:500]}"
+                  + ("…" if len(item["text"]) > 500 else ""))
+            answer = input("> ").strip().lower()
+            if answer == "q":
+                break
+            if apply_key(item, answer):
+                done += 1
+                save(path, doc)
+    except (EOFError, KeyboardInterrupt):
         print()
-        answer = input("tier [d/t/l/s/q]: ").strip().lower()
-        if answer == "q":
-            break
-        if answer == "s" or answer not in TIER_KEYS:
+    print(f"labeled this run: {done}   total: {len(labeled(doc))} / {len(doc['prompts'])}")
+    return 0
+
+
+SHEET_HEADER = ("# Judge labels — fill the `key` column (n/d/t/a/l), leave blank to skip\n"
+                "# " + KEY_HELP + "\n\n| id | key | prompt |\n|---|---|---|\n")
+
+
+def cmd_sheet(args) -> int:
+    doc = load(Path(args.fixture))
+    rows = []
+    for item in doc["prompts"]:
+        if item.get("tier") is not None:
             continue
-        item["tier"] = TIER_KEYS[answer]
-        item["task"] = input("task-shaped? [y/n]: ").strip().lower().startswith("y")
-        item["ambiguous"] = (item["task"]
-                             and input("needs a brief? [y/n]: ").strip().lower().startswith("y"))
-        save(path, doc)
-    print(f"\nlabeled: {len(labeled(doc))} / {len(doc['prompts'])}")
+        text = item["text"].replace("|", "\\|").replace("\n", " ")[:300]
+        rows.append(f"| {item['id']} |  | {text} |")
+    Path(args.out).write_text(SHEET_HEADER + "\n".join(rows) + "\n", encoding="utf-8")
+    print(f"wrote {len(rows)} rows to {args.out} — fill `key`, then: judge_label.py import")
+    return 0
+
+
+def cmd_import(args) -> int:
+    path = Path(args.fixture)
+    doc = load(path)
+    by_id = {item["id"]: item for item in doc["prompts"]}
+    applied = 0
+    for line in Path(args.sheet).read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| ") or line.startswith("| id ") or line.startswith("|---"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        item = by_id.get(cells[0])
+        if item is not None and apply_key(item, cells[1].lower()):
+            applied += 1
+    save(path, doc)
+    print(f"applied {applied} labels   total: {len(labeled(doc))} / {len(doc['prompts'])}")
     return 0
 
 
@@ -165,10 +222,15 @@ def main(argv=None) -> int:
     ex.add_argument("--out", default=str(DEFAULT_OUT))
     ex.add_argument("--force", action="store_true")
     ex.set_defaults(func=cmd_extract)
-    for name, func in (("label", cmd_label), ("status", cmd_status)):
+    for name, func in (("label", cmd_label), ("status", cmd_status),
+                       ("sheet", cmd_sheet), ("import", cmd_import)):
         sp = sub.add_parser(name)
         sp.add_argument("--fixture", default=str(DEFAULT_OUT))
         sp.set_defaults(func=func)
+        if name == "sheet":
+            sp.add_argument("--out", default=str(DEFAULT_OUT.with_suffix(".sheet.md")))
+        if name == "import":
+            sp.add_argument("--sheet", default=str(DEFAULT_OUT.with_suffix(".sheet.md")))
     args = parser.parse_args(argv)
     return args.func(args)
 

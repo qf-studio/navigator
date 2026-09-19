@@ -46,3 +46,31 @@ class ExtractionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KeyAndSheetTest(unittest.TestCase):
+    def test_apply_key(self):
+        item = {}
+        self.assertTrue(judge_label.apply_key(item, "a"))
+        self.assertEqual((item["tier"], item["task"], item["ambiguous"]), ("TASK", True, True))
+        self.assertFalse(judge_label.apply_key(item, "x"))
+        judge_label.apply_key(item, "n")
+        self.assertEqual((item["tier"], item["task"], item["ambiguous"]), ("DIRECT", False, False))
+
+    def test_sheet_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "f.json"
+            sheet = Path(tmp) / "s.md"
+            judge_label.save(fixture, {"prompts": [
+                {"id": "aaaa", "project": "p", "text": "fix | the typo\nnow", "tier": None, "task": None, "ambiguous": None},
+                {"id": "bbbb", "project": "p", "text": "done already", "tier": "LOOP", "task": True, "ambiguous": False}]})
+            judge_label.cmd_sheet(type("A", (), {"fixture": str(fixture), "out": str(sheet)})())
+            body = sheet.read_text()
+            self.assertIn("| aaaa |  | fix \\| the typo now |", body)
+            self.assertNotIn("bbbb", body)
+            sheet.write_text(body.replace("| aaaa |  |", "| aaaa | d |"))
+            judge_label.cmd_import(type("A", (), {"fixture": str(fixture), "sheet": str(sheet)})())
+            doc = judge_label.load(fixture)
+            self.assertEqual(doc["prompts"][0]["tier"], "DIRECT")
+            self.assertTrue(doc["prompts"][0]["task"])
+            self.assertEqual(doc["prompts"][1]["tier"], "LOOP")
