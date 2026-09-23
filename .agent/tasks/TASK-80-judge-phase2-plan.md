@@ -70,6 +70,33 @@ two prompt ops via `judge.record_axes` from the scorers' new `judge.axes` outcom
 0.5), not the raw number. Surfaced as one line on the Tier-1 `nav stats` card
 (`judge.summary_line`) and as a row in the nav-stats skill report.
 
+### First live read — 2026-09-23 (B telemetry, 4 days)
+
+Plugin hooks on this machine execute from the navigator working tree (directory-sourced
+marketplace), so telemetry landed in Pilot without a release. 92 judged prompts: Pilot 86
+(1 failed call), this repo 6.
+
+| Axis | Agreed | Overridden | Undecided |
+|---|---|---|---|
+| loop | 91 | 0 | 0 |
+| complexity | 81 | 0 | 10 |
+| task | 81 | 4 | 6 |
+| ambiguity (task-shaped only) | 5 | 1 | 0 |
+
+Latency last 445–499 ms, max 1271 ms (inside the 1500 ms fuse; one timeout/failure).
+
+Reading: on ordinary prompts the keyword heuristics are right almost every time, and the
+judge agrees. Its value is in the tails — trigger phrases inside pasted text — and no such
+prompt occurred in four days. Net effect so far: 4 task-shapedness decisions changed out
+of 92, none on loop or complexity, for ~0.5 s per prompt and ~$0.003 total. The band is not
+too wide (undecided ≈ 10% on complexity, 7% on task). Direction of overrides is not
+recorded yet (heuristic→judge yes vs no); add `overridden_to_true/false` before judging
+the four.
+
+Consequence for the plan: the judge stays opt-in and off by default; the accuracy story
+needs the labeled real set (A) before any threshold moves; C (rerank) is where a typed
+judgment is more likely to change what the user sees.
+
 ## Workstream C — memory relevance rerank (the one new surface)
 
 **Why this surface and not another**: `memory_recall.rank_memories` ranks by raw concept-
