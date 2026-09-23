@@ -6,6 +6,25 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v7.7.1] — 2026-09-23 — "Count What the Judge Does"
+
+Override telemetry and real-session eval tooling for the typed judge (TASK-80, workstreams
+A and B). No behavior change to gating; `judge` still ships off.
+→ [Full release notes](./releases/RELEASE-NOTES-v7.7.1.md)
+
+- **Per-axis counters** in runtime state (`judge` section, 30-day TTL): calls, failures,
+  last/max latency, and for loop / complexity / task / ambiguity whether the judge
+  overrode the keyword decision, agreed, or stayed undecided. Counters only, no prompt text.
+- **`nav stats`** carries two judge lines; the nav-stats skill report gains a row.
+- **`scripts/judge_label.py`** extract / label / sheet / import / status: builds a
+  private, gitignored set of real prompts from local transcripts (secret-redacted,
+  deduplicated, subagent and hook echoes filtered) and labels it one key per prompt.
+  `scripts/judge_eval.py` skips unlabeled rows.
+- First live read after four days, 92 judged prompts: 4 overrides, all on the task axis;
+  loop and complexity agreed every time. Recorded in TASK-80.
+
+---
+
 ## [v7.7.0] — 2026-09-19 — "Judge, Then Fall Back"
 
 The prompt-time keyword scorers get a typed judge behind them (TASK-79). One request per

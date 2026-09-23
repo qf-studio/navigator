@@ -176,6 +176,8 @@ parallel both landed):
   dropped — block reasons render as plain text, so Tier-1 is self-safe via exact-match rail
 
 Other threads:
+- **TASK-80** 🚧 — judge phase 2: override telemetry + labeling tooling shipped v7.7.1;
+  first live read 92 prompts / 4 overrides; real-set labeling and memory rerank pending
 - **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight
   typed questions per prompt; decisive axes override the loop-trigger / complexity /
   ambiguity keyword scorers in prompt_gate + prompt_brief, everything else falls back.
@@ -367,5 +369,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-09-19 (v7.7.0 — typed prompt judge behind the keyword scorers TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-09-23 (v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

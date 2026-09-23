@@ -1,6 +1,6 @@
 # TASK-80: Typed judge, phase 2 — evidence first, then one more surface
 
-**Status**: 🚧 In Progress — approved 2026-09-19; B done (telemetry), A tooling done (labeling pending, user), C pending
+**Status**: 🚧 In Progress — B + A tooling released v7.7.1 (2026-09-23); A labeling pending (user), C pending
 
 ## Framing constraint
 
