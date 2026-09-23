@@ -176,6 +176,10 @@ parallel both landed):
   dropped — block reasons render as plain text, so Tier-1 is self-safe via exact-match rail
 
 Other threads:
+- **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
+  (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
+  three releases. Plan: real release check + one-line notice in session_start, single
+  script call in the skill, honest docs. Not started
 - **TASK-80** 🚧 — judge phase 2: override telemetry + labeling tooling shipped v7.7.1;
   first live read 92 prompts / 4 overrides; real-set labeling and memory rerank pending
 - **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight

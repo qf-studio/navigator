@@ -152,9 +152,13 @@ VERIFY, or on demand ("simplify this code"). Configure via the `simplification` 
 
 ### Auto-Update (v5.5.0)
 
-On session start, Navigator checks for a newer plugin version and updates when
-`auto_update.enabled` is true (restart required afterward — Claude Code caches skill
-paths at session start). Network failure or timeout skips the update and continues.
+**Known gap (TASK-81, 2026-09-23)**: in v7 the SessionStart op only runs a read-only
+version-drift check; nothing in the hook runtime updates the plugin. The updating path is
+Step 1.5 of the nav-start skill, prose the model may or may not execute. Until TASK-81
+ships, update by hand after each release:
+`claude plugin update navigator@navigator-marketplace` (restart required afterward —
+Claude Code caches skill paths at session start). `auto_update.enabled` currently only
+controls the drift notice.
 
 ### Task Mode (v5.6.0)
 
