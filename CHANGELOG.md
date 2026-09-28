@@ -6,6 +6,25 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [Unreleased]
+
+Team-repo fixes from the 2026-09-28 issue batch (GH-30 … GH-34). All shipped with tests;
+no version bump yet.
+
+- **Personal config override** (GH-30): `.agent/.nav-config.local.json` merges last
+  (DEFAULTS < shared < local) in the hook runtime and in `nav-features`; `--local` writes
+  there, `show` marks locally decided rows with `L`, `config_guard` validates the file.
+- **Per-person onboarding state** (GH-31): `nav-onboard` keeps progress, workflow guide and
+  `.completed` under `~/.config/navigator/onboarding/<repo-id>/`
+  (`NAVIGATOR_ONBOARDING_HOME` overrides), never in the repo.
+- **GitHub-issue task IDs** (GH-32): `task_id_source: github` creates the issue first and
+  names the doc `GH-<n>-slug.md`; index, graph sync and lifecycle events accept any
+  `PREFIX-<n>` filename. Default stays `local`.
+- **nav-init gitignore** (GH-33): runtime-state files, the local config override and
+  `.agent/onboarding/` are appended idempotently.
+- **Deep-research fallback notes** (GH-34): an `ok` write supersedes a `blocked`/`skipped`
+  stub under the same id, so a WebFetch fallback after a 403/429 yields one ok note.
+
 ## [v7.7.1] — 2026-09-23 — "Count What the Judge Does"
 
 Override telemetry and real-session eval tooling for the typed judge (TASK-80, workstreams
