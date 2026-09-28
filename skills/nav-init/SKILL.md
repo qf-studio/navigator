@@ -190,13 +190,33 @@ The plugin registers the following hooks automatically when the plugin is instal
 
 ### 7. Create .gitignore Entries
 
-Add to `.gitignore` if not present:
+Add each of these lines to `.gitignore` unless it is already present (check line by
+line — re-running nav-init must not duplicate entries):
 ```
 # Navigator context markers
 .context-markers/
 
 # Navigator temporary files
 .agent/.nav-temp/
+
+# Navigator hook-runtime session state (regenerated every turn, never shared)
+.agent/.nav-runtime-state.json
+.agent/.nav-runtime-state.lock
+
+# Navigator personal config override (per contributor, see nav-features --local)
+.agent/.nav-config.local.json
+
+# Navigator onboarding state (per person; lives under ~/.config/navigator since v7.8)
+.agent/onboarding/
+```
+
+Idempotent append, one command:
+```bash
+for line in ".context-markers/" ".agent/.nav-temp/" \
+            ".agent/.nav-runtime-state.json" ".agent/.nav-runtime-state.lock" \
+            ".agent/.nav-config.local.json" ".agent/onboarding/"; do
+  grep -qxF "$line" .gitignore 2>/dev/null || echo "$line" >> .gitignore
+done
 ```
 
 ### 8. Success Message

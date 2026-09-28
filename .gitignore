@@ -55,6 +55,10 @@ temp/
 .agent/.nav-runtime-state.lock
 .agent/.nav-dispatch-health.json
 
+# Personal config override + per-person onboarding state (GH-30, GH-31)
+.agent/.nav-config.local.json
+.agent/onboarding/
+
 # Keep these in git (share with team)
 # .agent/.jitd-config.json
 # .agent/DEVELOPMENT-README.md
