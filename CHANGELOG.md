@@ -6,10 +6,11 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
-## [Unreleased]
+## [v7.8.0] — 2026-09-28 — "One Repo, Many People"
 
-Team-repo fixes from the 2026-09-28 issue batch (GH-30 … GH-34). All shipped with tests;
-no version bump yet.
+Team-repo features and fixes from the 2026-09-28 issue batch (GH-30 … GH-34): the shared
+parts of `.agent/` become shareable and the personal parts personal.
+→ [Full release notes](./releases/RELEASE-NOTES-v7.8.0.md)
 
 - **Personal config override** (GH-30): `.agent/.nav-config.local.json` merges last
   (DEFAULTS < shared < local) in the hook runtime and in `nav-features`; `--local` writes
