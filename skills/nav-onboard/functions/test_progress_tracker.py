@@ -7,25 +7,79 @@ get_next_task) instead of raising JSONDecodeError/KeyError.
 """
 
 import json
+import os
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent))
-from progress_tracker import update_progress, get_progress, get_next_task
+from onboarding_paths import ENV_OVERRIDE, onboarding_dir, repo_id
+from progress_tracker import init_progress, update_progress, get_progress, get_next_task
+from workflow_generator import generate_workflow
 
 
-class TestProgressTrackerResilience(unittest.TestCase):
+class _IsolatedHome(unittest.TestCase):
+    """Route per-person onboarding state into a throwaway home (GH-31)."""
+
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self.onboarding = Path(self.tmp) / ".agent" / "onboarding"
+        self.home = tempfile.mkdtemp()
+        self._env = mock.patch.dict(os.environ, {ENV_OVERRIDE: self.home})
+        self._env.start()
+        self.onboarding = onboarding_dir(self.tmp)
         self.onboarding.mkdir(parents=True)
         self.data_file = self.onboarding / ".progress-data.json"
 
     def tearDown(self):
+        self._env.stop()
         shutil.rmtree(self.tmp, ignore_errors=True)
+        shutil.rmtree(self.home, ignore_errors=True)
+
+
+class TestOnboardingPaths(_IsolatedHome):
+    def test_state_lives_outside_the_repo(self):
+        self.assertTrue(str(self.onboarding).startswith(self.home))
+        self.assertFalse(str(self.onboarding).startswith(self.tmp))
+
+    def test_two_repos_get_separate_dirs(self):
+        other = tempfile.mkdtemp()
+        try:
+            self.assertNotEqual(onboarding_dir(self.tmp), onboarding_dir(other))
+        finally:
+            shutil.rmtree(other, ignore_errors=True)
+
+    def test_repo_id_is_stable_and_keyed_by_realpath(self):
+        self.assertEqual(repo_id(self.tmp), repo_id(self.tmp + "/"))
+        self.assertIn(Path(self.tmp).name[:40], repo_id(self.tmp))
+
+    def test_default_home_is_under_config_when_unset(self):
+        with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": "/tmp/xdg-test"}, clear=False):
+            os.environ.pop(ENV_OVERRIDE, None)
+            self.assertEqual(str(onboarding_dir(self.tmp)),
+                             f"/tmp/xdg-test/navigator/onboarding/{repo_id(self.tmp)}")
+
+    def test_init_and_workflow_write_nothing_under_project(self):
+        init_progress(self.tmp, "quick_start", "python", "demo",
+                      {"essential_skills": ["nav-start"], "recommended_skills": []})
+        generate_workflow(self.tmp, {"project_name": "demo", "project_type": "python"},
+                          {"essential_skills": [], "recommended_skills": [],
+                           "optional_skills": [], "workflow_order": []})
+        self.assertFalse((Path(self.tmp) / ".agent").exists())
+        self.assertTrue((self.onboarding / "PROGRESS.md").exists())
+        self.assertTrue((self.onboarding / "MY-WORKFLOW.md").exists())
+
+    def test_update_regenerates_markdown_with_next_task(self):
+        init_progress(self.tmp, "quick_start", "python", "demo",
+                      {"essential_skills": [], "recommended_skills": []})
+        out = update_progress(self.tmp, "nav-start", "completed")
+        self.assertEqual(out["next_task"], "nav-marker")
+        self.assertIn("**Next Task**: nav-marker", (self.onboarding / "PROGRESS.md").read_text())
+
+
+class TestProgressTrackerResilience(_IsolatedHome):
 
     def _write(self, text: str):
         self.data_file.write_text(text)

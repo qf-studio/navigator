@@ -2,7 +2,8 @@
 """
 Personalized workflow generator for Navigator onboarding.
 
-Generates .agent/onboarding/MY-WORKFLOW.md based on project analysis
+Generates MY-WORKFLOW.md in the per-person onboarding directory
+(onboarding_paths.onboarding_dir, outside the repo) based on project analysis
 and skill recommendations.
 """
 
@@ -11,6 +12,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from onboarding_paths import onboarding_dir as _onboarding_dir  # noqa: E402
 
 
 def generate_workflow(
@@ -29,7 +33,7 @@ def generate_workflow(
     Returns:
         Path to generated workflow file
     """
-    onboarding_dir = Path(project_dir) / ".agent" / "onboarding"
+    onboarding_dir = _onboarding_dir(project_dir)  # per person, outside the repo (GH-31)
     onboarding_dir.mkdir(parents=True, exist_ok=True)
 
     workflow_file = onboarding_dir / "MY-WORKFLOW.md"

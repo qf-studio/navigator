@@ -2,7 +2,10 @@
 """
 Progress tracking for Navigator onboarding.
 
-Manages .agent/onboarding/PROGRESS.md to track learning completion.
+Manages PROGRESS.md in the per-person onboarding directory (see
+onboarding_paths.onboarding_dir — outside the repo since GH-31) to track
+learning completion. ``project_dir`` arguments identify the repo; nothing is
+written under it.
 """
 
 import json
@@ -11,6 +14,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from onboarding_paths import onboarding_dir as _onboarding_dir  # noqa: E402
 
 
 def init_progress(
@@ -33,7 +39,7 @@ def init_progress(
     Returns:
         Path to created progress file
     """
-    onboarding_dir = Path(project_dir) / ".agent" / "onboarding"
+    onboarding_dir = _onboarding_dir(project_dir)
     onboarding_dir.mkdir(parents=True, exist_ok=True)
 
     progress_file = onboarding_dir / "PROGRESS.md"
@@ -126,7 +132,7 @@ def update_progress(
     Returns:
         Updated progress summary
     """
-    onboarding_dir = Path(project_dir) / ".agent" / "onboarding"
+    onboarding_dir = _onboarding_dir(project_dir)
     data_file = onboarding_dir / ".progress-data.json"
 
     if not data_file.exists():
@@ -177,7 +183,7 @@ def get_progress(project_dir: str) -> Dict:
     Returns:
         Progress summary dictionary
     """
-    onboarding_dir = Path(project_dir) / ".agent" / "onboarding"
+    onboarding_dir = _onboarding_dir(project_dir)
     data_file = onboarding_dir / ".progress-data.json"
 
     if not data_file.exists():
@@ -212,7 +218,7 @@ def get_next_task(project_dir: str) -> Optional[str]:
     Returns:
         Next skill name or None if complete
     """
-    onboarding_dir = Path(project_dir) / ".agent" / "onboarding"
+    onboarding_dir = _onboarding_dir(project_dir)
     data_file = onboarding_dir / ".progress-data.json"
 
     if not data_file.exists():
@@ -222,14 +228,16 @@ def get_next_task(project_dir: str) -> Optional[str]:
         data = json.loads(data_file.read_text())
     except json.JSONDecodeError:
         return None
+    return _next_from_data(data)
 
-    # Find first non-completed skill in order
+
+def _next_from_data(data: Dict) -> Optional[str]:
+    """First non-completed skill in curriculum order, or None when all done."""
     all_skills = data.get("essential_skills", []) + data.get("development_skills", [])
     progress = data.get("progress", {})
     for skill in all_skills:
         if progress.get(skill, {}).get("status") != "completed":
             return skill
-
     return None
 
 
@@ -255,7 +263,7 @@ def _regenerate_markdown(onboarding_dir: Path, data: Dict) -> None:
         dev_rows.append(f"| {i} | {skill} | {status_icon} | {completed} | {notes} |")
 
     percentage = round(data["completed"] / data["total"] * 100) if data["total"] > 0 else 0
-    next_task = get_next_task(str(onboarding_dir.parent.parent)) or "complete"
+    next_task = _next_from_data(data) or "complete"
 
     flow_name = "Quick Start" if data["flow_type"] == "quick_start" else "Full Education"
 

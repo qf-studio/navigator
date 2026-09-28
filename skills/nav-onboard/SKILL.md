@@ -21,7 +21,8 @@ Invoke this skill when the user:
 
 **DO NOT invoke** if:
 - User is asking about a specific skill (invoke that skill instead)
-- User already completed onboarding (`.agent/onboarding/.completed` exists)
+- User already completed onboarding (`.completed` exists in their personal onboarding
+  dir — see Step 1; state is per person, never in the repo, since v7.8.0 / GH-31)
 - User explicitly asks to skip onboarding
 
 ## Two Learning Flows
@@ -41,17 +42,33 @@ For users who want comprehensive understanding:
 
 ## Execution Steps
 
-### Step 1: Check Previous Onboarding
+### Step 1: Resolve the Personal Onboarding Dir and Check Previous Onboarding
+
+Onboarding state (progress, workflow guide, completion marker) is **per person and per
+repo**, stored under `~/.config/navigator/onboarding/<repo-id>/` (or
+`$NAVIGATOR_ONBOARDING_HOME/<repo-id>/`), never inside the repository. Two contributors on
+the same repo each get their own run; nothing lands in tracked paths (GH-31).
 
 ```bash
-if [ -f ".agent/onboarding/.completed" ]; then
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
+[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+NAV_ONBOARD_DIR=$(python3 "$PLUGIN_DIR/skills/nav-onboard/functions/onboarding_paths.py" .)
+if [ -f "$NAV_ONBOARD_DIR/.completed" ]; then
   echo "COMPLETED"
 else
   echo "NOT_COMPLETED"
 fi
 ```
 
-**If completed**: Ask if user wants to re-do onboarding or just view their workflow guide.
+**If completed**: Ask if user wants to re-do onboarding or just view their workflow guide
+(`$NAV_ONBOARD_DIR/MY-WORKFLOW.md`).
+
+**If the project has its own setup skill** (e.g. `.claude/skills/onboard/` or a
+`SKILL.md` whose name contains "onboard"/"setup"), mention it and suggest running it
+first; Navigator onboarding teaches the workflow, not the project.
+
+**Legacy state**: a pre-v7.8.0 `.agent/onboarding/` in the repo is ignored (nav-init
+gitignores it now). Do not read `.completed` from there.
 
 ### Step 2: Analyze Project
 
@@ -138,10 +155,11 @@ Your choice [Q/F]:
 
 ### Step 5: Initialize Progress Tracking
 
-Create onboarding directory and progress file:
+Create the personal onboarding directory and progress file (`$NAV_ONBOARD_DIR` from
+Step 1; the functions below create it themselves):
 
 ```bash
-mkdir -p .agent/onboarding
+mkdir -p "$NAV_ONBOARD_DIR"
 ```
 
 ```bash
@@ -151,7 +169,7 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketpl
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/progress_tracker.py" init [flow_type] [project_type]
 ```
 
-Creates `.agent/onboarding/PROGRESS.md`:
+Creates `$NAV_ONBOARD_DIR/PROGRESS.md`:
 ```markdown
 # Navigator Onboarding Progress
 
@@ -277,7 +295,7 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketpl
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/workflow_generator.py"
 ```
 
-Creates `.agent/onboarding/MY-WORKFLOW.md` with:
+Creates `$NAV_ONBOARD_DIR/MY-WORKFLOW.md` with:
 - Project-specific workflow diagram
 - Daily workflow checklist
 - Quick reference table with all skill triggers
@@ -288,8 +306,7 @@ Creates `.agent/onboarding/MY-WORKFLOW.md` with:
 Mark onboarding complete and show summary:
 
 ```bash
-touch .agent/onboarding/.completed
-echo "[date]" > .agent/onboarding/.completed
+date -u +%Y-%m-%dT%H:%M:%SZ > "$NAV_ONBOARD_DIR/.completed"
 ```
 
 ```
@@ -306,7 +323,7 @@ You've learned:
 ✅ [dev skills]  - Build [project_type] features
 
 Your personalized workflow:
-📄 .agent/onboarding/MY-WORKFLOW.md
+📄 $NAV_ONBOARD_DIR/MY-WORKFLOW.md   (personal, outside the repo)
 
 Quick Reference:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -403,8 +420,12 @@ Maps project analysis to skill recommendations:
 - Optional skills (advanced features)
 - Workflow order (suggested sequence)
 
+### onboarding_paths.py
+Resolves the per-person onboarding directory for a repo (`onboarding_dir`,
+`repo_id`, `completed_marker`); CLI prints it. Every other function routes through it.
+
 ### progress_tracker.py
-Manages `.agent/onboarding/PROGRESS.md`:
+Manages `PROGRESS.md` in the personal onboarding dir:
 - Initialize progress file
 - Update task status
 - Calculate completion percentage
@@ -417,7 +438,7 @@ Validates task completion:
 - User confirmation prompts
 
 ### workflow_generator.py
-Generates `.agent/onboarding/MY-WORKFLOW.md`:
+Generates `MY-WORKFLOW.md` in the personal onboarding dir:
 - Project-specific workflow
 - Daily checklist
 - Quick reference table
@@ -463,15 +484,18 @@ Continuing to next task...
 
 Onboarding is successful when:
 - [ ] User completed at least 3 essential skill tasks
-- [ ] `.agent/onboarding/PROGRESS.md` shows progress
-- [ ] `.agent/onboarding/MY-WORKFLOW.md` generated
-- [ ] `.agent/onboarding/.completed` marker created
+- [ ] `$NAV_ONBOARD_DIR/PROGRESS.md` shows progress
+- [ ] `$NAV_ONBOARD_DIR/MY-WORKFLOW.md` generated
+- [ ] `$NAV_ONBOARD_DIR/.completed` marker created
+- [ ] `git status` shows no onboarding files (state is outside the repo)
 - [ ] User knows how to start sessions and save progress
 
 ## Notes
 
 - Real files created during onboarding (not sandboxed)
 - Files created can be deleted later if unwanted
-- Progress persists across sessions
+- Progress persists across sessions, per person: `~/.config/navigator/onboarding/<repo-id>/`
+  (`<repo-id>` = dirname + 8-char hash of the checkout path; `NAVIGATOR_ONBOARDING_HOME`
+  overrides the base)
 - Can re-run onboarding anytime (asks to overwrite)
 - Learning tasks designed for 3-5 minutes each
