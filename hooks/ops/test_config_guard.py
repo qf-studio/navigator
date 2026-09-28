@@ -78,6 +78,21 @@ class ValidationTest(ConfigGuardBase):
         self.config_path.write_text("  \n", encoding="utf-8")
         self.assertIsNone(config_guard.run(self.ctx()))
 
+    def test_invalid_local_override_warns_and_names_the_file(self):
+        """GH-30: a broken personal override is caught like the shared file."""
+        self.config_path.write_text('{"version": "7.7.1"}', encoding="utf-8")
+        (self.agent / ".nav-config.local.json").write_text("{nope", encoding="utf-8")
+        result = config_guard.run(self.ctx())
+        self.assertIsNotNone(result)
+        self.assertIn(".nav-config.local.json", result["system_message"])
+        self.assertIn("personal overrides", result["system_message"])
+
+    def test_valid_local_override_is_silent(self):
+        self.config_path.write_text('{"version": "7.7.1"}', encoding="utf-8")
+        (self.agent / ".nav-config.local.json").write_text('{"judge": {"enabled": false}}',
+                                                          encoding="utf-8")
+        self.assertIsNone(config_guard.run(self.ctx()))
+
     def test_warning_never_echoes_payload_text(self):
         self.config_path.write_text("{broken", encoding="utf-8")
         result = config_guard.run(self.ctx(

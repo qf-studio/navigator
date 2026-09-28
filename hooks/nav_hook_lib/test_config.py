@@ -197,6 +197,43 @@ class LoadMergeSemanticsTest(_ProjectDirMixin):
         self.assertEqual(config.DEFAULTS, snapshot)
 
 
+class LocalOverrideTest(_ProjectDirMixin):
+    """GH-30: .agent/.nav-config.local.json merges last, over the shared file."""
+
+    def write_local(self, obj_or_text):
+        path = self.agent / ".nav-config.local.json"
+        if isinstance(obj_or_text, str):
+            path.write_text(obj_or_text, encoding="utf-8")
+        else:
+            path.write_text(json.dumps(obj_or_text, indent=2), encoding="utf-8")
+        return path
+
+    def test_local_key_overrides_shared(self):
+        self.write_config({"judge": {"enabled": True, "model": "jev-latest"}})
+        self.write_local({"judge": {"enabled": False}})
+        cfg = config.load(self.root)
+        self.assertIs(config.get(cfg, "judge.enabled"), False)
+        self.assertEqual(config.get(cfg, "judge.model"), "jev-latest")  # sibling kept
+
+    def test_absent_local_file_changes_nothing(self):
+        self.write_config({"judge": {"enabled": True}})
+        with_local_absent = config.load(self.root)
+        self.assertIs(config.get(with_local_absent, "judge.enabled"), True)
+        self.assertEqual(with_local_absent, config.load(self.root))
+
+    def test_corrupt_local_file_is_ignored(self):
+        self.write_config({"judge": {"enabled": True}})
+        self.write_local("{nope")
+        self.assertIs(config.get(config.load(self.root), "judge.enabled"), True)
+
+    def test_local_only_over_defaults_when_shared_missing(self):
+        self.write_local({"loop_mode": {"enabled": True}})
+        self.assertIs(config.get(config.load(self.root), "loop_mode.enabled"), True)
+
+    def test_local_relpath_constant(self):
+        self.assertEqual(config.LOCAL_CONFIG_RELPATH, ".agent/.nav-config.local.json")
+
+
 class GetDottedPathTest(unittest.TestCase):
     def setUp(self):
         self.cfg = {"a": {"b": {"c": 7, "n": None}}, "flat": "x"}

@@ -80,7 +80,18 @@ python3 "$PLUGIN_DIR/skills/nav-features/functions/feature_manager.py" enable ta
 
 # Disable a feature
 python3 "$PLUGIN_DIR/skills/nav-features/functions/feature_manager.py" disable loop_mode
+
+# Personal toggle (team repo): write to .agent/.nav-config.local.json, not the shared file
+python3 "$PLUGIN_DIR/skills/nav-features/functions/feature_manager.py" disable judge --local
 ```
+
+**Personal overrides (v7.8.0+)**: `.agent/.nav-config.json` is committed and shared.
+`.agent/.nav-config.local.json` is gitignored (nav-init adds it) and merges over the
+shared file last — DEFAULTS < shared < local — in both the hook runtime and this
+script. Use `--local` when the user says "for me only", "just on my machine", or has
+no key for a shared-on feature (typical: `disable judge --local`). `show` marks rows
+the local file decides with `L` and prints a legend; toggling the shared value while a
+local override exists prints a warning so nobody wonders why nothing changed.
 
 **Supported features**:
 
@@ -211,6 +222,9 @@ python3 feature_manager.py enable task_mode
 
 # Disable a feature
 python3 feature_manager.py disable loop_mode
+
+# Disable only for this contributor (.agent/.nav-config.local.json, gitignored)
+python3 feature_manager.py disable judge --local
 
 # Get feature details
 python3 feature_manager.py info task_mode

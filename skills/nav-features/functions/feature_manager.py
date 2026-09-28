@@ -5,9 +5,14 @@ Display and toggle Navigator features with formatted table output.
 
 Usage:
     python3 feature_manager.py show [--first-session]
-    python3 feature_manager.py enable <feature>
-    python3 feature_manager.py disable <feature>
+    python3 feature_manager.py enable <feature> [--local]
+    python3 feature_manager.py disable <feature> [--local]
     python3 feature_manager.py info <feature>
+
+Config layering (GH-30): the shared .agent/.nav-config.json is committed; the
+personal .agent/.nav-config.local.json (gitignored) merges over it last, the
+same way hooks/nav_hook_lib/config.py loads it. ``--local`` writes the toggle
+to the personal file; ``show`` marks rows whose value comes from it with ``L``.
 """
 
 import sys
@@ -292,10 +297,11 @@ FEATURES = {
 }
 
 CONFIG_PATH = ".agent/.nav-config.json"
+LOCAL_CONFIG_PATH = ".agent/.nav-config.local.json"
 
 
 def load_config() -> Tuple[Optional[Dict], Optional[str]]:
-    """Load nav-config.json, return (config, error)."""
+    """Load the shared nav-config.json, return (config, error)."""
     path = Path(CONFIG_PATH)
     if not path.exists():
         return None, f"Config not found: {CONFIG_PATH}"
@@ -307,10 +313,43 @@ def load_config() -> Tuple[Optional[Dict], Optional[str]]:
         return None, f"Invalid JSON: {e}"
 
 
-def save_config(config: Dict) -> Optional[str]:
-    """Save config, return error if any."""
+def load_local_config() -> Tuple[Dict, Optional[str]]:
+    """Load the personal override file; absent file is an empty override, not an error."""
+    path = Path(LOCAL_CONFIG_PATH)
+    if not path.exists():
+        return {}, None
     try:
-        with open(CONFIG_PATH, 'w') as f:
+        with open(path, 'r') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        return {}, f"Invalid JSON in {LOCAL_CONFIG_PATH}: {e}"
+    if not isinstance(data, dict):
+        return {}, f"{LOCAL_CONFIG_PATH}: top level must be a JSON object"
+    return data, None
+
+
+def merge_config(shared: Dict, local: Dict) -> Dict:
+    """Deep-merge ``local`` over a copy of ``shared`` (dicts key-wise, scalars replace)."""
+    merged = json.loads(json.dumps(shared))
+    for key, value in local.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = merge_config(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def is_locally_overridden(local: Dict, feature_name: str) -> bool:
+    """True when the feature's enabled flag is set in the personal override file."""
+    feature = FEATURES.get(feature_name) or {}
+    section = local.get(feature.get("config_key", ""), None)
+    return isinstance(section, dict) and feature.get("enabled_key") in section
+
+
+def save_config(config: Dict, path: str = CONFIG_PATH) -> Optional[str]:
+    """Save config to ``path`` (shared file by default), return error if any."""
+    try:
+        with open(path, 'w') as f:
             json.dump(config, f, indent=2)
             f.write("\n")
         return None
@@ -359,15 +398,25 @@ def is_feature_enabled(config: Dict, feature_name: str) -> bool:
     return feature["default"]
 
 
-def format_status(enabled: bool, feature_type: str = "config") -> str:
-    """Format status with ASCII characters for consistent width."""
+def format_status(enabled: bool, feature_type: str = "config", local: bool = False) -> str:
+    """Format status with ASCII characters for consistent width.
+
+    ``local`` appends ``L``: the value comes from .agent/.nav-config.local.json.
+    """
     if feature_type == "installed":
         return "[*]  " if enabled else "[ ]  "
-    return "[x]  " if enabled else "[ ]  "
+    mark = "[x]" if enabled else "[ ]"
+    return f"{mark} L" if local else f"{mark}  "
 
 
-def show_features(config: Dict, first_session: bool = False) -> str:
-    """Generate feature table display."""
+def show_features(config: Dict, first_session: bool = False,
+                  local: Optional[Dict] = None) -> str:
+    """Generate feature table display.
+
+    ``config`` is the effective (merged) config; ``local`` is the raw personal
+    override, used only to mark which rows it decides.
+    """
+    local = local or {}
     version = config.get("version", "unknown")
 
     lines = []
@@ -385,10 +434,13 @@ def show_features(config: Dict, first_session: bool = False) -> str:
     lines.append("├─────────────────────────┼────────┼───────────────────────────────────────────────┤")
 
     # Feature rows
+    any_local = False
     for feature_name, feature in FEATURES.items():
         enabled = is_feature_enabled(config, feature_name)
         feature_type = feature.get("type", "config")
-        status = format_status(enabled, feature_type)
+        overridden = is_locally_overridden(local, feature_name)
+        any_local = any_local or overridden
+        status = format_status(enabled, feature_type, overridden)
 
         # Truncate description if needed
         desc = feature["description"][:45]
@@ -403,6 +455,8 @@ def show_features(config: Dict, first_session: bool = False) -> str:
         lines.append(f"│ {name_col} │ {status_col} │ {desc_col} │")
 
     lines.append("└─────────────────────────┴────────┴───────────────────────────────────────────────┘")
+    if any_local:
+        lines.append(f"L = personal override from {LOCAL_CONFIG_PATH} (not shared)")
     lines.append("")
     lines.append(f"All v{version} features configured.")
 
@@ -454,7 +508,7 @@ def toggle_feature(config: Dict, feature_name: str, enable: bool) -> Tuple[Dict,
     return config, message
 
 
-def get_feature_info(feature_name: str, config: Dict) -> str:
+def get_feature_info(feature_name: str, config: Dict, local: Optional[Dict] = None) -> str:
     """Get detailed info about a feature."""
     if feature_name not in FEATURES:
         available = ", ".join(FEATURES.keys())
@@ -463,6 +517,8 @@ def get_feature_info(feature_name: str, config: Dict) -> str:
     feature = FEATURES[feature_name]
     enabled = is_feature_enabled(config, feature_name)
     status = "Enabled" if enabled else "Disabled"
+    if is_locally_overridden(local or {}, feature_name):
+        status += f" (personal override: {LOCAL_CONFIG_PATH})"
 
     return f"""{feature['display_name']} (v{feature['version']})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -484,17 +540,24 @@ def main():
     parser.add_argument("--first-session", action="store_true",
                         help="Show welcome message for first session")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument("--local", action="store_true",
+                        help=f"enable/disable: write to {LOCAL_CONFIG_PATH} (personal, "
+                             "gitignored) instead of the shared config")
 
     args = parser.parse_args()
 
-    # Load config
-    config, error = load_config()
+    # Load config: shared file is required; personal override merges over it.
+    shared, error = load_config()
     if error:
         print(f"❌ {error}", file=sys.stderr)
         return 1
+    local, local_error = load_local_config()
+    if local_error:
+        print(f"⚠️  {local_error} — ignoring the personal override", file=sys.stderr)
+    config = merge_config(shared, local)
 
     if args.command == "show":
-        output = show_features(config, first_session=args.first_session)
+        output = show_features(config, first_session=args.first_session, local=local)
         print(output)
         return 0
 
@@ -504,21 +567,35 @@ def main():
             return 1
 
         enable = args.command == "enable"
-        config, message = toggle_feature(config, args.feature, enable)
+        # --local toggles inside the personal override; otherwise the shared file.
+        target, target_path = (local, LOCAL_CONFIG_PATH) if args.local \
+            else (shared, CONFIG_PATH)
+        target, message = toggle_feature(target, args.feature, enable)
 
         if message.startswith("❌"):
             print(message, file=sys.stderr)
             return 1
 
-        # Save config
-        save_error = save_config(config)
+        if message.startswith("💡"):  # not toggleable (installed-type); nothing to save
+            print(message)
+            return 0
+
+        save_error = save_config(target, target_path)
         if save_error:
             print(f"❌ {save_error}", file=sys.stderr)
             return 1
 
+        if args.local:
+            message += f"\n   (personal override written to {target_path}, not shared)"
+            local = target
+        else:
+            shared = target
+            if is_locally_overridden(local, args.feature):
+                message += (f"\n⚠️  {LOCAL_CONFIG_PATH} still overrides this feature for you; "
+                            f"run with --local to change your own value")
         print(message)
         print()
-        print(show_features(config))
+        print(show_features(merge_config(shared, local), local=local))
         return 0
 
     elif args.command == "info":
@@ -526,7 +603,7 @@ def main():
             print("❌ Feature name required for info", file=sys.stderr)
             return 1
 
-        output = get_feature_info(args.feature, config)
+        output = get_feature_info(args.feature, config, local)
         print(output)
         return 0 if not output.startswith("❌") else 1
 

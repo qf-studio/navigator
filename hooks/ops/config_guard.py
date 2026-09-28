@@ -26,6 +26,9 @@ import json
 from nav_hook_lib import hio
 
 CONFIG_RELPATH = ".agent/.nav-config.json"
+# The personal override (GH-30) is validated the same way: a broken local file
+# silently drops every personal toggle, which is exactly what this guard is for.
+GUARDED_RELPATHS = (CONFIG_RELPATH, ".agent/.nav-config.local.json")
 
 
 def _invalid_detail(raw: str):
@@ -43,17 +46,21 @@ def _invalid_detail(raw: str):
 
 def run(ctx):
     root = hio.project_root(ctx.payload)
-    raw = hio.safe_read(root / ".agent" / ".nav-config.json")
-    if raw is None or not raw.strip():
-        return None  # absent/empty config is legal — DEFAULTS apply
+    for relpath in GUARDED_RELPATHS:
+        raw = hio.safe_read(root / relpath)
+        if raw is None or not raw.strip():
+            continue  # absent/empty file is legal — DEFAULTS / lower layers apply
 
-    detail = _invalid_detail(raw)
-    if detail is None:
-        return None
+        detail = _invalid_detail(raw)
+        if detail is None:
+            continue
 
-    return {
-        "system_message": (
-            f"nav-config: {CONFIG_RELPATH} is unreadable ({detail}); "
-            "Navigator is running on built-in defaults until the file parses."
-        )
-    }
+        layer = ("built-in defaults" if relpath == CONFIG_RELPATH
+                 else "the shared config without your personal overrides")
+        return {
+            "system_message": (
+                f"nav-config: {relpath} is unreadable ({detail}); "
+                f"Navigator is running on {layer} until the file parses."
+            )
+        }
+    return None

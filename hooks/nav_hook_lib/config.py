@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """nav_hook_lib.config — layered Navigator config for v7 hook ops (TASK-59 Phase 1).
 
-Loads .agent/.nav-config.json over a complete DEFAULTS tree so no op ever
+Loads .agent/.nav-config.json, then the personal .agent/.nav-config.local.json
+(GH-30), over a complete DEFAULTS tree so no op ever
 KeyErrors on a missing block. This covers the old-consumer-config risk: a
 pristine v6.18.1 config (no v7 blocks) must load with every v7 feature at its
 safe/off default (only the dispatcher itself is on; every blocking/injecting
@@ -26,6 +27,9 @@ except ImportError:  # top-level module under per-directory unittest discovery
     import hio
 
 CONFIG_RELPATH = ".agent/.nav-config.json"
+# Personal, gitignored overrides merged last (GH-30). A contributor toggles
+# features here without touching the shared file; absent file = no change.
+LOCAL_CONFIG_RELPATH = ".agent/.nav-config.local.json"
 
 # Layered defaults. Sources of truth:
 #   - v6 blocks: the in-code defaults of the nine hooks/*.py scripts and the
@@ -234,18 +238,20 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def load(root=None) -> dict:
-    """Load layered config: user .agent/.nav-config.json deep-merged over DEFAULTS.
+    """Load layered config: DEFAULTS < .agent/.nav-config.json < .nav-config.local.json.
 
     ``root`` is the project root (defaults to hio.project_root()). A missing or
-    corrupt user file yields a fresh copy of DEFAULTS. The returned dict is
-    always a private copy — callers may mutate it freely.
+    corrupt user file yields a fresh copy of DEFAULTS; a missing or corrupt
+    local file changes nothing. The returned dict is always a private copy —
+    callers may mutate it freely.
     """
     if root is None:
         root = hio.project_root()
     cfg = copy.deepcopy(DEFAULTS)
-    user = hio.safe_json(Path(root) / ".agent" / ".nav-config.json")
-    if user:
-        _deep_merge(cfg, user)
+    for relpath in (CONFIG_RELPATH, LOCAL_CONFIG_RELPATH):
+        layer = hio.safe_json(Path(root) / relpath)
+        if layer:
+            _deep_merge(cfg, layer)
     return cfg
 
 

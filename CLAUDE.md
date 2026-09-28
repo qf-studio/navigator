@@ -360,7 +360,9 @@ archive + close on completion → notify team chat.
 
 Navigator config in `.agent/.nav-config.json` (minimal subset shown; the live file also
 carries `tom_features`, `loop_mode`, `task_mode`, `knowledge_graph`, `multi_agent`, and
-the `*_hook` toggle blocks; missing blocks default safe via `nav_hook_lib.config.DEFAULTS`):
+the `*_hook` toggle blocks; missing blocks default safe via `nav_hook_lib.config.DEFAULTS`).
+Personal overrides go in `.agent/.nav-config.local.json` (gitignored, merged last:
+DEFAULTS < shared < local); `nav-features disable <feature> --local` writes there:
 
 ```json
 {
