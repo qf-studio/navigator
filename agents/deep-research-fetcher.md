@@ -47,7 +47,9 @@ For every row in the batch, in order:
    ```
    WebFetch returns model-processed text, not the raw page. The `webfetch` method tag
    tells the writer and critic that this source may be paraphrased but never quoted.
-   If WebFetch also fails, leave the blocked note as is.
+   The `write` replaces the blocked stub under the same id (`superseded: true` in its
+   output) — never delete the stub or hand-write a note. If WebFetch also fails, leave
+   the blocked note as is.
 
 3. If `status` is `skipped` (PDF, non-text, empty), do nothing further. Do not try to
    extract PDFs. Record it in your report.

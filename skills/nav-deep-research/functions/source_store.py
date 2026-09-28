@@ -18,6 +18,9 @@ Commands (all print JSON except ``digest``):
 Fetch policy (stdlib urllib, no cookies, no JS):
 - canonical URL: lowercase scheme/host, no fragment, no utm_*/fbclid/gclid,
   no trailing slash; dedup on canonical(url) and canonical(final_url) within a run
+- a ``blocked``/``skipped`` stub never wins over a later ``ok`` write for the same
+  URL: the ok note replaces the stub under the stub's id (``superseded: true``), so
+  a WebFetch fallback after a blocked raw fetch yields exactly one ok note (GH-34)
 - Content-Type outside text/html|text/plain|application/xhtml → status skipped
 - 401/403/429/503, network failure, or a thin body carrying bot-wall markers →
   status blocked (the fetcher may then fall back to WebFetch and use ``write``)
@@ -284,6 +287,16 @@ def find_duplicate(slug: str, url: str, agent_dir: str = ".agent") -> dict | Non
     return None
 
 
+def _dedup_result(duplicate: dict, slug: str, agent_dir: str) -> dict:
+    return {"id": duplicate["id"], "status": duplicate.get("status"), "deduped": True,
+            "path": str(sources_dir(slug, agent_dir) / f"{duplicate['id']}.md")}
+
+
+def _is_stub(meta: dict | None) -> bool:
+    """A note that carries no body (blocked or skipped) and may be superseded."""
+    return bool(meta) and meta.get("status") in ("blocked", "skipped")
+
+
 # Which search lens produced a URL (TASK-78). Recorded in ``suggested_by`` so the
 # writer, the critic and the gate can tell a canonical source from a breadth one.
 # ``canonical`` = primary/authoritative (spec, vendor doc, paper, issue tracker).
@@ -310,22 +323,29 @@ def store_note(slug: str, url: str, body: str, *, title: str = "", final_url: st
         raise FileNotFoundError(f"run {slug!r} not found under {directory.parent.parent}")
     directory.mkdir(parents=True, exist_ok=True)
     duplicate = find_duplicate(slug, url, agent_dir)
-    if duplicate:
-        return {"id": duplicate["id"], "status": duplicate.get("status"), "deduped": True,
-                "path": str(directory / f"{duplicate['id']}.md")}
+    supersede = _is_stub(duplicate) and status == "ok"
+    if duplicate and not supersede:
+        return _dedup_result(duplicate, slug, agent_dir)
     truncated = len(body) > max_chars
     body = body[:max_chars] if truncated else body
-    # Parallel fetchers write concurrently: claim the id with an exclusive create
-    # and retry on collision instead of trusting a precomputed next_id.
-    for _ in range(1000):
-        note_id = next_id(slug, agent_dir)
-        try:
-            handle = open(directory / f"{note_id}.md", "x", encoding="utf-8")
-        except FileExistsError:
-            continue
-        break
-    else:  # pragma: no cover - only if a thousand ids collide
-        raise RuntimeError("could not allocate a source id")
+    if supersede:
+        # The existing note is a bodiless stub (blocked/skipped) and this write is
+        # ok — e.g. the WebFetch fallback after a blocked raw fetch. Reuse its id so
+        # the URL has exactly one note and no dangling reference (GH-34).
+        note_id = duplicate["id"]
+        handle = open(directory / f"{note_id}.md", "w", encoding="utf-8")
+    else:
+        # Parallel fetchers write concurrently: claim the id with an exclusive create
+        # and retry on collision instead of trusting a precomputed next_id.
+        for _ in range(1000):
+            note_id = next_id(slug, agent_dir)
+            try:
+                handle = open(directory / f"{note_id}.md", "x", encoding="utf-8")
+            except FileExistsError:
+                continue
+            break
+        else:  # pragma: no cover - only if a thousand ids collide
+            raise RuntimeError("could not allocate a source id")
     meta = {
         "id": note_id,
         "url": url,
@@ -347,17 +367,18 @@ def store_note(slug: str, url: str, body: str, *, title: str = "", final_url: st
     with handle:
         handle.write(render_note(meta, body if status == "ok" else ""))
     return {"id": note_id, "status": status, "reason": reason, "deduped": False,
-            "path": str(path), "chars": len(body), "truncated": truncated,
-            "title": meta["title"]}
+            "superseded": supersede, "path": str(path), "chars": len(body),
+            "truncated": truncated, "title": meta["title"]}
 
 
 def fetch_and_store(slug: str, url: str, *, suggested_by: str = "seed",
                     max_chars: int = DEFAULT_MAX_CHARS, timeout: int = DEFAULT_TIMEOUT,
                     agent_dir: str = ".agent", opener=None) -> dict:
     duplicate = find_duplicate(slug, url, agent_dir)
-    if duplicate:
-        return {"id": duplicate["id"], "status": duplicate.get("status"), "deduped": True,
-                "path": str(sources_dir(slug, agent_dir) / f"{duplicate['id']}.md")}
+    if duplicate and not _is_stub(duplicate):
+        return _dedup_result(duplicate, slug, agent_dir)
+    # A stub (blocked/skipped) does not block a retry: refetch, and let store_note
+    # supersede the stub if this attempt comes back ok.
     fetched = fetch_url(url, timeout=timeout, opener=opener)
     body, title, headings = "", "", []
     if fetched["ok"]:

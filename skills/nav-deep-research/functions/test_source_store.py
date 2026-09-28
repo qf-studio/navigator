@@ -202,6 +202,61 @@ class TestNotes(unittest.TestCase):
         self.assertEqual(again["id"], "001")
         self.assertEqual(len(load_notes(self.slug, self.agent)), 1)
 
+    def test_ok_write_supersedes_blocked_stub_under_same_id(self):
+        """GH-34: blocked raw fetch, then WebFetch fallback → one ok note."""
+        opener = _FakeOpener({"https://e.com/wall": _http_error("https://e.com/wall", 403)})
+        stub = fetch_and_store(self.slug, "https://e.com/wall", agent_dir=self.agent,
+                               opener=opener)
+        self.assertEqual(stub["status"], "blocked")
+        out = store_note(self.slug, "https://e.com/wall", "fallback text",
+                         fetch_method="webfetch", http_status=200, title="W",
+                         agent_dir=self.agent)
+        self.assertFalse(out["deduped"])
+        self.assertTrue(out["superseded"])
+        self.assertEqual(out["id"], stub["id"])
+        notes = load_notes(self.slug, self.agent)
+        self.assertEqual(len(notes), 1)
+        meta, body, _ = notes[0]
+        self.assertEqual(meta["status"], "ok")
+        self.assertEqual(meta["fetch_method"], "webfetch")
+        self.assertEqual(body, "fallback text")
+
+    def test_skipped_stub_is_superseded_too(self):
+        opener = _FakeOpener({"https://e.com/gone": _http_error("https://e.com/gone", 404)})
+        stub = fetch_and_store(self.slug, "https://e.com/gone", agent_dir=self.agent,
+                               opener=opener)
+        self.assertEqual(stub["status"], "skipped")
+        out = store_note(self.slug, "https://e.com/gone", "found via webfetch",
+                         fetch_method="webfetch", agent_dir=self.agent)
+        self.assertTrue(out["superseded"])
+        self.assertEqual(load_notes(self.slug, self.agent)[0][0]["status"], "ok")
+
+    def test_ok_note_still_dedups_later_writes(self):
+        store_note(self.slug, "https://e.com/a", "body", agent_dir=self.agent)
+        again = store_note(self.slug, "https://e.com/a", "other", fetch_method="webfetch",
+                           agent_dir=self.agent)
+        self.assertTrue(again["deduped"])
+        self.assertEqual(load_notes(self.slug, self.agent)[0][1], "body")
+
+    def test_blocked_write_over_blocked_stub_dedups_not_duplicates(self):
+        opener = _FakeOpener({"https://e.com/wall": _http_error("https://e.com/wall", 403)})
+        fetch_and_store(self.slug, "https://e.com/wall", agent_dir=self.agent, opener=opener)
+        again = fetch_and_store(self.slug, "https://e.com/wall", agent_dir=self.agent,
+                                opener=opener)
+        self.assertTrue(again["deduped"])
+        self.assertEqual(len(load_notes(self.slug, self.agent)), 1)
+
+    def test_refetch_of_blocked_stub_that_now_succeeds_supersedes(self):
+        opener = _FakeOpener({"https://example.com/page": _http_error("https://example.com/page", 429)})
+        stub = fetch_and_store(self.slug, "https://example.com/page", agent_dir=self.agent,
+                               opener=opener)
+        opener.responses["https://example.com/page"] = _FakeResponse(HTML)
+        out = fetch_and_store(self.slug, "https://example.com/page", agent_dir=self.agent,
+                              opener=opener)
+        self.assertEqual(out["status"], "ok")
+        self.assertEqual(out["id"], stub["id"])
+        self.assertEqual(len(load_notes(self.slug, self.agent)), 1)
+
     def test_dedup_matches_final_url_after_redirect(self):
         response = _FakeResponse(HTML, url="https://example.com/final")
         opener = _FakeOpener({"https://example.com/page": response})
