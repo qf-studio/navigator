@@ -121,6 +121,19 @@ class TaskDocSyncTest(GraphSyncTestBase):
         self.assertEqual(result["ack"], True)
         self.assertIsNotNone(self.stub_calls())
 
+    def test_gh_prefixed_task_doc_syncs_too(self):
+        """GH-32: task_id_source github names docs GH-<n>-slug.md."""
+        task = self.make_task_doc("GH-57-oauth.md")
+        result = graph_sync.run(self.ctx(self.payload(file_path=str(task))))
+        self.assertEqual(result["ack"], True)
+        self.assertIsNotNone(self.stub_calls())
+
+    def test_non_task_markdown_in_tasks_dir_acks_without_sync(self):
+        task = self.make_task_doc("README.md")
+        result = graph_sync.run(self.ctx(self.payload(file_path=str(task))))
+        self.assertEqual(result, {"ack": True})
+        self.assertIsNone(self.stub_calls())
+
     def test_write_tool_is_on_the_v6_surface(self):
         task = self.make_task_doc()
         result = graph_sync.run(self.ctx(self.payload(tool_name="Write",

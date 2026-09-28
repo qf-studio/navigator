@@ -108,6 +108,7 @@ Copy from plugin's `templates/` directory to `.agent/`:
   "tech_stack": "${TECH_STACK}",
   "project_management": "none",
   "task_prefix": "TASK",
+  "task_id_source": "local",
   "team_chat": "none",
   "auto_load_navigator": true,
   "compact_strategy": "conservative",

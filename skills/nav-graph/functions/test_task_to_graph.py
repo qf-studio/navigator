@@ -51,6 +51,18 @@ class TaskSyncIntegrityTest(unittest.TestCase):
         graph = load_graph(str(self.graph_path))
         self.assertEqual(find_dangling_edges(graph), [])
 
+    def test_gh_prefixed_doc_gets_gh_task_id_and_title(self):
+        """GH-32: task_id_source github → GH-<n>-slug.md, '# GH-<n>: title'."""
+        task = self._write_task(
+            "GH-57-oauth.md",
+            "# GH-57: OAuth login\n\nImprove the profile flow.\n",
+        )
+        add_task_to_graph(str(task), str(self.graph_path))
+        graph = load_graph(str(self.graph_path))
+        node = graph["nodes"]["tasks"]["GH-57"]
+        self.assertEqual(node["title"], "OAuth login")
+        self.assertNotIn("GH-57-oauth", graph["nodes"]["tasks"])
+
     def test_canonical_concept_edge_is_added(self):
         # 'profile'/'tom' both normalize to the canonical 'theory of mind' node.
         task = self._write_task(

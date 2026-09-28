@@ -48,7 +48,8 @@ LIFECYCLE_EVENTS = frozenset({"TaskCreated", "TaskCompleted"})
 # Payload keys swept for a task-doc path on lifecycle events (shape unpinned).
 LIFECYCLE_PATH_KEYS = ("task_path", "file_path", "path", "task_file")
 
-TASK_PATH_RE = re.compile(r"\.agent/tasks/(TASK[-_][\w\-.]+)\.md$")
+# Any `<PREFIX>-<n>` doc: TASK-12, GH-57 (task_id_source: github, GH-32), LIN-9 …
+TASK_PATH_RE = re.compile(r"\.agent/tasks/([A-Z][A-Z0-9]*[-_]\d+[\w\-.]*)\.md$")
 
 SYNC_TIMEOUT_SECONDS = 8
 

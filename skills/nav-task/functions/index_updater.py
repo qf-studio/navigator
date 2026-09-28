@@ -13,7 +13,7 @@ def update_task_index(task_file, status="Planning", description=""):
     Add task entry to DEVELOPMENT-README.md index.
 
     Args:
-        task_file: Task filename (e.g., TASK-10-feature-name.md)
+        task_file: Task filename (e.g., TASK-10-feature-name.md or GH-57-feature.md)
         status: Task status (Planning, In Progress, Completed)
         description: Short task description
 
@@ -27,7 +27,7 @@ def update_task_index(task_file, status="Planning", description=""):
         return False
 
     # Extract task ID and title from filename
-    match = re.match(r'(TASK-\d+)-(.*?)\.md', task_file)
+    match = re.match(r'([A-Z][A-Z0-9]*-\d+)-(.*?)\.md', task_file)  # TASK-12-x, GH-57-x
     if not match:
         print(f"Error: Invalid task filename format: {task_file}", file=sys.stderr)
         return False

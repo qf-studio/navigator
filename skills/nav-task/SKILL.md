@@ -29,11 +29,28 @@ Invoke this skill when the user:
 **If user provided task ID** (e.g., "TASK-01", "GH-123"):
 - Use their ID directly
 
-**If no ID provided**:
-- Read `.agent/.nav-config.json` for `task_prefix`
-- Check existing tasks: `ls .agent/tasks/*.md`
-- Generate next number: `{prefix}-{next-number}`
-- Example: Last task is TASK-05, create TASK-06
+**If no ID provided**, run the generator — it reads `task_id_source` from
+`.agent/.nav-config.json` (default `local`):
+
+```bash
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
+[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+python3 "$PLUGIN_DIR/skills/nav-task/functions/task_id_generator.py" \
+  --title "{feature name}" --body "{one-line summary}" --json
+```
+
+- `task_id_source: local` (solo repos) — next sequential `{task_prefix}-NN` from
+  `.agent/tasks/` (last is TASK-05 → TASK-06). `--title` is ignored.
+- `task_id_source: github` (team repos, GH-32) — creates the GitHub issue first via
+  `gh issue create` and returns `GH-<n>`; the doc is `.agent/tasks/GH-<n>-{slug}.md`.
+  Issue numbers are allocated by GitHub, so two contributors branching at once can
+  never mint the same ID, and Pilot already addresses tasks as `GH-<n>`. Add
+  `--label pilot` (or any label) when the issue should be picked up. A failing `gh`
+  (no auth, no network) is an error — do **not** fall back to a local number; tell the
+  user and stop.
+- Existing `TASK-NN` docs keep working either way; the index, graph sync and
+  session-start listing accept any `PREFIX-<n>` filename.
+- In the doc template below, `TASK-{XX}` stands for whichever ID came back.
 
 ### Step 2: Determine Action (Create vs Archive)
 

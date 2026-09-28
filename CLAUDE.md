@@ -369,6 +369,7 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
   "version": "7.0.0",
   "project_management": "none",
   "task_prefix": "TASK",
+  "task_id_source": "local",
   "team_chat": "none",
   "auto_load_navigator": true,
   "compact_strategy": "conservative",

@@ -42,6 +42,8 @@ DEFAULTS = {
     "version": None,
     "project_management": "none",
     "task_prefix": "TASK",
+    # "local": next TASK-NN from .agent/tasks; "github": gh issue first → GH-<n> (GH-32)
+    "task_id_source": "local",
     "team_chat": "none",
     "auto_load_navigator": True,
     "compact_strategy": "conservative",

@@ -138,7 +138,7 @@ def extract_status(content: str) -> str:
 
 def extract_title(content: str, filename: str) -> str:
     """Extract title from task content."""
-    match = re.search(r'^#\s+TASK-\d+:\s*(.+)$', content, re.MULTILINE)
+    match = re.search(r'^#\s+[A-Z][A-Z0-9]*-\d+:\s*(.+)$', content, re.MULTILINE)
     if match:
         return match.group(1).strip()
     return filename.replace('.md', '').replace('-', ' ').title()
@@ -190,7 +190,7 @@ def add_task_to_graph(task_path: str, graph_path: str) -> dict:
     content = task_file.read_text()
 
     # Extract task ID from filename
-    match = re.search(r'(TASK-\d+)', task_file.name)
+    match = re.match(r'([A-Z][A-Z0-9]*-\d+)', task_file.name)  # TASK-12, GH-57 (GH-32)
     task_id = match.group(1) if match else task_file.stem
 
     # Load graph

@@ -146,8 +146,9 @@ def scan_tasks(agent_dir: Path) -> list:
         filename = task_file.name
 
         # Extract task ID
-        match = re.match(r'TASK-(\d+)', filename)
-        task_id = f"TASK-{match.group(1)}" if match else filename.replace('.md', '')
+        # TASK-12 or GH-57 (task_id_source: github, GH-32) — any PREFIX-<n>
+        match = re.match(r'([A-Z][A-Z0-9]*-\d+)', filename)
+        task_id = match.group(1) if match else filename.replace('.md', '')
 
         tasks.append({
             'id': task_id,
