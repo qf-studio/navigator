@@ -215,6 +215,16 @@ racing the workflow. Re-run the workflow; it's idempotent (`gh release edit` + `
 gh run rerun "$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')"
 ```
 
+**`make test` fails in `validate` on `test_user_prompt_submit_p95_under_200ms` only** — runner noise
+(p95 measured against a 200 ms ceiling; median stays ~75 ms). Seen on v7.8.0 (2026-09-28); the
+push-triggered `test.yml` run on the same commit was green. Re-run the failed job, then verify as in Step 6:
+
+```bash
+gh run rerun "$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')" --failed
+```
+
+If it flakes twice in a row, raise `NAV_TIMING_MULT` in the workflow or widen the ceiling instead of retrying.
+
 **Version mismatch after release** — update the missing file to the SSOT, commit with a `fix:` prefix, push to `main`
 (do **not** recreate the tag).
 

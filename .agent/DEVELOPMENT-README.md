@@ -145,7 +145,7 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
-Current active threads (as of 2026-09-19; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19 — docs site synced through v7.7.0):
+Current active threads (as of 2026-09-28; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28 — docs site synced through v7.8.0):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
 day; local testing phase, no release tagged; critical path 57→59→60→61→62→64 all landed, 58/63
@@ -176,6 +176,15 @@ parallel both landed):
   dropped — block reasons render as plain text, so Tier-1 is self-safe via exact-match rail
 
 Other threads:
+- **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
+  config override `.nav-config.local.json` + `nav-features --local` (#30), per-person
+  onboarding state under `~/.config/navigator/onboarding/<repo-id>/` (#31),
+  `task_id_source: github` → `GH-<n>-slug.md` docs with PREFIX-<n> regexes in index /
+  graph sync / lifecycle (#32), nav-init gitignore of runtime state + local config +
+  onboarding (#33), deep-research ok-write supersedes blocked/skipped stub (#34).
+  Released v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
+  a new `/skills/nav-features` page. First release whose specs live only in issues — the
+  precedent for `task_id_source: github` in this repo, not yet switched on here
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
   three releases. Plan: real release check + one-line notice in session_start, single
@@ -278,6 +287,8 @@ Query: `"What do we know about hooks?"` returns the full memory set + their cros
 
 Each op keeps its v6 `*_hook.enabled` toggle in `.agent/.nav-config.json` (config keys unchanged: `session_start_hook`, `compact_hook`, `task_graph_sync_hook`, `workflow_state_hook`, `profile_sync_hook`, `workflow_enforcer_hook`, `brief_hook`, `read_guard_hook`). Defaults are all `true`. The two gates (`prompt_gate` via `workflow_enforcer_hook`, `read_guard` via `read_guard_hook`) additionally take `strict_block`. `brief_hook` additionally takes `ambiguity_threshold` (default 0.5) and `memory_budget_chars` (default 1200). See `nav-features` skill for the interactive toggle UI.
 
+Since v7.8.0 (GH-30) `nav_hook_lib.config.load` reads two files over `DEFAULTS`: the committed `.agent/.nav-config.json`, then the gitignored `.agent/.nav-config.local.json` (personal; dict-wise merge, scalars replace; missing or corrupt local file changes nothing). `nav-features enable|disable <feature> --local` writes the local file; `show` marks locally decided rows with `L`; `config_guard` validates both files. Top-level `task_id_source` (`local` | `github`, GH-32) tells nav-task where a new ID comes from.
+
 ---
 
 ## When to Read What
@@ -312,6 +323,13 @@ Each op keeps its v6 `*_hook.enabled` toggle in `.agent/.nav-config.json` (confi
 4. Commit both (feature commit, then `chore(release): prepare vX.Y.Z`), push, then tag →
    CI publishes via `release.yml`. Never `gh release create` locally
 5. Verify with `release_validator.py --verify-tag vX.Y.Z`
+6. If `release.yml` fails only on `test_user_prompt_submit_p95_under_200ms`, it is runner
+   noise (p95 vs a 200 ms ceiling): `gh run rerun <id> --failed`, then re-verify. Never
+   `gh release create` locally. `--verify-hooks` `[unset]` failures on this laptop are the
+   missing `~/.claude/plugins/marketplaces/` fallback dir, not a regression
+7. Sync the docs site (`~/Projects/startups/navigator-site`, no git remote): `lib/version.ts`,
+   touched skill/config pages, `bun run build && vercel --prod --yes`, then curl the live
+   version string
 
 **Scenario: investigating a session deadlock or unexpected block**
 1. Read `.agent/.nav-runtime-state.json` — the single schema-2 state file every op reads

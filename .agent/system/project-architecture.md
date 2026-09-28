@@ -216,16 +216,26 @@ Created during `/nav:init` in user projects:
 
 ```json
 {
-  "version": "1.0.0",
+  "version": "7.8.0",
   "project_management": "none",  // linear|github|jira|gitlab|none
   "task_prefix": "TASK",
+  "task_id_source": "local",     // local (next TASK-NN) | github (gh issue first → GH-<n>)
   "team_chat": "none",  // slack|discord|teams|none
   "auto_load_navigator": true,
   "compact_strategy": "conservative"
 }
 ```
 
-**Purpose**: User project configuration
+**Purpose**: User project configuration, committed and shared with the team.
+
+**Personal override** (v7.8.0, GH-30): `.agent/.nav-config.local.json`, gitignored by nav-init,
+deep-merged last (DEFAULTS < shared < local) by `hooks/nav_hook_lib/config.py` and by
+`skills/nav-features/functions/feature_manager.py` (`--local` writes it). A contributor toggles
+features for themselves without touching the shared file.
+
+**Other per-person state outside the repo** (v7.8.0, GH-31): nav-onboard progress, workflow
+guide and `.completed` live under `~/.config/navigator/onboarding/<repo-id>/`
+(`skills/nav-onboard/functions/onboarding_paths.py`; `NAVIGATOR_ONBOARDING_HOME` overrides).
 
 **Not committed to plugin repo**: Generated per-project
 
