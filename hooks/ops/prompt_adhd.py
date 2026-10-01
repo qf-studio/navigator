@@ -61,6 +61,8 @@ def run(ctx):
     if ctx.pilot_executor:
         return None
     message = _user_message(ctx.payload).strip()
+    if not message:
+        return None  # malformed/empty payload: nothing to answer or shape
     kind = adhd.classify(message)
     if kind:
         return _block(_toggle_reason(kind, ctx))

@@ -6,7 +6,11 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
-## [Unreleased]
+## [v7.9.0] — 2026-10-01 — "Say the Word"
+
+ADHD mode: a per-person reply-shape switch toggled by saying `adhd mode on/off` (TASK-82),
+plus the removal of the multi-Claude orchestration deprecated in v6.15.
+→ [Full release notes](./releases/RELEASE-NOTES-v7.9.0.md)
 
 - **ADHD mode** (TASK-82): `adhd mode on` / `adhd mode off` at any prompt flips a
   per-person switch (`~/.config/navigator/adhd-mode.json`, `NAVIGATOR_CONFIG_HOME`

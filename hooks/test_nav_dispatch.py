@@ -109,6 +109,9 @@ GATED_OPS = (
 ALL_TOGGLES_OFF = json.dumps({block: {"enabled": False} for block in TOGGLE_BLOCKS})
 
 
+_ISOLATED_CONFIG_HOME = tempfile.TemporaryDirectory()
+
+
 def clean_env(extra=None):
     """Subprocess env with the escape hatches / project redirects removed.
 
@@ -118,6 +121,9 @@ def clean_env(extra=None):
     env = os.environ.copy()
     for var in ("PILOT_EXECUTOR", "CLAUDE_PROJECT_DIR", "CLAUDE_USER_MESSAGE"):
         env.pop(var, None)
+    # TASK-82: per-person settings (ADHD switch) live outside the repo; point
+    # them at an empty dir so the developer's own switch never shapes a test.
+    env["NAVIGATOR_CONFIG_HOME"] = _ISOLATED_CONFIG_HOME.name
     if extra:
         env.update(extra)
     return env

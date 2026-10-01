@@ -75,6 +75,9 @@ def build_env(home: Path, plugin_root: str | None) -> dict:
     for var in STRIPPED_ENV_VARS:
         env.pop(var, None)
     env["HOME"] = str(home)
+    # TASK-82: per-person settings never leak from the developer's machine.
+    env["NAVIGATOR_CONFIG_HOME"] = str(home / ".config" / "navigator")
+    env.pop("XDG_CONFIG_HOME", None)
     if plugin_root is None:
         env.pop("CLAUDE_PLUGIN_ROOT", None)
     else:

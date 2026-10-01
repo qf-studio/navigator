@@ -101,10 +101,14 @@ def single_hook_entry(testcase, manifest, event):
     return groups[0], hooks[0]
 
 
+_ISOLATED_CONFIG_HOME = tempfile.TemporaryDirectory()
+
+
 def clean_env(extra=None, drop=()):
     env = os.environ.copy()
     for key in ("PILOT_EXECUTOR", "CLAUDE_PROJECT_DIR", "CLAUDE_USER_MESSAGE"):
         env.pop(key, None)
+    env["NAVIGATOR_CONFIG_HOME"] = _ISOLATED_CONFIG_HOME.name  # TASK-82
     for key in drop:
         env.pop(key, None)
     if extra:

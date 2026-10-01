@@ -216,7 +216,7 @@ Created during `/nav:init` in user projects:
 
 ```json
 {
-  "version": "7.8.0",
+  "version": "7.9.0",
   "project_management": "none",  // linear|github|jira|gitlab|none
   "task_prefix": "TASK",
   "task_id_source": "local",     // local (next TASK-NN) | github (gh issue first → GH-<n>)

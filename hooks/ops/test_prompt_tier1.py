@@ -64,6 +64,11 @@ class Tier1TestBase(unittest.TestCase):
     def setUp(self):
         self._saved = {key: os.environ.pop(key, None) for key in ENV_VARS}
         self.addCleanup(self._restore)
+        # TASK-82: the developer's own ADHD switch must not reach these runs.
+        self._cfg_home = tempfile.TemporaryDirectory()
+        self.addCleanup(self._cfg_home.cleanup)
+        self._saved["NAVIGATOR_CONFIG_HOME"] = os.environ.pop("NAVIGATOR_CONFIG_HOME", None)
+        os.environ["NAVIGATOR_CONFIG_HOME"] = self._cfg_home.name
 
     def _restore(self):
         for key, value in self._saved.items():
@@ -340,6 +345,7 @@ class DispatchContractTest(Tier1TestBase):
         env = os.environ.copy()
         for var in ENV_VARS:
             env.pop(var, None)
+        env["NAVIGATOR_CONFIG_HOME"] = self._cfg_home.name  # TASK-82 isolation
         if env_extra:
             env.update(env_extra)
         return subprocess.run(

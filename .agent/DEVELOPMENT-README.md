@@ -145,7 +145,7 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
-Current active threads (as of 2026-09-28; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28 — docs site synced through v7.8.0):
+Current active threads (as of 2026-09-28; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28, v7.9.0 ADHD mode + multi-Claude removal 2026-10-01 — docs site synced through v7.8.0):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
 day; local testing phase, no release tagged; critical path 57→59→60→61→62→64 all landed, 58/63
@@ -182,7 +182,8 @@ Other threads:
   `task_id_source: github` → `GH-<n>-slug.md` docs with PREFIX-<n> regexes in index /
   graph sync / lifecycle (#32), nav-init gitignore of runtime state + local config +
   onboarding (#33), deep-research ok-write supersedes blocked/skipped stub (#34).
-  Released v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
+  Released v7.9.0 2026-10-01 (`releases/RELEASE-NOTES-v7.9.0.md`: ADHD mode TASK-82, multi-Claude
+  removal); v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
   a new `/skills/nav-features` page. First release whose specs live only in issues — the
   precedent for `task_id_source: github` in this repo, not yet switched on here
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
@@ -392,5 +393,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-09-28 (v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-01 (v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

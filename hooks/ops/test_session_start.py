@@ -92,6 +92,9 @@ class SessionStartOpTestBase(unittest.TestCase):
             for key in ("CLAUDE_PROJECT_DIR", "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DIR")
         }
         self.addCleanup(self._restore_env)
+        # TASK-82: the developer's personal ADHD switch must not change bytes here.
+        self._saved_env["NAVIGATOR_CONFIG_HOME"] = os.environ.pop("NAVIGATOR_CONFIG_HOME", None)
+        os.environ["NAVIGATOR_CONFIG_HOME"] = str(self.root / "cfg-home")
         self.write_config(HERMETIC_CONFIG)
         (self.agent / "DEVELOPMENT-README.md").write_text(
             "# Test Navigator Index\n\nDocs table here.\n", encoding="utf-8")
@@ -104,6 +107,8 @@ class SessionStartOpTestBase(unittest.TestCase):
         for key, value in self._saved_env.items():
             if value is not None:
                 os.environ[key] = value
+            else:
+                os.environ.pop(key, None)
 
     def write_config(self, cfg_dict):
         path = self.agent / ".nav-config.json"
@@ -400,20 +405,6 @@ class MemoriesGateAndOrderingTest(SessionStartOpTestBase):
 
 class SectionAdhdNoticeTest(SessionStartOpTestBase):
     """TASK-82: one line when ADHD mode resolves by an explicit switch; silent otherwise."""
-
-    def setUp(self):
-        super().setUp()
-        from nav_hook_lib import personal
-        self._adhd_saved = os.environ.pop(personal.ENV_OVERRIDE, None)
-        os.environ[personal.ENV_OVERRIDE] = str(self.root / "cfg-home")
-        self.addCleanup(self._restore_adhd)
-
-    def _restore_adhd(self):
-        from nav_hook_lib import personal
-        if self._adhd_saved is None:
-            os.environ.pop(personal.ENV_OVERRIDE, None)
-        else:
-            os.environ[personal.ENV_OVERRIDE] = self._adhd_saved
 
     def test_silent_by_default(self):
         self.assertNotIn("ADHD mode", self.run_op()["additional_context"])
