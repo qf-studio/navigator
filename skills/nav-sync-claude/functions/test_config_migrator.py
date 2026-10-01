@@ -164,6 +164,7 @@ TIER1_RULE_IDS = {
 # introduction version. Keep in sync with config_migrator.VERSION_CONFIGS.
 ALL_FEATURE_BLOCKS = {
     "deep_research",  # 7.3.0 (TASK-74)
+    "adhd_mode",  # 7.9.0 (TASK-82)
     "tom_features",
     "loop_mode",
     "simplification",

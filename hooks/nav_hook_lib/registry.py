@@ -108,6 +108,13 @@ EVENT_OPS: dict[str, list[OpSpec]] = {
         #   demote Tier-1 to an advisory injection ("answer verbatim from
         #   this data"). tier1.enabled seeds OFF (config.DEFAULTS).
         OpSpec("prompt_tier1", "responders", None, "tier1", 800),
+        # prompt_adhd (TASK-82) — same decision:block channel as Tier-1
+        #   (mem-053) for the exact toggle phrases "adhd mode on|off", plus
+        #   the rule block as additional_context on every prompt while the
+        #   person's switch is on. One row: the op answers OR injects, never
+        #   both. adhd_mode.enabled seeds True (availability only); the
+        #   personal switch seeds off, so nothing is injected by default.
+        OpSpec("prompt_adhd", "responders", None, "adhd_mode", 200),
         OpSpec("prompt_brief", "injectors", None, "brief_hook", 2000),
     ],
     "PreToolUse": [

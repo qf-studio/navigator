@@ -44,7 +44,8 @@ V6_BLOCKS = [
     "workflow_state_hook", "profile_sync_hook", "workflow_enforcer_hook",
     "brief_hook", "read_guard_hook", "knowledge_graph",
 ]
-V7_BLOCKS = ["dispatcher", "tier1", "stop_completion", "jit_memory", "subagent_context"]
+V7_BLOCKS = ["dispatcher", "tier1", "stop_completion", "jit_memory", "subagent_context",
+             "adhd_mode"]
 
 
 def _leaf_paths(node, prefix=()):
@@ -100,6 +101,9 @@ class DefaultsShapeTest(unittest.TestCase):
         self.assertFalse(d["jit_memory"]["enabled"])
         self.assertFalse(d["subagent_context"]["enabled"])
         self.assertEqual(d["subagent_context"]["budget_chars"], 2000)
+        # TASK-82: available by default, but the switch itself defers (null).
+        self.assertTrue(d["adhd_mode"]["enabled"])
+        self.assertIsNone(d["adhd_mode"]["on"])
 
 
 class LoadPristineFixtureTest(_ProjectDirMixin):

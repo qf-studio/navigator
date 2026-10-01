@@ -59,6 +59,7 @@ v<version> Features:
 │ subagent_context        │ [ ]    │ Injects project context into subagents (2k)   │
 │ failure_diagnosis       │ [ ]    │ Surfaces graph pitfalls on tool failures      │
 │ judge                   │ [ ]    │ Jev judgments overlay the prompt scorers      │
+│ adhd_mode               │ [ ]    │ Per-person reply shaping (one next action,... │
 │ config_guard            │ [x]    │ Warns when .nav-config.json edits break JSON  │
 │ setup_hook              │ [x]    │ One-line runtime status on the Setup event    │
 └─────────────────────────┴────────┴───────────────────────────────────────────────┘
@@ -124,6 +125,12 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
   scorers (ships OFF). Needs a key: `TYPESAFE_API_KEY` or `~/.config/typesafe/api_key`,
   never inside `.nav-config.json`. After `enable judge`, show the key hint the toggle
   prints and point to `.agent/sops/integrations/typesafe-judge-setup.md`
+- `adhd_mode` - ADHD-friendly reply shape (one next action first, deadlines bold,
+  lists capped, no preamble). The switch is the person's: `enable adhd_mode` writes
+  `~/.config/navigator/adhd-mode.json`, not the repo, and the user can also just say
+  `adhd mode on` / `adhd mode off` at any prompt (answered by the hook, zero model
+  turn). `--local` pins `adhd_mode.on` in `.nav-config.local.json`; a repo pin wins
+  over the personal switch. `adhd_mode.enabled` only makes the machinery available
 - `config_guard` - systemMessage warning on invalid `.nav-config.json` edits
   (safety surface, ON by default)
 - `setup_hook` - One-line runtime status on the Setup event (safety surface,

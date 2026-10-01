@@ -53,6 +53,7 @@ with a config off-switch in `.agent/.nav-config.json`:
 | Tier-1 instant answers | prompt_tier1 | `tier1.enabled`, per rule via `tier1.rules` |
 | Context markers around compaction | compact_marker | `compact_hook.enabled` |
 | Typed judge behind the prompt scorers | judge (lib, used by prompt_gate + prompt_brief) | `judge.enabled` |
+| ADHD mode toggle + reply-shape block | prompt_adhd | `adhd_mode.enabled`; switch via `adhd mode on/off` or `adhd_mode.on` |
 
 `stop_completion.continue_enabled`, `tier1.enabled` and `judge.enabled` ship OFF (new blocking
 or outbound features seed off). Setting the `PILOT_EXECUTOR` environment variable disables interactive/blocking hook
@@ -233,6 +234,19 @@ comes from `TYPESAFE_API_KEY` or `~/.config/typesafe/api_key`, never from the co
 config. Verify with `python3 hooks/nav_hook_lib/judge.py --check`; session start names the
 key source or warns when none is found. Setup SOP:
 `.agent/sops/integrations/typesafe-judge-setup.md`. Replay the eval with `scripts/judge_eval.py`.
+
+### ADHD Mode (v7.9.0)
+
+A per-person switch for reply shape: one next action first, time-critical items first
+with the deadline in bold, bullets over prose, lists capped at five, numbered steps with
+"step k of n", no preamble, one sub-two-minute closing action. Say `adhd mode on` or
+`adhd mode off` at any prompt: the hook answers with zero model turn and writes
+`~/.config/navigator/adhd-mode.json`, so the switch follows you across repos and takes
+effect on the next prompt without a restart. While on, the rule block rides every prompt
+as injected context; while off it exists nowhere in the context. Subagents never see it.
+A repo can pin it with `adhd_mode.on: true|false` (shared or `.local`); `null` defers to
+the person. Enforced by prompt_adhd (hook runtime); this text is documentation, not the
+mechanism. Design: `.agent/tasks/TASK-82-adhd-mode.md`.
 
 ---
 

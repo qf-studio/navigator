@@ -238,6 +238,12 @@ VERSION_CONFIGS: Dict[str, Dict[str, Any]] = {
             "models": {"fetcher": "sonnet", "writer": "opus", "critic": "opus", "patcher": "opus"}
         }
     },
+    "7.9.0": {
+        "adhd_mode": {
+            "enabled": True,
+            "on": None
+        }
+    },
 }
 
 

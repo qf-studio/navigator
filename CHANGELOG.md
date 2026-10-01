@@ -8,6 +8,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ## [Unreleased]
 
+- **ADHD mode** (TASK-82): `adhd mode on` / `adhd mode off` at any prompt flips a
+  per-person switch (`~/.config/navigator/adhd-mode.json`, `NAVIGATOR_CONFIG_HOME`
+  overrides) with zero model turn; while on, a reply-shape rule block (one next action
+  first, bold deadlines, lists capped at five, numbered steps, no preamble) is injected on
+  every prompt and nowhere otherwise. New op `prompt_adhd`, lib `nav_hook_lib.adhd` +
+  `personal`, config block `adhd_mode` (`enabled` = available, `on` = repo pin, null
+  defers), `nav-features` row, session-start status line. Subagents and Pilot unaffected.
 - **Multi-Claude orchestration removed** (TASK-25 follow-up): the `nav-multi` and
   `nav-install-multi-claude` skills, `scripts/navigator-multi-claude*.sh` and their helper
   scripts, `templates/multi-claude/`, the two multi-Claude SOPs, memory `mem-020` and the

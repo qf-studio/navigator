@@ -108,5 +108,47 @@ class CLITest(unittest.TestCase):
         self.assertIn("ignoring the personal override", proc.stderr)
 
 
+class PersonalSwitchTest(unittest.TestCase):
+    """TASK-82: adhd_mode toggles the person's file, never the shared config."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / ".agent").mkdir()
+        self.shared = self.root / ".agent" / ".nav-config.json"
+        self.local = self.root / ".agent" / LOCAL_CONFIG_PATH.split("/")[-1]
+        self.shared.write_text(json.dumps({"version": "7.9.0"}))
+        self.home = self.root / "cfg-home"
+        self.env = dict(os.environ, NAVIGATOR_CONFIG_HOME=str(self.home))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_fm(self, *args):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], cwd=self.root,
+                              capture_output=True, text=True, env=self.env)
+
+    def row(self, out):
+        return next(line for line in out.splitlines() if "adhd_mode" in line)
+
+    def test_enable_writes_personal_file_only(self):
+        out = self.run_fm("enable", "adhd_mode")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("personal switch", out.stdout)
+        self.assertEqual(json.loads((self.home / "adhd-mode.json").read_text())["on"], True)
+        self.assertEqual(json.loads(self.shared.read_text()), {"version": "7.9.0"})
+        self.assertFalse(self.local.exists())
+        self.assertIn("[x]", self.row(self.run_fm("show").stdout))
+        self.run_fm("disable", "adhd_mode")
+        self.assertIn("[ ]", self.row(self.run_fm("show").stdout))
+
+    def test_local_pin_marks_row_and_wins(self):
+        self.run_fm("enable", "adhd_mode")
+        out = self.run_fm("disable", "adhd_mode", "--local")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(json.loads(self.local.read_text()), {"adhd_mode": {"on": False}})
+        self.assertIn("[ ] L", self.row(self.run_fm("show").stdout))
+
+
 if __name__ == "__main__":
     unittest.main()

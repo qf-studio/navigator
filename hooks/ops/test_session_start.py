@@ -398,6 +398,39 @@ class MemoriesGateAndOrderingTest(SessionStartOpTestBase):
         self.assertFalse((self.plugin_dir / "recall_argv.txt").exists())
 
 
+class SectionAdhdNoticeTest(SessionStartOpTestBase):
+    """TASK-82: one line when ADHD mode resolves by an explicit switch; silent otherwise."""
+
+    def setUp(self):
+        super().setUp()
+        from nav_hook_lib import personal
+        self._adhd_saved = os.environ.pop(personal.ENV_OVERRIDE, None)
+        os.environ[personal.ENV_OVERRIDE] = str(self.root / "cfg-home")
+        self.addCleanup(self._restore_adhd)
+
+    def _restore_adhd(self):
+        from nav_hook_lib import personal
+        if self._adhd_saved is None:
+            os.environ.pop(personal.ENV_OVERRIDE, None)
+        else:
+            os.environ[personal.ENV_OVERRIDE] = self._adhd_saved
+
+    def test_silent_by_default(self):
+        self.assertNotIn("ADHD mode", self.run_op()["additional_context"])
+
+    def test_personal_switch_named(self):
+        from nav_hook_lib import adhd
+        adhd.set_personal(True)
+        body = self.run_op()["additional_context"]
+        self.assertIn("ADHD mode: on (personal switch", body)
+
+    def test_local_pin_counts(self):
+        (self.agent / ".nav-config.local.json").write_text(
+            json.dumps({"adhd_mode": {"on": False}}), encoding="utf-8")
+        body = self.run_op()["additional_context"]
+        self.assertIn("ADHD mode: off (pinned by repo config", body)
+
+
 if __name__ == "__main__":
     unittest.main()
 

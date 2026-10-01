@@ -180,5 +180,9 @@
     "min_confidence": 0.4,
     "noul_low": 0.4,
     "noul_high": 0.6
+  },
+  "adhd_mode": {
+    "enabled": true,
+    "on": null
   }
 }

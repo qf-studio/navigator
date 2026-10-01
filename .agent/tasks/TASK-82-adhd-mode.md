@@ -1,6 +1,6 @@
 # TASK-82: ADHD mode — a per-person output-shaping switch, on/off mid-session
 
-**Status**: 📐 Design — 2026-10-01 (awaiting confirmation; nothing implemented)
+**Status**: ✅ Implemented — 2026-10-01 (unreleased; ships in v7.9.0 with the multi-Claude removal). Both open questions answered: inject on every prompt; personal-global switch with repo pin.
 
 ## Context
 
@@ -102,7 +102,19 @@ prompts.
 
 Size: ~half a day.
 
-## Open questions (max 2)
+## Done (2026-10-01)
+
+- `nav_hook_lib/personal.py` (per-person JSON under `~/.config/navigator`, `NAVIGATOR_CONFIG_HOME`
+  override), `nav_hook_lib/adhd.py` (phrases, resolution, rule block, state), `ops/prompt_adhd.py`
+  (responder row after prompt_tier1, budget 200 ms). 11 + 10 + 13 new tests incl. the dispatcher
+  subprocess path; `make test` green.
+- `adhd_mode` block in DEFAULTS / live config / migrator 7.9.0; `nav-features` row with the
+  personal-file branch; session-start status line; CLAUDE.md, nav-features SKILL.md,
+  DEVELOPMENT-README ops table, changelog.
+- Live check on this repo: `adhd mode` answers via decision:block; dispatch ~0.5 s with the judge
+  call included. Not switched on for the author yet.
+
+## Open questions (answered)
 
 1. Inject on every prompt (robust, ~110 tokens each) or once per session plus after
    compaction (cheaper, drifts on long sessions)? Recommendation: every prompt.

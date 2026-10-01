@@ -23,6 +23,16 @@ import argparse
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
+# Per-person switches (ADHD mode) resolve through the hook runtime's lib so the
+# table and the hooks agree. The plugin root holds hooks/ next to skills/.
+_HOOKS_DIR = Path(__file__).resolve().parents[3] / "hooks"
+if str(_HOOKS_DIR) not in sys.path:
+    sys.path.insert(0, str(_HOOKS_DIR))
+try:
+    from nav_hook_lib import adhd as _adhd
+except Exception:  # older/partial install: personal switches read as off
+    _adhd = None
+
 # Feature definitions with metadata
 FEATURES = {
     "task_mode": {
@@ -192,6 +202,18 @@ FEATURES = {
         "enabled_key": "enabled",
         "default": False,
         "type": "config"
+    },
+    "adhd_mode": {
+        "name": "adhd_mode",
+        "display_name": "ADHD Mode",
+        "version": "7.9.0",
+        "description": "Per-person reply shaping (one next action, bold deadlines, short lists); say 'adhd mode on/off' any time",
+        "short_desc": "ADHD-friendly reply shape, personal switch",
+        "config_key": "adhd_mode",
+        "enabled_key": "on",
+        "default": False,
+        "type": "config",
+        "personal": True
     },
     "tier1": {
         "name": "tier1",
@@ -369,9 +391,13 @@ def is_feature_enabled(config: Dict, feature_name: str) -> bool:
 
     config_section = config.get(config_key, {})
 
-    if isinstance(config_section, dict):
-        return config_section.get(feature["enabled_key"], feature["default"])
-    return feature["default"]
+    value = config_section.get(feature["enabled_key"]) \
+        if isinstance(config_section, dict) else None
+    if feature.get("personal") and not isinstance(value, bool):
+        # Repo value absent/null: the person's own switch decides.
+        personal = _adhd.personal_on() if _adhd is not None else None
+        return personal if isinstance(personal, bool) else feature["default"]
+    return value if value is not None else feature["default"]
 
 
 def format_status(enabled: bool, feature_type: str = "config", local: bool = False) -> str:
@@ -543,6 +569,23 @@ def main():
             return 1
 
         enable = args.command == "enable"
+        feature = FEATURES.get(args.feature) or {}
+        if feature.get("personal") and not args.local:
+            # Personal switch: lives under ~/.config/navigator, never in the repo.
+            if _adhd is None or not _adhd.set_personal(enable):
+                print("❌ Could not write the personal ADHD switch", file=sys.stderr)
+                return 1
+            state = "on" if enable else "off"
+            print(f"{'✅' if enable else '⏸ Off'} {feature['display_name']} {state} "
+                  f"(personal switch, {_adhd.personal.path(_adhd.STATE_NAME)}; "
+                  f"applies in every repo from the next prompt)")
+            if is_locally_overridden(local, args.feature) or \
+                    isinstance((shared.get("adhd_mode") or {}).get("on"), bool):
+                print("⚠️  this repo pins adhd_mode.on in its config, which wins over "
+                      "the personal switch here")
+            print()
+            print(show_features(merge_config(shared, local), local=local))
+            return 0
         # --local toggles inside the personal override; otherwise the shared file.
         target, target_path = (local, LOCAL_CONFIG_PATH) if args.local \
             else (shared, CONFIG_PATH)

@@ -128,7 +128,23 @@ def _section_config(root: Path):
         "## Navigator Config (.agent/.nav-config.json)\n\n"
         f"```json\n{json.dumps(summary, indent=2)}\n```"
         + _judge_notice(cfg.get("judge"))
+        + _adhd_notice(root)
     )
+
+
+def _adhd_notice(root: Path) -> str:
+    """One line when ADHD mode resolves on/off by an explicit switch (TASK-82).
+
+    Silent when nobody ever switched it (the default), so existing session
+    bytes are unchanged for everyone else. Uses the layered config because a
+    .local pin counts.
+    """
+    try:
+        from nav_hook_lib import adhd
+        line = adhd.status_line(config.load(root))
+        return f"\n\n{line}" if line else ""
+    except Exception:
+        return ""
 
 
 def _judge_notice(block) -> str:

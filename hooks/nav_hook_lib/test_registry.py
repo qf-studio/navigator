@@ -75,7 +75,7 @@ ALL_EVENTS = V6_EVENTS | TASK62_EVENTS
 # The eight TASK-61 rows + every landed TASK-62 row, in order.
 EXPECTED_ROWS = {
     "SessionStart": ["session_start"],
-    "UserPromptSubmit": ["prompt_gate", "prompt_tier1", "prompt_brief"],
+    "UserPromptSubmit": ["prompt_gate", "prompt_tier1", "prompt_adhd", "prompt_brief"],
     "PreToolUse": ["read_guard"],
     "PostToolUse": ["jit_memory", "graph_sync", "profile_sync"],
     "Stop": ["stop_completion", "stop_state"],
@@ -94,6 +94,7 @@ EXPECTED_CONFIG_KEYS = {
     "session_start": "session_start_hook",
     "prompt_gate": "workflow_enforcer_hook",
     "prompt_tier1": "tier1",
+    "prompt_adhd": "adhd_mode",
     "prompt_brief": "brief_hook",
     "read_guard": "read_guard_hook",
     "graph_sync": "task_graph_sync_hook",
@@ -115,13 +116,16 @@ V7_OFF_CONFIG_KEYS = {
     "tier1", "stop_completion", "jit_memory", "subagent_context",
     "failure_diagnosis",
 }
-V7_ON_CONFIG_KEYS = {"config_guard", "setup_hook"}
+# adhd_mode (TASK-82) seeds enabled=True too: the block only makes the toggle
+# available; injection waits for the person's own switch (seeded off).
+V7_ON_CONFIG_KEYS = {"config_guard", "setup_hook", "adhd_mode"}
 V7_CONFIG_KEYS = V7_OFF_CONFIG_KEYS | V7_ON_CONFIG_KEYS
 
 EXPECTED_PHASES = {
     "session_start": "injectors",
     "prompt_gate": "gates",
     "prompt_tier1": "responders",
+    "prompt_adhd": "responders",
     "prompt_brief": "injectors",
     "read_guard": "gates",
     "graph_sync": "recorders",

@@ -213,6 +213,12 @@ DEFAULTS = {
         "api_key_file": "~/.config/typesafe/api_key",
         "max_state_chars": 4000,
     },
+    # ---- v7.9 ADHD mode (TASK-82): the switch is the person's, not the repo's ----
+    # enabled=True only makes the machinery available (toggle phrases answer,
+    # the rule block can be injected). Nothing is injected for anyone until
+    # their personal switch (~/.config/navigator/adhd-mode.json) is on or the
+    # repo pins adhd_mode.on to true; null defers to the person.
+    "adhd_mode": {"enabled": True, "on": None},
 }
 
 
