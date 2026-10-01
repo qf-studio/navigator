@@ -136,16 +136,6 @@ VERSION_CONFIGS: Dict[str, Dict[str, Any]] = {
             "git_tracked": True
         }
     },
-    "6.1.0": {
-        "multi_agent": {
-            "enabled": True,
-            "default_workflow": "standard",
-            "auto_dashboard": False,
-            "parallel_limit": 3,
-            "retry_attempts": 2,
-            "phase_timeout_seconds": 180
-        }
-    },
     "6.9.0": {
         "session_start_hook": {
             "enabled": True,

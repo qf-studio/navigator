@@ -91,30 +91,6 @@ FEATURES = {
         "default": True,
         "type": "config"
     },
-    "multi_agent": {
-        "name": "multi_agent",
-        "display_name": "Multi-Agent",
-        "version": "6.0.0",
-        "description": "Parallel agent orchestration (nav-multi skill)",
-        "short_desc": "Parallel agent workflows",
-        "config_key": "multi_agent",
-        "enabled_key": "enabled",
-        "default": True,
-        "type": "config"
-    },
-    "multi_claude_scripts": {
-        "name": "multi_claude_scripts",
-        "display_name": "Multi-Claude Scripts",
-        "version": "4.3.0",
-        "description": "DEPRECATED (TASK-25) — use native /workflows + Agent tool",
-        "short_desc": "Deprecated; superseded by native Workflows",
-        "config_key": None,
-        "enabled_key": None,
-        "default": False,
-        "type": "installed",
-        "deprecated": True,
-        "check_command": "command -v navigator-multi-claude.sh"
-    },
     "compact_hook": {
         "name": "compact_hook",
         "display_name": "Compact Hook",
@@ -474,7 +450,7 @@ def toggle_feature(config: Dict, feature_name: str, enable: bool) -> Tuple[Dict,
     # Check if feature is toggleable
     if feature.get("type") == "installed":
         if enable:
-            return config, f"💡 {feature['display_name']} requires installation.\n\nRun: 'Install multi-Claude workflows'"
+            return config, f"💡 {feature['display_name']} requires installation.\n\nSee the feature's install instructions"
         else:
             return config, f"💡 {feature['display_name']} uninstall not yet supported.\n\nManually remove scripts from ~/bin/ if needed."
 

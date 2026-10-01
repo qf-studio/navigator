@@ -42,7 +42,7 @@ V6_BLOCKS = [
     "task_mode", "tom_features", "loop_mode", "simplification", "auto_update",
     "pilot", "session_start_hook", "compact_hook", "task_graph_sync_hook",
     "workflow_state_hook", "profile_sync_hook", "workflow_enforcer_hook",
-    "brief_hook", "read_guard_hook", "knowledge_graph", "multi_agent",
+    "brief_hook", "read_guard_hook", "knowledge_graph",
 ]
 V7_BLOCKS = ["dispatcher", "tier1", "stop_completion", "jit_memory", "subagent_context"]
 

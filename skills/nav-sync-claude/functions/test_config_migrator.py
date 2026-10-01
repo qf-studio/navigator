@@ -170,7 +170,6 @@ ALL_FEATURE_BLOCKS = {
     "auto_update",
     "task_mode",
     "knowledge_graph",
-    "multi_agent",
     "session_start_hook",
     "compact_hook",
     "task_graph_sync_hook",

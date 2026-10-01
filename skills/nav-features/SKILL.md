@@ -46,8 +46,6 @@ v<version> Features:
 │ simplification          │ [x]    │ Post-implementation code cleanup with Opus    │
 │ auto_update             │ [x]    │ Auto-updates on session start                 │
 │ knowledge_graph         │ [x]    │ Unified project knowledge + experiential m... │
-│ multi_agent             │ [x]    │ Parallel agent orchestration (nav-multi sk... │
-│ multi_claude_scripts    │ [*]    │ External shell scripts for multi-Claude wo... │
 │ compact_hook            │ [x]    │ Injects rich summary into compacted sessions  │
 │ workflow_enforcer_hook  │ [x]    │ Enforces WORKFLOW CHECK block before task ... │
 │ read_guard_hook         │ [x]    │ Warns on excessive Reads (push to agents)     │
@@ -102,7 +100,6 @@ Core (config-toggled):
 - `simplification` - Code cleanup before commit
 - `auto_update` - Auto-update on session start
 - `knowledge_graph` - Unified project knowledge + memories (v6.0.0)
-- `multi_agent` - Parallel agent orchestration via `nav-multi` (v6.0.0)
 
 Hooks (config-toggled, edit with caution):
 - `compact_hook` - Pre-compact summary injection
@@ -131,9 +128,6 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
   (safety surface, ON by default)
 - `setup_hook` - One-line runtime status on the Setup event (safety surface,
   ON by default)
-
-Install-based:
-- `multi_claude_scripts` - External shell scripts (`navigator-multi-claude.sh` on PATH)
 
 **After toggle, show updated table**.
 

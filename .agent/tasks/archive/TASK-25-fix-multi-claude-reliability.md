@@ -3,7 +3,7 @@
 **Created**: 2025-11-01
 **Assignee**: Multi-Claude Workflow (dogfooding)
 **Priority**: High
-**Status**: ❌ Deprecated — 2026-06-04 (superseded by native Claude Code Workflows)
+**Status**: 🗑️ Removed — 2026-10-01 (skills, scripts, templates, SOPs and the `multi_agent` config block deleted; native Claude Code Workflows + Pilot cover orchestration). Was: ❌ Deprecated — 2026-06-04
 **Target**: ~~v4.5.0~~ — not pursued; feature deprecated instead
 **Work-package**: wp10 of TASK-42 (audit remediation). Decision: **deprecate**, not repair.
 

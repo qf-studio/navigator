@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-09-13T12:02:11.986989+00:00",
+  "last_updated": "2026-10-01T12:12:54.218604+00:00",
   "stats": {
-    "total_nodes": 189,
-    "total_edges": 892,
-    "memory_count": 68
+    "total_nodes": 186,
+    "total_edges": 832,
+    "memory_count": 67
   },
   "nodes": {
     "tasks": {
@@ -967,37 +967,6 @@
           "session"
         ]
       },
-      "SOP-multi_claude_troubleshooting": {
-        "id": "SOP-multi_claude_troubleshooting",
-        "path": ".agent/sops/development/multi-claude-troubleshooting.md",
-        "title": "Multi-Claude Workflow Troubleshooting",
-        "category": "development",
-        "concepts": [
-          "testing",
-          "markers",
-          "context",
-          "workflow",
-          "skills",
-          "session"
-        ]
-      },
-      "SOP-multi_claude_orchestration": {
-        "id": "SOP-multi_claude_orchestration",
-        "path": ".agent/sops/development/multi-claude-orchestration.md",
-        "title": "Multi-Claude Orchestration SOP",
-        "category": "development",
-        "concepts": [
-          "deployment",
-          "workflow",
-          "testing",
-          "markers",
-          "context",
-          "frontend",
-          "code quality",
-          "skills",
-          "session"
-        ]
-      },
       "SOP-version_management": {
         "id": "SOP-version_management",
         "path": ".agent/sops/development/version-management.md",
@@ -1906,18 +1875,6 @@
         "concepts": [
           "loop",
           "autonomous"
-        ],
-        "created": "2026-05-11",
-        "last_validated": "2026-05-11"
-      },
-      "mem-020": {
-        "type": "pitfall",
-        "summary": "nav-multi SESSION_ID collision: TASK_NUM=0 + epoch seconds collides for parallel no-task-ID runs in the same second. Fixed in v6.4.0 by appending $$ (PID) to SESSION_ID. [skills/nav-multi/SKILL.md:111-115]",
-        "path": "memories/pitfalls/mem-020.md",
-        "confidence": 1.0,
-        "concepts": [
-          "workflow",
-          "skills"
         ],
         "created": "2026-05-11",
         "last_validated": "2026-05-11"
@@ -3086,366 +3043,6 @@
       "to": "TASK-10",
       "type": "relates-to",
       "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-32",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-33",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-16",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-01",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-18",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-11",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-19",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-05",
-      "type": "relates-to",
-      "weight": 0.4
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-13",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-26",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-03",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-15",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-22",
-      "type": "relates-to",
-      "weight": 0.4
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-02",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-34",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "VIDEO-PRODUCTION-PLAN",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-17",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-06",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-35",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-36",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-30",
-      "type": "relates-to",
-      "weight": 0.6000000000000001
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "task-22-simple-console-logger-1761948433-review-report",
-      "type": "relates-to",
-      "weight": 0.4
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-25",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "task-22-simple-console-logger-1761948433-plan",
-      "type": "relates-to",
-      "weight": 0.6000000000000001
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-31",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-12",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-29",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-27",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-04",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_troubleshooting",
-      "to": "TASK-10",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-32",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-33",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-16",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-01",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-18",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-11",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-19",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-05",
-      "type": "relates-to",
-      "weight": 0.6000000000000001
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-13",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-26",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-03",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-15",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-22",
-      "type": "relates-to",
-      "weight": 0.4
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-02",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-34",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "VIDEO-PRODUCTION-PLAN",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-17",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-06",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-35",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-36",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-30",
-      "type": "relates-to",
-      "weight": 0.6000000000000001
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "task-22-simple-console-logger-1761948433-review-report",
-      "type": "relates-to",
-      "weight": 0.6000000000000001
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-25",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "task-22-simple-console-logger-1761948433-plan",
-      "type": "relates-to",
-      "weight": 0.8
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-31",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-12",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-29",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-27",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-04",
-      "type": "relates-to",
-      "weight": 1.0
-    },
-    {
-      "from": "SOP-multi_claude_orchestration",
-      "to": "TASK-10",
-      "type": "relates-to",
-      "weight": 1.0
     },
     {
       "from": "SOP-version_management",
@@ -7689,8 +7286,6 @@
       "project-architecture",
       "SOP-navigator_plugin_release_workflow",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-version_management",
       "SOP-complete_release_workflow",
       "SOP-autonomous_completion",
@@ -7810,8 +7405,6 @@
       "project-architecture",
       "SOP-navigator_plugin_release_workflow",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-version_management",
       "SOP-complete_release_workflow",
       "SOP-autonomous_completion",
@@ -7930,8 +7523,6 @@
       "project-architecture",
       "SOP-navigator_plugin_release_workflow",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-version_management",
       "SOP-complete_release_workflow",
       "SOP-autonomous_completion",
@@ -7970,7 +7561,6 @@
       "mem-014",
       "mem-017",
       "mem-018",
-      "mem-020",
       "mem-021",
       "mem-022",
       "mem-025",
@@ -8047,8 +7637,6 @@
       "TASK-04",
       "project-architecture",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-opentelemetry_setup",
       "2025-01-20-grafana-dashboard-fixes",
       "v4.0.0-release-complete",
@@ -8140,8 +7728,6 @@
       "project-architecture",
       "SOP-navigator_plugin_release_workflow",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-version_management",
       "SOP-complete_release_workflow",
       "SOP-opentelemetry_setup",
@@ -8169,7 +7755,6 @@
       "mem-013",
       "mem-014",
       "mem-016",
-      "mem-020",
       "mem-026",
       "TASK-38",
       "TASK-41",
@@ -8245,7 +7830,6 @@
       "TASK-27",
       "TASK-10",
       "plugin-patterns",
-      "SOP-multi_claude_orchestration",
       "SOP-autonomous_completion",
       "SOP-visual_regression_setup",
       "v2.2-complete-2025-10-19-184500",
@@ -8344,8 +7928,6 @@
       "TASK-10",
       "plugin-patterns",
       "project-architecture",
-      "SOP-multi_claude_troubleshooting",
-      "SOP-multi_claude_orchestration",
       "SOP-complete_release_workflow",
       "SOP-autonomous_completion",
       "2025-01-20-grafana-dashboard-fixes",
@@ -8413,7 +7995,6 @@
       "project-architecture",
       "SOP-navigator_plugin_release_workflow",
       "SOP-plugin_release_workflow",
-      "SOP-multi_claude_orchestration",
       "SOP-complete_release_workflow",
       "SOP-test_failures",
       "SOP-grafana_dashboard_empty_data",
@@ -8478,7 +8059,6 @@
       "task-22-simple-console-logger-1761948433-plan",
       "TASK-12",
       "project-architecture",
-      "SOP-multi_claude_orchestration",
       "mem-015",
       "mem-024"
     ],

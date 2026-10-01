@@ -90,8 +90,7 @@ curl -s https://api.github.com/repos/alekspetrov/navigator/releases
 ⚡ Experimental version available: v4.3.0
 
 New in v4.3.0 (Experimental):
-• Multi-Claude agentic workflows
-• 30% success rate (use for simple features)
+• Knowledge graph with experiential memories
 • PM integration with ticket closing
 
 Options:
@@ -109,8 +108,7 @@ Latest stable: v4.0.0
 Status: You're ahead of stable (testing experimental features)
 
 New features in your version:
-- Multi-Claude workflows
-- Task agents in sub-Claude phases
+- Knowledge graph with experiential memories
 ```
 
 Skip to Step 5 (Feature Discovery).
@@ -140,8 +138,7 @@ When pre-release detected, present choice using AskUserQuestion tool:
 ⚡ Experimental version available: v4.3.0
 
 New in v4.3.0 (Experimental):
-• Multi-Claude agentic workflows
-• 30% success rate (use for simple features)
+• Knowledge graph with experiential memories
 • PM integration with ticket closing
 
 **Question**: Which version would you like?
@@ -153,9 +150,7 @@ New in v4.3.0 (Experimental):
     - Most reliable
 
 [2] **Try experimental v4.3.0** (early adopter)
-    - Multi-Claude workflows
     - Latest features
-    - 30% completion rate
     - Help test new functionality
 
 Your choice?

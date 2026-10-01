@@ -43,8 +43,6 @@
     "./skills/nav-loop",
     "./skills/nav-sync-claude",
     "./skills/nav-upgrade",
-    "./skills/nav-install-multi-claude",
-    "./skills/nav-multi",
     "./skills/nav-marker",
     "./skills/nav-compact",
     "./skills/nav-task",

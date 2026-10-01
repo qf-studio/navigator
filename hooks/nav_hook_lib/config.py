@@ -155,14 +155,6 @@ DEFAULTS = {
         "staleness_threshold_days": 90,
         "git_tracked": True,
     },
-    "multi_agent": {
-        "enabled": True,
-        "default_workflow": "standard",
-        "auto_dashboard": False,
-        "parallel_limit": 3,
-        "retry_attempts": 2,
-        "phase_timeout_seconds": 180,
-    },
     # ---- v7 blocks (hooks-runtime plan) — blocking features seeded OFF ----
     "dispatcher": {
         "enabled": True,

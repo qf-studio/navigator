@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [Unreleased]
+
+- **Multi-Claude orchestration removed** (TASK-25 follow-up): the `nav-multi` and
+  `nav-install-multi-claude` skills, `scripts/navigator-multi-claude*.sh` and their helper
+  scripts, `templates/multi-claude/`, the two multi-Claude SOPs, memory `mem-020` and the
+  `multi_agent` config block are deleted (deprecated since v6.15.0; orchestration is native
+  Claude Code Workflows, the Agent tool, and Pilot). The `multi_agent` /
+  `multi_claude_scripts` rows leave the `nav-features` table; a stale `multi_agent` block
+  in an existing config is ignored.
+
 ## [v7.8.0] — 2026-09-28 — "One Repo, Many People"
 
 Team-repo features and fixes from the 2026-09-28 issue batch (GH-30 … GH-34): the shared

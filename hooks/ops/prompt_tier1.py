@@ -112,7 +112,6 @@ FEATURE_BLOCKS = (
     "simplification",
     "auto_update",
     "knowledge_graph",
-    "multi_agent",
     "session_start_hook",
     "workflow_enforcer_hook",
     "brief_hook",

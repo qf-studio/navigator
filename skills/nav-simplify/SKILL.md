@@ -416,15 +416,6 @@ Implement → Verify → **Simplify** → Commit → Archive
 
 Simplification runs automatically after verification passes, before commit.
 
-### Multi-Claude Workflow
-
-As dedicated role:
-```
-Orchestrator → Implementer → Tester → **Simplifier** → Reviewer → Documenter
-```
-
-Simplifier receives implementation marker, outputs simplified code marker.
-
 ### Loop Mode
 
 Added to VERIFY phase completion indicators:
