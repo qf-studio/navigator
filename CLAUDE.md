@@ -242,6 +242,10 @@ key source or warns when none is found. Setup SOP:
   multi-file searches, unfamiliar code, pattern discovery.
 - **Skills** = execution and consistency (predefined functions/templates): features
   following patterns, boilerplate, project conventions.
+- **Model**: the bundled research agents (`navigator-research`, `task-planner`, the
+  deep-research fetcher) declare `model: sonnet` in their frontmatter, so read-only
+  exploration runs on the current Sonnet (resolved to Sonnet 5.5 on Claude Code 2.1.284);
+  the deep-research writer, critic and patcher stay on Opus.
 
 | Scenario | Use |
 |---|---|
