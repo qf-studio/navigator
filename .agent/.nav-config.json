@@ -20,7 +20,7 @@
     "belief_anchors": false
   },
   "loop_mode": {
-    "enabled": false,
+    "enabled": true,
     "max_iterations": 5,
     "stagnation_threshold": 3,
     "exit_requires_explicit_signal": true,
