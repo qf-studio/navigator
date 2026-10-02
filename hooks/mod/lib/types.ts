@@ -49,6 +49,15 @@ export type Io = {
   disowned: () => Promise<string[]>
   noteCrash: (op: string) => Promise<number>
   disown: (op: string) => Promise<void>
+  // ---- step 5b io ----
+  /**
+   * `$.process.run` keeping stderr (graph_sync / profile_sync diagnostics). Rejects when the
+   * command cannot start or outlives `timeoutMs`; the ops classify the rejection. Optional:
+   * without it the ops fall back to `run` and report an empty stderr.
+   */
+  runCapture?: (argv: readonly string[], cwd: string, timeoutMs: number) =>
+    Promise<{ exitCode: number; stdout: string; stderr: string }>
+  // ---- step 5b io ----
 }
 
 export type OpCtx = {
