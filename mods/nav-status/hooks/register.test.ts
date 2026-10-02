@@ -4,6 +4,7 @@ import type { On } from 'claude-code'
 
 const PLUGIN = 'nav-status'
 const CWD = '/repo'
+const AGENT = `${CWD}/.agent`
 const CFG = '/cfg'
 const PERSONAL = `${CFG}/adhd-mode.json`
 const REPO_CONFIG = `${CWD}/.agent/.nav-config.json`
@@ -17,6 +18,7 @@ type EnvSet = { name: string; value?: string }
 const world = (on: On, files: Files, percent?: number) => {
   const writes: Write[] = []
   const envSets: EnvSet[] = []
+  const opened: string[] = []
   mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
   mock.clock(on, { now: 1_700_000_000_000 })
   on('session.cwd', () => ({ value: CWD }))
@@ -46,7 +48,29 @@ const world = (on: On, files: Files, percent?: number) => {
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'engine', ref: 0 }))
-  return { writes, envSets }
+  on('ui.render', { component: 'Pane' }, () => ({ type: 'engine', ref: 0 }))
+  on('ui.open', (_$, e) => {
+    opened.push(e.id)
+    return { value: { isPlaced: true } }
+  })
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('command.run', () => ({}))
+  on('fs.list', (_$, e) => ({
+    value: Object.keys(files)
+      .filter(f => f.startsWith(`${e.path}/`))
+      .map(f => ({
+        name: f.slice(e.path.length + 1), kind: 'file' as const, size: 1, mtimeMs: 0, isLink: false,
+      })),
+  }))
+  on('process.run', (_$, e) => ({
+    value: {
+      exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
+      stdout: e.argv[0] === 'sh'
+        ? '.agent/tasks/TASK-15-x.md\n.agent/tasks/TASK-80-judge.md\n'
+        : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
+    },
+  }))
+  return { writes, envSets, opened }
 }
 
 const submit = ($: Engine, text: string) =>
@@ -170,4 +194,54 @@ test('(e) session.start claims ADHD ownership through the environment', async ($
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
   expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'adhd' })
+})
+
+const NAV_CMD = {
+  command: 'nav', args: '', origin: { kind: 'composer' as const },
+  presentation: { isFullscreen: false, columns: 120 },
+}
+
+const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
+  $.ui.mount({
+    plugin: PLUGIN,
+    surface,
+    component: 'Pane',
+    requestId: 'nav',
+    props: {
+      title: 'Navigator', isFocused: true, bodyColumns: 60, placement: 'inline',
+      scroll: { offset: 0, bodyRows: 20 }, view: {},
+    },
+  })
+
+test('(f) /nav opens the pane with task, context bar and memories', async ($, on) => {
+  const { opened } = world(on, {
+    [`${AGENT}/.context-markers/a-old.md`]: '',
+    [`${AGENT}/.context-markers/b-new.md`]: '',
+  }, 42)
+  await complete($, 'Phase: IMPL\n')
+  await $.command.run(NAV_CMD)
+  expect(opened).toContain('nav')
+  for (const surface of SURFACES) {
+    const ui = await navPane($, surface)
+    const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+    expect(texts).toContain('TASK-80')
+    expect(texts).toContain('phase IMPL')
+    expect(texts).toContain('42%')
+    expect(texts).toContain('last marker b-new')
+    expect(texts).toContain('PITFALL stop gate over-fires')
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(6)
+    await ui.unmount()
+  }
+})
+
+test('(g) a pinned memory rides the next prompt once', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' })
+  await $.command.run(NAV_CMD)
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'mem-0' })
+  const first = await submit($, 'fix the gate')
+  expect(first.context?.some(c => c.includes('stop gate over-fires'))).toBe(true)
+  const second = await submit($, 'and again')
+  expect((second.context ?? []).some(c => c.includes('stop gate over-fires'))).toBe(false)
+  await ui.unmount()
 })
