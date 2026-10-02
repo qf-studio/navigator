@@ -231,7 +231,7 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row">
+        <Box flexDirection="row" marginBottom={1}>
           <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
             {title('context')}
             <Text wrap="truncate-end">
