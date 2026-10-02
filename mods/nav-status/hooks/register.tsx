@@ -41,6 +41,20 @@ const usage = atom({ plugin: 'nav-status', key: 'usage' } as const, null as NavU
 const history = atom({ plugin: 'nav-status', key: 'history' } as const, NO_HISTORY)
 const pinned = atom({ plugin: 'nav-status', key: 'pinned' } as const, null as string | null)
 
+// $.state survives a hot reload, so a value written by an older version of this module
+// can lack fields added since. Read through these to merge stored values over defaults.
+const readPane = async ($: EngineInterface): Promise<NavPane> =>
+  ({ ...EMPTY_NAV, ...((await read($, pane)) ?? {}) })
+const readHistory = async ($: EngineInterface): Promise<NavHistory> => {
+  const h = await read($, history)
+  return {
+    ctx: Array.isArray(h?.ctx) ? h.ctx : [],
+    saved: Array.isArray(h?.saved) ? h.saved : [],
+  }
+}
+const readActivity = async ($: EngineInterface): Promise<NavActivity> =>
+  ({ ...NO_ACTIVITY, ...((await read($, activity)) ?? {}) })
+
 type Json = Record<string, unknown>
 
 const readJson = async ($: EngineInterface, path: string): Promise<Json | null> => {
@@ -140,8 +154,8 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
 /** Memories for the concepts a prompt names; leaves the pane alone when none match. */
 const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
   const root = await projectRoot($)
-  const current = await read($, pane)
-  if (root === null || current === null) return
+  const current = await readPane($)
+  if (root === null) return
   const hits = matchConcepts(prompt, current.concepts)
   if (hits.length === 0) return
   const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
@@ -149,7 +163,7 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
     '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
   const memories = parseMemories(out)
   if (memories.length > 0) {
-    await update($, pane, p => ({ ...(p ?? EMPTY_NAV), memories, memoriesFor: hits.join(', ') }))
+    await update($, pane, p => ({ ...EMPTY_NAV, ...(p ?? {}), memories, memoriesFor: hits.join(', ') }))
   }
 }
 
@@ -179,7 +193,10 @@ export const register: Register = on => {
     const ran = await next(e)
     if (e.file_path.includes('/.agent/') && ran.deny === undefined) {
       const bytes = (ran.text ?? '').length
-      await update($, activity, a => ({ ...a, docsBytes: a.docsBytes + bytes, docsReads: a.docsReads + 1 }))
+      await update($, activity, a => {
+        const x = { ...NO_ACTIVITY, ...a }
+        return { ...x, docsBytes: x.docsBytes + bytes, docsReads: x.docsReads + 1 }
+      })
     }
     return ran
   })
@@ -187,7 +204,7 @@ export const register: Register = on => {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
     if (/\bgit\s+commit\b/.test(e.command) && ran.deny === undefined && ran.isError !== true) {
-      await update($, activity, a => ({ ...a, committed: true }))
+      await update($, activity, a => ({ ...NO_ACTIVITY, ...a, committed: true }))
     }
     return ran
   })
@@ -229,7 +246,10 @@ export const register: Register = on => {
       const tokens = used === undefined ? 0
         : used.input_tokens + used.cache_read_input_tokens + used.cache_creation_input_tokens
           + used.output_tokens
-      await update($, activity, a => ({ ...a, agentRuns: a.agentRuns + 1, agentTokens: a.agentTokens + tokens }))
+      await update($, activity, a => {
+        const x = { ...NO_ACTIVITY, ...a }
+        return { ...x, agentRuns: x.agentRuns + 1, agentTokens: x.agentTokens + tokens }
+      })
       return next(e)
     }
     const u = await $.session.usage()
@@ -245,10 +265,14 @@ export const register: Register = on => {
       })),
       usd: u.cost?.usd ?? null,
     }))
-    const a = await read($, activity)
-    const tree = (await read($, pane))?.docsTreeBytes ?? 0
-    await update($, activity, x => ({ ...x, committed: false, lastTurnCommitted: x.committed }))
-    await update($, history, h => ({
+    const a = await readActivity($)
+    const tree = (await readPane($)).docsTreeBytes
+    const h = await readHistory($)
+    await update($, activity, x => {
+      const y = { ...NO_ACTIVITY, ...x }
+      return { ...y, committed: false, lastTurnCommitted: y.committed }
+    })
+    await update($, history, () => ({
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
       saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
     }))
@@ -269,10 +293,10 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const s = await read($, status)
-    const p = (await read($, pane)) ?? EMPTY_NAV
+    const p = await readPane($)
     const u = await read($, usage)
-    const a = await read($, activity)
-    const hist = await read($, history)
+    const a = await readActivity($)
+    const hist = await readHistory($)
     const chosen = await read($, pinned)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
