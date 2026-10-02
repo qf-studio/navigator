@@ -38,6 +38,7 @@ export type Io = {
   run: (argv: readonly string[], cwd: string, timeoutMs: number) =>
     Promise<{ exitCode: number; stdout: string }>
   cwd: () => Promise<string>
+  sessionId: () => Promise<string | null>
   nowMs: () => Promise<number>
   version: () => Promise<{ version: string; base?: string }>
   env: () => Promise<EnvSnapshot>
@@ -52,6 +53,11 @@ export type Io = {
 
 export type OpCtx = {
   io: Io
+  sessionId: string | null
+  /** Shared schema-2 runtime state; ops mutate it, the event saves it once. */
+  state: Json
+  /** Judge answer cached per event (undefined = not asked yet). */
+  judgment?: unknown
   event: string
   payload: Json
   config: Json

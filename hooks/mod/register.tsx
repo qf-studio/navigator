@@ -14,7 +14,7 @@ import type { Io } from './lib/types'
 import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
 import { announce } from './owns'
-import { runOps } from './runner'
+import { runEvent } from './runner'
 import {
   clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
   tokensOf, turnsTo,
@@ -64,6 +64,7 @@ const ioOf = ($: EngineInterface): Io => ({
     return { exitCode: r.exitCode, stdout: r.stdout }
   },
   cwd: () => $.session.cwd(),
+  sessionId: async () => (await $.session.id()) || null,
   nowMs: () => $.clock.now(),
   version: async () => {
     const v = await $.session.version()
@@ -202,7 +203,7 @@ export const register: Register = on => {
 
   on('prompt.submit', async ($, e, next) => {
     const ctx = await makeCtx(ioOf($), 'UserPromptSubmit', { prompt: e.text })
-    const merged = ctx === null ? null : await runOps(ctx, EVENT_OPS.UserPromptSubmit ?? [])
+    const merged = ctx === null ? null : await runEvent(ctx, EVENT_OPS.UserPromptSubmit ?? [])
     if (merged?.drop != null) return { drop: merged.drop }
     const memory = await read($, pinned)
     if (memory !== null) await update($, pinned, () => null)

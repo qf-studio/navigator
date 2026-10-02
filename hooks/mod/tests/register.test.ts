@@ -16,12 +16,15 @@ type EnvSet = { name: string; value?: string }
 
 // The world beneath the plugin: an in-memory FS, a fixed cwd, a fixed usage.
 const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
+  const allWrites: Write[] = []
+  // Only writes to the personal switch; the runtime state file is saved every event.
   const writes: Write[] = []
   const envSets: EnvSet[] = []
   const opened: string[] = []
   // A Navigator project: ops only run where `.agent/` exists (v7 parity).
   if (!(`${AGENT}/.nav-config.json` in files)) files[`${AGENT}/.nav-config.json`] = '{}'
   on('session.version', () => ({ value: { version: '2.1.287', base: '2.1.287', builtAt: '' } }))
+  on('session.id', () => ({ value: 'session-1' }))
   mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
   mock.clock(on, { now: 1_700_000_000_000 })
   on('session.cwd', () => ({ value: CWD }))
@@ -42,7 +45,8 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
     e.path in files ? { value: files[e.path] ?? '' } : { deny: `missing ${e.path}` },
   )
   on('fs.write', (_$, e) => {
-    writes.push({ path: e.path, text: e.text })
+    allWrites.push({ path: e.path, text: e.text })
+    if (e.path === PERSONAL) writes.push({ path: e.path, text: e.text })
     files[e.path] = e.text
     return { value: undefined }
   })
@@ -86,7 +90,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
             : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
     },
   }))
-  return { writes, envSets, opened }
+  return { writes, allWrites, envSets, opened }
 }
 
 const submit = ($: Engine, text: string) =>
@@ -123,7 +127,7 @@ test('(a2) injects nothing when nothing is switched on', async ($, on) => {
   world(on, {})
   const r = await submit($, 'fix the flaky test')
   expect(r.drop).toBeUndefined()
-  expect(r.context ?? []).toHaveLength(0)
+  expect((r.context ?? []).some(c => c.includes('ADHD MODE: on ('))).toBe(false)
 })
 
 test('(b) a repo pin off wins over the personal switch', async ($, on) => {
@@ -133,7 +137,7 @@ test('(b) a repo pin off wins over the personal switch', async ($, on) => {
   })
   const r = await submit($, 'fix the flaky test')
   expect(r.drop).toBeUndefined()
-  expect(r.context ?? []).toHaveLength(0)
+  expect((r.context ?? []).some(c => c.includes('ADHD MODE: on ('))).toBe(false)
 })
 
 test('(c) "adhd mode on" drops the prompt and writes the personal file', async ($, on) => {
@@ -209,7 +213,7 @@ test('(d4) subagent turns do not drive the band', async ($, on) => {
 test('(e) session.start claims ADHD ownership through the environment', async ($, on) => {
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_adhd' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_adhd,prompt_brief' })
 })
 
 const NAV_CMD = {
@@ -335,5 +339,5 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
   const { envSets } = world(on, {})
   await $.classic.SessionStart({ source: 'compact' } as never)
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_adhd' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_adhd,prompt_brief' })
 })

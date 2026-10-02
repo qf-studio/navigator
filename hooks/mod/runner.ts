@@ -3,6 +3,7 @@
 // per-op crash isolation with a breaker, merge in registry order.
 import { clamp } from './lib/budget'
 import { configAllows } from './lib/config'
+import { save } from './lib/state'
 import type { Merged, Op, OpCtx, OpResult } from './lib/types'
 import { noteCrash, owns } from './owns'
 
@@ -54,6 +55,16 @@ export const merge = (event: string, results: readonly OpResult[]): Merged => {
   }
 }
 
+/** runtime._note_op_error: append {op, error, ts} to meta.op_errors (bounded on save). */
+const noteOpError = (ctx: OpCtx, op: string, error: unknown): void => {
+  const meta = (ctx.state.meta ?? {}) as Record<string, unknown>
+  const list = Array.isArray(meta.op_errors) ? meta.op_errors : []
+  const name = error instanceof Error ? error.name : typeof error
+  list.push({ op, error: `${ctx.event}/${op}: ${name}`, ts: ctx.now })
+  meta.op_errors = list
+  ctx.state.meta = meta
+}
+
 export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> => {
   const ordered = ops
     .map((op, index) => ({ op, index }))
@@ -69,7 +80,8 @@ export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> =>
     let result: OpResult | null
     try {
       result = await op.run(ctx)
-    } catch {
+    } catch (error) {
+      noteOpError(ctx, op.spec.name, error)
       await noteCrash(ctx.io, op.spec.name)
       continue
     }
@@ -79,4 +91,11 @@ export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> =>
     outcomes.push({ index, result })
   }
   return merge(ctx.event, outcomes.sort((a, b) => a.index - b.index).map(o => o.result))
+}
+
+/** One event end to end: run the ops, then persist the shared runtime state once. */
+export const runEvent = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> => {
+  const merged = await runOps(ctx, ops)
+  await save(ctx.io, ctx.root, ctx.state as never, ctx.sessionId, ctx.now)
+  return merged
 }

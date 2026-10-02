@@ -42,7 +42,7 @@ describe('judge client', () => {
   const io = (over: Partial<Io>): Io => ({
     pluginRoot: '/p', read: async () => { throw new Error('none') }, write: async () => {},
     exists: async () => false, list: async () => [], run: async () => ({ exitCode: 1, stdout: '' }),
-    cwd: async () => '/r', nowMs: async () => 0, version: async () => ({ version: '2.1.287' }),
+    cwd: async () => '/r', sessionId: async () => 's', nowMs: async () => 0, version: async () => ({ version: '2.1.287' }),
     env: async () => ({ HOME: '/home/me' }), setOwned: async () => {}, disowned: async () => [],
     noteCrash: async () => 0, disown: async () => {},
     http: async () => ({ ok: true, status: 200, text: JSON.stringify((JUDGE_CASES[0] as { doc: unknown }).doc) }),

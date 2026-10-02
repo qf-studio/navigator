@@ -27,3 +27,12 @@ export const stripAll = (text: string): string => {
   }
   return out !== text ? out.replace(ORIGINAL_PROMPT_LINE, '') : out
 }
+
+export const REDACTION_PLACEHOLDER = '[redacted]'
+
+/** sentinels.redact_phrases: replace each phrase case-insensitively with the placeholder. */
+export const redactPhrases = (text: string, phrases: readonly string[]): string =>
+  phrases.filter(Boolean).reduce(
+    (t, p) => t.replace(new RegExp(p.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'giu'), REDACTION_PLACEHOLDER),
+    text,
+  )

@@ -20,6 +20,7 @@ const fakeIo = (version = '2.1.287'): FakeIo => {
     list: async () => [],
     run: async () => ({ exitCode: 1, stdout: '' }),
     cwd: async () => '/repo',
+    sessionId: async () => 's1',
     nowMs: async () => 0,
     version: async () => ({ version, base: version }),
     env: async () => ({}),
@@ -34,7 +35,8 @@ const fakeIo = (version = '2.1.287'): FakeIo => {
 }
 
 const ctxOf = (io: Io, event = 'UserPromptSubmit', pilotExecutor = false): OpCtx => ({
-  io, event, payload: {}, config: {}, root: '/repo', pilotExecutor, now: 0,
+  io, event, payload: {}, config: {}, root: '/repo', pilotExecutor, now: 0, sessionId: 's1',
+  state: {},
 })
 
 // Ops named after OWNED entries so the ownership check lets them run.

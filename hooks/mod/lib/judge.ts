@@ -171,3 +171,56 @@ export const judgePrompt = async (
 }
 
 export { thresholdsOf }
+
+// ---- per-event cache and telemetry (judge.for_ctx / record_call / record_axes) ---------
+
+const AXES = ['loop', 'complexity', 'task', 'ambiguity']
+const OUTCOMES = ['overridden', 'agreed', 'undecided']
+
+const section = (state: Json): Json => {
+  const block = state.judge
+  if (block !== null && typeof block === 'object' && !Array.isArray(block)) return block as Json
+  const fresh: Json = {}
+  state.judge = fresh
+  return fresh
+}
+
+const int = (v: unknown): number => (typeof v === 'number' ? Math.trunc(v) : 0)
+
+export const recordCall = (state: Json, judgment: Judgment | null, enabled: boolean): void => {
+  if (!enabled) return
+  const b = section(state)
+  b.calls = int(b.calls) + 1
+  if (judgment === null) {
+    b.failed = int(b.failed) + 1
+    return
+  }
+  b.model = judgment.model
+  b.latency_last_ms = Math.trunc(judgment.latencyMs)
+  b.latency_max_ms = Math.max(int(b.latency_max_ms), Math.trunc(judgment.latencyMs))
+}
+
+export const recordAxes = (state: Json, axes: Record<string, string> | undefined): void => {
+  if (!axes || Object.keys(axes).length === 0) return
+  const b = section(state)
+  const table = (b.axes !== null && typeof b.axes === 'object' ? b.axes : {}) as Record<string, Json>
+  b.axes = table
+  for (const [axis, outcome] of Object.entries(axes)) {
+    if (!AXES.includes(axis) || !OUTCOMES.includes(outcome)) continue
+    const row = table[axis] ?? {}
+    row[outcome] = int(row[outcome]) + 1
+    table[axis] = row
+  }
+}
+
+/** The judgment for this event, computed once and shared by gate and brief. */
+export const forCtx = async (
+  ctx: { io: Io; config: Json; pilotExecutor: boolean; state: Json; judgment?: unknown },
+  message: string,
+): Promise<Judgment | null> => {
+  if (ctx.judgment !== undefined) return ctx.judgment as Judgment | null
+  const judgment = await judgePrompt(ctx.io, message, ctx.config, ctx.pilotExecutor)
+  ctx.judgment = judgment
+  recordCall(ctx.state, judgment, Boolean(settings(ctx.config).enabled) && !ctx.pilotExecutor)
+  return judgment
+}
