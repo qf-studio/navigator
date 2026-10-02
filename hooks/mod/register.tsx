@@ -481,14 +481,18 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
-    const { s, dest, here } = await navState($)
+    const { s, dest, route, here } = await navState($)
     const detour = await read($, offRoute)
     const left = turnsTo((await readHistory($)).ctx, 70)
     const percent = s?.ctxPercent ?? null
+    const at = here === null ? 0 : route.indexOf(here) + 1
     const text = bandText({
       destination: dest?.title ?? null,
       waypoint: here?.label ?? null,
-      offRoute: (detour?.count ?? 0) >= OFF_ROUTE_AFTER,
+      position: at,
+      total: route.length,
+      next: s?.next ?? null,
+      offRoute: (detour?.count ?? 0) >= OFF_ROUTE_AFTER ? (detour?.topic ?? 'a detour') : null,
       lowFuel: (percent !== null && percent >= 70) || (left !== null && left <= LOW_FUEL_TURNS),
     }, e.props.bodyColumns)
     if (!text) return next(e)

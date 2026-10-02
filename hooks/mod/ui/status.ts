@@ -7,7 +7,8 @@ const PHASE_RE = /\bPhase:\s*(INIT|RESEARCH|IMPL|VERIFY|COMPLETE)\b/
 const NEXT_ACTION_RE = /^(?:\*\*)?Next(?: action)?:(?:\*\*)?\s*(.+)$/im
 const LEAD_MARKUP_RE = /^(?:[#>*\-]+\s*|\d+\.\s*)+/
 const BOLD_RE = /\*\*/g
-const STATUS_LINE_RE = /^(NAVIGATOR_STATUS|Phase:|Iteration:|Progress:|Stagnation:|State Hash|Previous Hash|Exit Conditions|Completion Indicators|```)/
+// Never 'an action': NAVIGATOR_STATUS fields, code fences, table rows, intent-brief fields.
+const STATUS_LINE_RE = /^(NAVIGATOR_STATUS|Phase:|Iteration:|Progress:|Stagnation:|State Hash|Previous Hash|Exit Conditions|Completion Indicators|```|\||(\*\*)?(Goal|Scope|Approach|Limits|Verify|Won't do|Contradiction)(\*\*)?\s*[:|])/i
 
 export const parsePhase = (answer: string): NavPhase | null => {
   const m = PHASE_RE.exec(answer)

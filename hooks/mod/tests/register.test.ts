@@ -170,12 +170,12 @@ test('(d) the band is one quiet line: waypoint, then destination once known', as
   await complete($, 'NAVIGATOR_STATUS\nPhase: IMPL\nIteration: 2/5\nNext Action: run tests\n')
   for (const surface of SURFACES) {
     const ui = await band($, surface)
-    expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('● impl')
+    expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('on route: ● impl 2/4 · next: run tests')
     await ui.unmount()
   }
   await $.command.run(NAV_CMD)
   const ui = await band($, 'terminal')
-  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('→ Typed judge, phase 2 · impl')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('on route: Typed judge, phase 2 · ● impl 2/4 · next: run tests')
   await ui.unmount()
 })
 
@@ -183,7 +183,7 @@ test('(d2) a goal stated in a brief becomes the destination', async ($, on) => {
   world(on, {})
   await complete($, '| Goal | Ship the route view |\n| Scope | pane + band |\nPhase: RESEARCH\n')
   const ui = await band($, 'terminal')
-  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('→ Ship the route view · research')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('on route: Ship the route view · ● research 1/4')
   await ui.unmount()
 })
 
@@ -363,7 +363,7 @@ test('(p) two substantive prompts away from the destination open the off-route p
   await ui.unmount()
   await submit($, 'draft another threads reply for the marketing audience please')
   ui = await band($, 'terminal')
-  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('⚠ off route · /nav')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toMatch(/^off route: .+ · \/nav to park or go back$/)
   await ui.unmount()
   const all = await texts($)
   expect(all).toContain('⚠ off route')

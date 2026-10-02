@@ -32,12 +32,13 @@ describe('route model', () => {
     expect(isOffRoute('fix the routing bug in the pane rendering code', dest)).toBe(false)
     expect(isOffRoute('anything at all here goes', new Set())).toBe(false)
   })
-  test('band stays one quiet line', () => {
-    expect(bandText({ destination: null, waypoint: null, offRoute: false, lowFuel: false }, 80)).toBe('')
-    expect(bandText({ destination: 'Ship v8', waypoint: 'verify', offRoute: false, lowFuel: true }, 80))
-      .toBe('→ Ship v8 · verify · compact soon')
-    expect(bandText({ destination: 'Ship v8', waypoint: 'verify', offRoute: true, lowFuel: true }, 80))
-      .toBe('⚠ off route · /nav')
+  test('band follows "<state>: <what>" in every state', () => {
+    const base = { destination: 'Ship v8', waypoint: 'verify', position: 3, total: 5, next: 'run headless matrix', offRoute: null, lowFuel: false }
+    expect(bandText(base, 120)).toBe('on route: Ship v8 · ● verify 3/5 · next: run headless matrix')
+    expect(bandText({ ...base, lowFuel: true }, 120)).toBe('low fuel: Ship v8 · ● verify 3/5 · compact after this waypoint')
+    expect(bandText({ ...base, offRoute: 'threads feedback' }, 120)).toBe('off route: threads feedback · /nav to park or go back')
+    expect(bandText({ ...base, destination: null, waypoint: null, next: null }, 120)).toBe('')
+    expect(bandText(base, 20)).toBe('on route: Ship v8 ·…')
   })
   test('next task number', () => {
     expect(nextTaskNumber(['TASK-84-x.md', 'TASK-9.md', 'README.md'])).toBe(85)
