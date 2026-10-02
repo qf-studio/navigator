@@ -49,6 +49,12 @@ export type Io = {
   disowned: () => Promise<string[]>
   noteCrash: (op: string) => Promise<number>
   disown: (op: string) => Promise<void>
+  // ---- step 5d io ----
+  /** `$.fs.stat`: kind and mtime, or null when missing. Optional: falls back to io.list. */
+  stat?: (path: string) => Promise<{ kind: 'file' | 'dir' | 'other'; mtimeMs: number } | null>
+  /** Minutes east of UTC at `ms` (Python local time). Optional: falls back to the JS Date zone. */
+  localOffsetMinutes?: (ms: number) => number
+  // ---- end step 5d io ----
 }
 
 export type OpCtx = {
