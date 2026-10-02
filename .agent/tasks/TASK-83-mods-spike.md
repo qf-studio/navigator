@@ -50,9 +50,9 @@ mods/nav-status/
 | `claude -p --plugin-dir mods/nav-status` + Bash `echo $NAVIGATOR_MOD_OWNS` | `adhd` — `$.env.set` reaches spawned children |
 | Dispatcher with/without the var | 1 / 0 ADHD blocks |
 | Model-side count of `ADHD MODE: on (` with the mod loaded | exactly 1 (no double injection) |
-| Band drawn in a live terminal | **not verified** (needs an interactive session; see below) |
+| Band drawn in a live terminal | ✅ 2026-10-02: `[nav] phase IMPL · ctx 4% · next: run the mod tests` above the input box |
 
-Live check still to do by hand:
+Live check, as run (band seen, debug log shows the hook answering `ui.render` with its own tree, no refusal):
 ```
 claude --plugin-dir "$PWD/mods/nav-status" --debug
 ```
