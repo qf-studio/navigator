@@ -7,6 +7,7 @@ const PHASE_RE = /\bPhase:\s*(INIT|RESEARCH|IMPL|VERIFY|COMPLETE)\b/
 const NEXT_ACTION_RE = /^(?:\*\*)?Next(?: action)?:(?:\*\*)?\s*(.+)$/im
 const LEAD_MARKUP_RE = /^(?:[#>*\-]+\s*|\d+\.\s*)+/
 const BOLD_RE = /\*\*/g
+const STATUS_LINE_RE = /^(NAVIGATOR_STATUS|Phase:|Iteration:|Progress:|Stagnation:|State Hash|Previous Hash|Exit Conditions|Completion Indicators|```)/
 
 export const parsePhase = (answer: string): NavPhase | null => {
   const m = PHASE_RE.exec(answer)
@@ -15,7 +16,8 @@ export const parsePhase = (answer: string): NavPhase | null => {
 
 /** The first non-empty line, stripped of list/heading markup and bold markers. */
 export const firstLine = (answer: string): string | null => {
-  const line = answer.split('\n').map(l => l.trim()).find(l => l.length > 0)
+  const line = answer.split('\n').map(l => l.trim())
+    .find(l => l.length > 0 && !STATUS_LINE_RE.test(l))
   if (!line) return null
   const bare = line.replace(LEAD_MARKUP_RE, '').replace(BOLD_RE, '').trim()
   return bare.length > 0 ? bare : null

@@ -23,6 +23,9 @@ const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
 const NO_READS: NavReads = { total: 0, docs: 0 }
 const EMPTY_NAV: NavPane = { tasks: [], marker: null, memories: [], graph: null }
+const KIND_COLOR: Record<string, string> = {
+  PITFALL: 'red', DECISION: 'blue', PATTERN: 'green', LEARNING: 'cyan',
+}
 
 const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
 const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
@@ -210,35 +213,40 @@ export const register: Register = on => {
     const width = Math.max(24, e.props.bodyColumns)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
+    const ctxColor = percent === null ? 'gray' : percent < 50 ? 'green' : percent < 70 ? 'yellow' : 'red'
     const phase = s?.phase ? `phase ${s.phase}` : 'phase —'
-    const task = p.tasks[p.tasks.length - 1] ?? 'no task in progress'
-    const compactHint = percent !== null && percent >= 70 ? 'compact: due' : 'compact: safe'
-    const marker = p.marker === null ? 'no marker yet' : `marker ${cut(p.marker, width - 10)}`
+    const current = p.tasks[p.tasks.length - 1] ?? null
+    const marker = p.marker === null ? 'no marker yet' : `marker ${cut(p.marker, width - 14)}`
     const rates = u === null ? '' : usageLine(u.rates, u.usd)
-    const fanOut = r.total - r.docs >= 5 ? '  → use an Agent' : ''
+    const fanOut = r.total - r.docs >= 5
     const graph = p.graph === null
-      ? 'graph: not initialized'
-      : `graph: ${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
+      ? 'graph not initialized'
+      : `${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
     const pinHint = chosen === null
       ? 'press ▸ to pin a memory into your next prompt'
       : 'pinned: rides your next prompt once'
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" columnGap={2}>
-          <Text bold>{cut(task, width - phase.length - 3)}</Text>
-          <Text dimColor>{phase}</Text>
+        <Box borderStyle="round" borderColor={ctxColor} paddingX={1} flexDirection="column">
+          <Box flexDirection="row" columnGap={2}>
+            <Text bold color="cyan">{current ?? 'no task in progress'}</Text>
+            <Text dimColor>{phase}</Text>
+          </Box>
+          {s?.next ? <Text wrap="truncate-end">→ {s.next}</Text> : null}
+          <Text>
+            <Text color={ctxColor}>{bar(percent, Math.max(10, width - 16))}</Text> {pct}
+          </Text>
+          <Text dimColor>{percent !== null && percent >= 70 ? 'compact due' : 'compact safe'} · {marker}</Text>
+          {rates ? <Text dimColor>{rates}</Text> : null}
         </Box>
-        {s?.next ? <Text wrap="truncate-end">next: {s.next}</Text> : null}
+        <Box flexDirection="row" columnGap={2}>
+          <Text>reads <Text bold>{r.total}</Text><Text dimColor> ({r.docs} docs)</Text></Text>
+          {fanOut ? <Text color="yellow">→ use an Agent</Text> : null}
+        </Box>
+        <Text dimColor>graph {graph}</Text>
         <Text> </Text>
-        <Text>context {bar(percent, Math.max(10, width - 14))} {pct}</Text>
-        <Text dimColor>{compactHint} · {marker}</Text>
-        {rates ? <Text dimColor>{rates}</Text> : null}
-        <Text> </Text>
-        <Text>reads {r.total} ({r.docs} in .agent/){fanOut}</Text>
-        <Text>{graph}</Text>
-        <Text> </Text>
-        <Text dimColor>── relevant memories ──</Text>
+        <Text bold color="magenta">relevant memories</Text>
         {p.memories.length === 0 && <Text dimColor>none for the open tasks</Text>}
         {p.memories.map((m, i) => (
           <Box flexDirection="row" columnGap={1}>
@@ -249,16 +257,22 @@ export const register: Register = on => {
               onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
             />
             <Box flexDirection="column">
-              <Text dimColor>{m.kind}{m.percent === null ? '' : ` ${m.percent}%`}</Text>
-              <Text wrap="wrap">{m.text}</Text>
+              <Text color={KIND_COLOR[m.kind] ?? 'white'} bold>
+                {m.kind}<Text dimColor>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+              </Text>
+              <Text wrap="wrap" dimColor={chosen !== null && chosen !== m.text}>{m.text}</Text>
             </Box>
           </Box>
         ))}
-        <Text dimColor>{pinHint}</Text>
+        <Text dimColor italic>{pinHint}</Text>
         <Text> </Text>
-        <Text dimColor>── open tasks ──</Text>
+        <Text bold color="magenta">open tasks</Text>
         {p.tasks.length === 0 && <Text dimColor>none marked in progress</Text>}
-        {p.tasks.slice(-5).map(t => <Text>{t}</Text>)}
+        {p.tasks.slice(-5).map(t => (
+          <Text color={t === current ? 'cyan' : undefined} dimColor={t !== current}>
+            {t === current ? '● ' : '○ '}{t}
+          </Text>
+        ))}
         <Text> </Text>
         <Box flexDirection="row" columnGap={3}>
           <Button
