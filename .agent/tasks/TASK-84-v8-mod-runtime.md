@@ -246,7 +246,9 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - Note for the release step: `tests/fixtures/tier1.gen.ts` embeds the plugin version, so the
   version bump must re-run `scripts/gen_mod_data.py`.
 - Headless check with the mod loaded: a "Run until done" prompt yields exactly one WORKFLOW CHECK
-  (same count as the Python-only run, `CLAUDE_CODE_DISABLE_FUNCTION_HOOKS=1`); Bash sees
+  (**correction**: the comparison run with `CLAUDE_CODE_DISABLE_FUNCTION_HOOKS=1` was NOT Python-only —
+  neither that variable nor `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=0` disables mods on 2.1.287; the real
+  fallback leg is the 2.1.284 binary, see step 10); Bash sees
   `NAVIGATOR_MOD_OWNS=prompt_gate,prompt_tier1,prompt_adhd,prompt_brief`.
 - CLI gotcha: `--debug` takes an optional filter, so `claude -p --debug "<prompt>"` swallows the
   prompt. Put the prompt first: `claude -p "<prompt>" --debug`.
@@ -307,3 +309,28 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - Parity fixes found on the way: `clamp` counts code points like Python (astral fixtures added);
   crash bookkeeping mirrors `_handle_op_crash` (class name only, ISO ts, health file).
 - 82 kit tests, 10 files.
+
+### Step 10 (automated part) — verification matrix (2026-10-02) ✅
+| Leg | Ownership seen by Bash | WORKFLOW CHECK | session doc | ADHD block |
+|---|---|---|---|---|
+| CC 2.1.287, mod loaded | all 16 ops | 1 | 1 | 1 |
+| CC 2.1.284 (mods rollout-gated off) = Python fallback | `[]` | 1 | 2* | 1 |
+| CC 2.1.287 + `PILOT_EXECUTOR=1` | all 16 | 0 | — | 0 (toggle phrase reaches the model, 1 turn) |
+\* the second copy is the personal `.claude/settings.local.json` dogfood hooks (working-tree
+dispatcher for SessionStart/Read/Stop on top of the plugin's hooks). With the mod they fast-exit;
+on the fallback both inject. Local setup, not a product issue (it also explains the doubled
+session block in v7 dogfood sessions).
+- Toggle phrase without Pilot: dropped with **0 model turns**. Stop block forces one continuation
+  (num_turns=3 probe, step 5c).
+- Latency, prompt path (judge on, memory recall on): mod `prompt.submit` 200 ms vs Python dispatcher
+  median 407 ms (spawn incl.). A fully owned Python hook still costs ~38 ms per event (spawn +
+  fast exit); a shell-level guard could remove it later (would extend the single-policy guard).
+- Shell gotcha: `ls` is aliased to `eza` on this machine, so `ls -t` does not sort by time; use
+  `/bin/ls -t` to find the newest debug log.
+
+### Left before release (needs the user)
+1. Interactive dogfood: `/clear` and `/resume` re-inject once; `/compact` writes a marker; `/nav`;
+   hot reload mid-session; a subagent gets context; config-change toast; `/theme` → Pilot.
+2. Go-ahead for the outward steps: merge `v8` → `main`, `scripts/bump-version.sh 8.0.0`, CHANGELOG,
+   tag push (CI publishes the release), docs-site sync + `vercel --prod`.
+3. Optional: drop the `.claude/settings.local.json` dogfood hooks (redundant with the plugin).
