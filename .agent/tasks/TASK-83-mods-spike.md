@@ -39,6 +39,16 @@ mods/nav-status/
   `turn.complete` (`e.answer`, main loop only) and `$.session.usage().context.percent`.
   Quiet before the first turn, under a survey, and for subagent turns.
 
+### Navigator pane (added 2026-10-02, commit 0f71fcd)
+
+`/nav` opens a pane (`hooks/nav.ts` pure parsing + a `ui.render {component: Pane,
+requestId: nav}` hook): in-progress task + loop phase, context fill bar from
+`$.session.usage()`, compact hint, newest marker, Read counts with a fan-out nudge, up to
+four relevant memories from `memory_recall.py --auto` with `▸` to pin one into the next
+prompt once, hotkeys `m` marker / `c` compact / `g` graph health / `r` refresh. State lives
+in `$.state` atoms and reloads on `classic.SessionStart` (clear/resume/fork), since `/clear`
+resets `$.state` and `session.start` does not fire again. 13 kit tests on both surfaces.
+
 ## Verified
 
 | Check | Result |
