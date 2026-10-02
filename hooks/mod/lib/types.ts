@@ -60,6 +60,12 @@ export type Io = {
   runCapture?: (argv: readonly string[], cwd: string, timeoutMs: number) =>
     Promise<{ exitCode: number; stdout: string; stderr: string }>
   // ---- step 5b io ----
+  // ---- step 5d io ----
+  /** `$.fs.stat`: kind and mtime, or null when missing. Optional: falls back to io.list. */
+  stat?: (path: string) => Promise<{ kind: 'file' | 'dir' | 'other'; mtimeMs: number } | null>
+  /** Minutes east of UTC at `ms` (Python local time). Optional: falls back to the JS Date zone. */
+  localOffsetMinutes?: (ms: number) => number
+  // ---- end step 5d io ----
 }
 
 export type OpCtx = {
