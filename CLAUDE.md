@@ -33,31 +33,44 @@ Strategic loading saves 92% of context for actual work.
 
 ---
 
-## Navigator Runtime (v7)
+## Navigator Runtime (v8)
 
-As of v7.0.0, Navigator's workflow is enforced by the hook runtime — a single dispatcher
-(`hooks/nav_dispatch.py` → `nav_hook_lib.runtime.dispatch`) routing op modules in
-`hooks/ops/`. The v6 prose mandates that used to live in this file — the WORKFLOW CHECK
-block requirement, the session-start ritual, the forbidden-actions list, loop exit rules,
-and intent-brief instructions — are retired as mandates. Each behavior lives on as an op
-with a config off-switch in `.agent/.nav-config.json`:
+Navigator's workflow is enforced by a hook runtime, not by prose in this file. As of v8.0.0
+that runtime is a **Claude Code mod**: one in-process TypeScript module
+(`hooks/hooks.json` → `hooks/mod/register.tsx`) that runs every op on Claude Code
+**2.1.287 or newer**. The v7 Python dispatcher (`hooks/nav_dispatch.py` →
+`nav_hook_lib.runtime`) stays registered as the **fallback**: on older Claude Code, where an
+organization's policy blocks mods, or when an op crashes three times in a session, Python runs
+that op instead. The mod announces what it owns in `NAVIGATOR_MOD_OWNS`; the Python dispatcher
+skips owned ops in one place and exits immediately when it owns nothing to do. Both share one
+state file, `.agent/.nav-runtime-state.json`, so an op handed across sees the same state.
 
-| Behavior | Op | Off-switch |
-|---|---|---|
-| Workflow gating | prompt_gate | `workflow_enforcer_hook.enabled`, `.strict_block` |
-| Intent briefs on ambiguous prompts | prompt_brief | `brief_hook.enabled` |
-| Repeated-Read guard | read_guard | `read_guard_hook.enabled`, `.strict_block` |
-| Session context injection | session_start | `session_start_hook.enabled` |
-| Workflow/loop state recording | stop_state | `workflow_state_hook.enabled` |
-| Completion gate (forced continuation) | stop_completion | `stop_completion.continue_enabled` |
-| Tier-1 instant answers | prompt_tier1 | `tier1.enabled`, per rule via `tier1.rules` |
-| Context markers around compaction | compact_marker | `compact_hook.enabled` |
-| Typed judge behind the prompt scorers | judge (lib, used by prompt_gate + prompt_brief) | `judge.enabled` |
-| ADHD mode toggle + reply-shape block | prompt_adhd | `adhd_mode.enabled`; switch via `adhd mode on/off` or `adhd_mode.on` |
+Each behavior is an op with a config off-switch in `.agent/.nav-config.json`:
+
+| Behavior | Op | Mod event | Off-switch |
+|---|---|---|---|
+| Workflow gating | prompt_gate | `prompt.submit` | `workflow_enforcer_hook.enabled`, `.strict_block` |
+| Tier-1 instant answers | prompt_tier1 | `prompt.submit` | `tier1.enabled`, per rule via `tier1.rules` |
+| ADHD mode toggle + reply-shape block | prompt_adhd | `prompt.submit` | `adhd_mode.enabled`; `adhd mode on/off` or `adhd_mode.on` |
+| Intent briefs on ambiguous prompts | prompt_brief | `prompt.submit` | `brief_hook.enabled` |
+| Repeated-Read guard | read_guard | `tool.call` (Read) | `read_guard_hook.enabled`, `.strict_block` |
+| Session context injection | session_start | `classic.SessionStart` | `session_start_hook.enabled` |
+| Workflow/loop state recording | stop_state | `classic.Stop` | `workflow_state_hook.enabled` |
+| Completion gate (forced continuation) | stop_completion | `classic.Stop` | `stop_completion.continue_enabled` |
+| Context markers around compaction | compact_marker | `classic.PreCompact` / `PostCompact` | `compact_hook.enabled` |
+| Typed judge behind the prompt scorers | judge (lib) | — | `judge.enabled` |
 
 `stop_completion.continue_enabled`, `tier1.enabled` and `judge.enabled` ship OFF (new blocking
-or outbound features seed off). Setting the `PILOT_EXECUTOR` environment variable disables interactive/blocking hook
-behavior across all ops (single policy point: `nav_hook_lib.config.is_pilot_executor`).
+or outbound features seed off). Setting `PILOT_EXECUTOR` disables interactive/blocking
+behavior in both runtimes (one policy point each: `nav_hook_lib.config.is_pilot_executor`,
+`hooks/mod/lib/config.ts` `isPilotExecutor`).
+
+What the mod adds beyond v7: **`/nav`**, a pane with the active task, a context forecast,
+live token savings (docs loaded vs the `.agent/` tree, subagent work kept out of context),
+memories matched to each prompt, open tasks, and marker/compact buttons; a status **band**
+above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
+Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte
+by generated fixtures (`scripts/gen_mod_data.py`, `make mod-test`).
 
 The sections below describe those behaviors so humans and models know what to expect.
 This text is documentation, not the mechanism.
@@ -153,13 +166,12 @@ VERIFY, or on demand ("simplify this code"). Configure via the `simplification` 
 
 ### Auto-Update (v5.5.0)
 
-**Known gap (TASK-81, 2026-09-23)**: in v7 the SessionStart op only runs a read-only
-version-drift check; nothing in the hook runtime updates the plugin. The updating path is
-Step 1.5 of the nav-start skill, prose the model may or may not execute. Until TASK-81
-ships, update by hand after each release:
-`claude plugin update navigator@navigator-marketplace` (restart required afterward —
-Claude Code caches skill paths at session start). `auto_update.enabled` currently only
-controls the drift notice.
+**How updates work (TASK-81, v8)**: Navigator never updates itself from a hook. At session
+start the mod compares its own version with the latest GitHub release (at most every
+`auto_update.check_interval_hours`, never under Pilot) and shows a notice with the command:
+`claude plugin update navigator@navigator-marketplace`. "Start my Navigator session" runs the
+nav-start skill, whose Step 1.5 calls `auto_updater.py` once and reports its JSON. Restart
+Claude Code after an update; it caches skill paths at session start.
 
 ### Task Mode (v5.6.0)
 

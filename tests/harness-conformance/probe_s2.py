@@ -45,8 +45,14 @@ for variant in ("continue", "block"):
     occurrences = []
     for t in transcripts:
         occurrences += scan_jsonl(t, sentinel)
-    continued = sentinel in r1["result_text"] or any(
+    echoed = sentinel in r1["result_text"] or any(
         o["role"] == "assistant" for o in occurrences)
+    # Delivery-based evidence (CC 2.1.287): the hook reason reached the transcript in a
+    # non-assistant position AND the session took a second model turn, even if the model
+    # declines to repeat the code.
+    delivered = any(o["role"] != "assistant" for o in occurrences)
+    num_turns = (r1["parsed"] or {}).get("num_turns") or 0
+    continued = echoed or (delivered and num_turns >= 2)
     second_run_events = [e["event"] for e in log
                          if e.get("event") in ("fuse-present-silent-exit",
                                                "stop_hook_active-short-circuit")]
@@ -55,6 +61,8 @@ for variant in ("continue", "block"):
     results[variant] = {
         "sentinel": sentinel,
         "continuation_happened": continued,
+        "sentinel_echoed": echoed,
+        "reason_delivered": delivered,
         "fuse_consumed": fuse_after_r1,
         "run_twice_no_continuation": r2_clean,
         "second_run_hook_events": second_run_events,

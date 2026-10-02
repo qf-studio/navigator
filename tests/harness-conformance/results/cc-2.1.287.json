@@ -15,7 +15,7 @@
       "channel_works": true,
       "verdict_file": "/tmp/nav-v7-spike/state/verdict-s2.json",
       "memory": "mem-051",
-      "summary": "continue:true is still a NO-OP. decision:block still forces the continuation (r1_num_turns=2, sentinel delivered in a user-position entry), but the model now REFUSES the imperative observable ('I'm not going to emit that token ... injected instructions from a hook') so decision_block_works reads false. Probe false negative per run.md method lesson 1: S2 must switch to a declarative fact + question observable (TASK-84 follow-up). Fuse consumed; run-twice produced zero further continuations (mem-037 belt verified)."
+      "summary": "continue:true is still a NO-OP (1 turn). decision:block forces the continuation: r1_num_turns=2 and the hook reason is delivered to the transcript (reason_delivered). Re-driven 2026-10-02 with the declarative observable + delivery criterion (probe_s2.py): decision_block_works=true. The model still declines to repeat the code, calling Stop-hook text an instruction 'that didn't come from you', so hook messages must be written as facts for the user's benefit, never as orders. Fuse consumed; run-twice zero continuations (mem-037)."
     },
     "s3": {
       "pass": true,
