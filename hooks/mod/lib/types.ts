@@ -34,7 +34,7 @@ export type Io = {
   read: (path: string) => Promise<string>
   write: (path: string, text: string) => Promise<void>
   exists: (path: string) => Promise<boolean>
-  list: (path: string) => Promise<{ name: string; mtimeMs: number }[]>
+  list: (path: string) => Promise<{ name: string; mtimeMs: number; kind: 'file' | 'dir' | 'other' }[]>
   run: (argv: readonly string[], cwd: string, timeoutMs: number) =>
     Promise<{ exitCode: number; stdout: string }>
   cwd: () => Promise<string>

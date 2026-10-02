@@ -231,3 +231,17 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   `$.clock.sleep` (fetch has no timeout). Custom `api_key_env` unsupported in the mod (literal
   env names only). Parity on the 60 recorded responses: request, verdicts, judged scoring.
 - 44/44 kit tests, tsc clean, gen --check clean, make test green.
+
+### Step 5a — prompt-time ops in the mod (2026-10-02) ✅
+- **Plan change: state stays in the shared schema-2 file.** `lib/state.ts` ports
+  `state.load/save`; mod and Python read/write `.agent/.nav-runtime-state.json`, so an op handed
+  across (breaker, older CC, partial ownership) sees the same state. No flock in the mod: events
+  are sequential (modules run before settings hooks). `$.state` stays UI-only.
+- Owned: `prompt_gate`, `prompt_tier1`, `prompt_adhd`, `prompt_brief` (registry order). Python's
+  UserPromptSubmit dispatch now fast-exits (every op owned).
+- Parity (all byte-identical, judge off, no graph): 3,600 gate/brief cases over three config
+  variants × three prior check states; 168 tier-1 cases incl. telemetry state written.
+- Kit limits learned: imports over 1 MiB are refused (fixtures compact + split per variant);
+  `as const` on huge literals blows up tsc (explicit row types for big fixtures).
+- Note for the release step: `tests/fixtures/tier1.gen.ts` embeds the plugin version, so the
+  version bump must re-run `scripts/gen_mod_data.py`.

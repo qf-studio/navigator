@@ -3,7 +3,7 @@
 import type { Io } from './lib/types'
 
 /** Ops ported to the mod. An op joins this list in the same commit as its parity tests. */
-export const OWNED: readonly string[] = ['prompt_gate', 'prompt_adhd', 'prompt_brief']
+export const OWNED: readonly string[] = ['prompt_gate', 'prompt_tier1', 'prompt_adhd', 'prompt_brief']
 
 export const MIN_CC = '2.1.287'
 export const BREAKER_LIMIT = 3

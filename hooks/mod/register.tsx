@@ -58,7 +58,8 @@ const ioOf = ($: EngineInterface): Io => ({
     await $.fs.write(path, text)
   },
   exists: path => $.fs.exists(path),
-  list: async path => (await $.fs.list(path)).map(f => ({ name: f.name, mtimeMs: f.mtimeMs })),
+  list: async path =>
+    (await $.fs.list(path)).map(f => ({ name: f.name, mtimeMs: f.mtimeMs, kind: f.kind })),
   run: async (argv, cwd, timeoutMs) => {
     const r = await $.process.run(argv, { cwd, timeoutMs })
     return { exitCode: r.exitCode, stdout: r.stdout }

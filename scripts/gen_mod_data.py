@@ -244,7 +244,69 @@ def op_variants() -> str:
     return HEADER + "\n" + ts_const("OP_VARIANTS", OP_VARIANTS)
 
 
+TIER1_GRAPH = {
+    "version": "1.0.0", "last_updated": "2026-10-02T08:00:39+00:00",
+    "stats": {"total_nodes": 195, "total_edges": 843, "memory_count": 71},
+    "concept_index": {"hooks": [], "mods": [], "state": []},
+}
+TIER1_MARKERS = [f"2026-10-{d:02d}-marker.md" for d in range(1, 13)]
+
+
+def tier1_fixtures() -> str:
+    """Python prompt_tier1 results and the state sections it leaves behind."""
+    import copy
+    import tempfile
+    import types
+    sys.path.insert(0, str(ROOT / "hooks" / "ops"))
+    import prompt_tier1  # noqa: E402
+
+    variants = {
+        "on": {"tier1": {"enabled": True}, "version": "7.9.0"},
+        "nav-stats-off": {"tier1": {"enabled": True, "rules": {"nav_stats": False}}},
+        "off": {"tier1": {"enabled": False}},
+        "drift": {"tier1": {"enabled": True}, "version": "7.1.0"},
+    }
+    prompts = ["nav stats", "NAV STATS", "  show features ", "list markers", "graph health",
+               "nav version", "nav stats please", "stats nav", "graph", "show me the features",
+               "<!-- nav-session-start-injected:v1 -->\nnav version", "x" * 60, "", "list  markers"]
+    priors = [{}, {"turn": {"tier1_hit": "nav_stats"}, "tier1": {"hits": 3, "false_positives": 1}},
+              {"reads": {"turn_count": 4}, "judge": {"calls": 2, "failed": 1, "latency_last_ms": 300,
+               "latency_max_ms": 700, "axes": {"loop": {"agreed": 2}, "task": {"overridden": 1}}},
+               "meta": {"op_errors": [{"op": "x"}]}}]
+    cases = []
+    with tempfile.TemporaryDirectory() as tmp:
+        agent = Path(tmp) / ".agent"
+        (agent / "knowledge").mkdir(parents=True)
+        (agent / "knowledge" / "graph.json").write_text(json.dumps(TIER1_GRAPH))
+        (agent / ".context-markers").mkdir()
+        for name in TIER1_MARKERS:
+            (agent / ".context-markers" / name).write_text("m")
+        for vname, patch in variants.items():
+            cfg = json.loads(json.dumps(config.DEFAULTS))
+            for k, v in patch.items():
+                if isinstance(v, dict):
+                    cfg.setdefault(k, {}).update(v)
+                else:
+                    cfg[k] = v
+            for prior in priors:
+                for text in prompts:
+                    state = copy.deepcopy(prior)
+                    ctx = types.SimpleNamespace(
+                        event="UserPromptSubmit", payload={"prompt": text, "cwd": tmp},
+                        config=cfg, state=state, pilot_executor=False, now=0.0)
+                    result = prompt_tier1.run(ctx)
+                    cases.append({"variant": vname, "prior": prior, "prompt": text,
+                                  "result": result, "after": state})
+    manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+    return (HEADER + "\n" + ts_const("TIER1_VARIANTS", variants) + "\n"
+            + ts_const("TIER1_GRAPH", TIER1_GRAPH) + "\n" + ts_const("TIER1_MARKERS", TIER1_MARKERS)
+            + "\n" + ts_const("PLUGIN_VERSION", manifest["version"]) + "\n"
+            + ts_const("TIER1_CASES", cases, "ReadonlyArray<{ variant: string; prior: Record<string, unknown>; "
+                       "prompt: string; result: unknown; after: Record<string, unknown> }>", compact=True))
+
+
 TARGETS = {
+    ROOT / "hooks/mod/tests/fixtures/tier1.gen.ts": tier1_fixtures,
     ROOT / "hooks/mod/tests/fixtures/ops-variants.gen.ts": op_variants,
     ROOT / "hooks/mod/tests/fixtures/ops-defaults.gen.ts": lambda: op_fixtures("defaults"),
     ROOT / "hooks/mod/tests/fixtures/ops-lenient.gen.ts": lambda: op_fixtures("lenient"),

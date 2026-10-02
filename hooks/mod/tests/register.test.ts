@@ -213,7 +213,7 @@ test('(d4) subagent turns do not drive the band', async ($, on) => {
 test('(e) session.start claims ADHD ownership through the environment', async ($, on) => {
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_adhd,prompt_brief' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief' })
 })
 
 const NAV_CMD = {
@@ -339,5 +339,5 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
   const { envSets } = world(on, {})
   await $.classic.SessionStart({ source: 'compact' } as never)
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_adhd,prompt_brief' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief' })
 })
