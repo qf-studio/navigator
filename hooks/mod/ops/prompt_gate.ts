@@ -69,6 +69,7 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   const judgment = await forCtx(ctx, message)
   const result = detectWorkflow(message, judgment)
   recordAxes(ctx.state, result.judge?.axes)
+  ctx.judgeAxes = { ...ctx.judgeAxes, ...result.judge?.axes }
   if (strict && result.loop_mode && priorCheckShown(ctx.state) === false) {
     return { exit_code: 2, stderr: redactPhrases(wrap('nav-workflow-block', BLOCK_MESSAGE), LOOP_TRIGGERS) }
   }

@@ -75,6 +75,8 @@ export type OpCtx = {
   state: Json
   /** Judge answer cached per event (undefined = not asked yet). */
   judgment?: unknown
+  /** Per-axis outcome of this event's judgment (gate: loop, complexity; brief: task, ambiguity). */
+  judgeAxes?: Record<string, string>
   event: string
   payload: Json
   config: Json

@@ -61,6 +61,7 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   const judgment = await forCtx(ctx, message)
   const result = scoreAmbiguity(message, judgment)
   recordAxes(ctx.state, result.judge?.axes)
+  ctx.judgeAxes = { ...ctx.judgeAxes, ...result.judge?.axes }
   if (!result.task_shaped || result.score < threshold) return null
   const concepts = extractConcepts(message)
   const memories = concepts.length === 0 ? ''

@@ -2,6 +2,8 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
+import { JUDGE_CASES } from './fixtures/judge.gen'
+
 const PLUGIN = 'navigator'
 const CWD = '/repo'
 const AGENT = `${CWD}/.agent`
@@ -238,7 +240,7 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
     },
   })
 
-test('(f) /nav shows destination, route steps, fuel (context) and saved', async ($, on) => {
+test('(f) /nav: context, session, reads on top; then the task with its leg, memories, open tasks', async ($, on) => {
   const { opened } = world(on, {
     [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
   }, 42)
@@ -248,38 +250,34 @@ test('(f) /nav shows destination, route steps, fuel (context) and saved', async 
   for (const surface of SURFACES) {
     const ui = await navPane($, surface)
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
-    expect(texts).toContain('Typed judge, phase 2')
-    expect(texts).toContain('TASK-80')
-    expect(texts).toContain('route · 2/4')
-    expect(texts).toContain('✓ research')
-    expect(texts).toContain('● impl')
-    expect(texts).toContain('○ complete')
-    expect(texts).not.toContain('you are here')
-    expect(texts).toContain('wire the band')
-    expect(texts).toContain('fuel (context)')
-    expect(texts.indexOf('fuel (context)')).toBeLessThan(texts.indexOf('destination')) // fuel/saved on top
-    expect(texts.indexOf('saved')).toBeLessThan(texts.indexOf('destination'))
+    expect(texts).toContain('TASK-80   Typed judge, phase 2')
+    expect(texts).toContain('● 2/4     impl') // the current leg, numbered
+    expect(texts).toContain('→ then    verify')
+    expect(texts).not.toContain('research') // passed legs stay out of the pane
+    expect(texts).not.toContain('wire the band') // the reply's next line is not the route
+    for (const card of ['context', 'session', 'reads', 'task', 'memories', 'open tasks']) expect(texts).toContain(card)
+    expect(texts.indexOf('context')).toBeLessThan(texts.indexOf('task'))
     expect(texts).toContain('42%')
-    expect(texts).toContain('~100.0K tokens')
-    expect(texts).not.toContain('stop gate over-fires on heredoc Bash') // memories left the pane
-    expect(texts).not.toContain('TASK-15') // tasks list hidden until t
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(4)
-    await ui.press({ key: 'tasks' })
-    expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('TASK-15')
-    await ui.press({ key: 'tasks' })
+    expect(texts).toContain('compact safe')
+    expect(texts).toContain('phase IMPL')
+    expect(texts).toContain('graph 195 nodes')
+    expect(texts).toContain('0  0 docs')
+    expect(texts).toContain('stop gate over-fires on heredoc Bash') // memories for the open tasks
+    expect(texts).toContain('○ TASK-15  Marketing plan')
+    expect(texts).not.toContain('judge  ') // nothing judged yet: no card, no key
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(5) // 2 memories + m c r
     await ui.unmount()
   }
 })
 
-test('(h) phase is sticky across turns and a "Next:" line feeds the route', async ($, on) => {
+test('(h) phase is sticky across turns and the leg clock counts turns', async ($, on) => {
   world(on, {}, 10)
   await $.command.run(NAV_CMD)
   await complete($, 'Phase: IMPL\n')
   await complete($, 'Removed the marker.\n\nNext: run the mod tests.\n')
   const all = await texts($)
-  expect(all).toContain('● impl')
-  expect(all).toContain('run the mod tests.')
-  expect(all).toContain('since  1 turn on this waypoint')
+  expect(all).toContain('● 2/4     impl')
+  expect(all).toContain('1 turn here')
 })
 
 const texts = async ($: Engine) => {
@@ -289,7 +287,7 @@ const texts = async ($: Engine) => {
   return all
 }
 
-test('(i) doc reads and subagent turns feed the saved panel', async ($, on) => {
+test('(i) reads card: doc and code reads counted, three code reads in a turn say "use an Agent"', async ($, on) => {
   world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
   await $.command.run(NAV_CMD)
   await $.tool.call({ tool: 'Read', file_path: `${AGENT}/tasks/TASK-80.md` } as never)
@@ -301,11 +299,17 @@ test('(i) doc reads and subagent turns feed the saved panel', async ($, on) => {
     },
   } as never)
   await complete($, 'Next: commit it\n')
-  const all = await texts($)
-  expect(all).toContain('docs 8.0KB of 400.0KB')
-  expect(all).toContain('agents 31.5K outside')
-  expect(all).toContain('~98.0K tokens')
-  expect(all).toContain('commit it')
+  let all = await texts($)
+  expect(all).toContain('1  1 docs')
+  expect(all).toContain('fan-out ok')
+  for (const f of ['a.py', 'b.py', 'c.py']) await $.tool.call({ tool: 'Read', file_path: `${CWD}/${f}` } as never)
+  all = await texts($)
+  expect(all).toContain('4  1 docs')
+  expect(all).toContain('use an Agent')
+  await complete($, 'ok\n') // the verdict is the last turn's until a new read lands
+  expect(await texts($)).toContain('use an Agent')
+  await $.tool.call({ tool: 'Read', file_path: `${AGENT}/system/x.md` } as never)
+  expect(await texts($)).toContain('fan-out ok')
 })
 
 test('(j) a committed turn turns the fuel hint into a nudge', async ($, on) => {
@@ -321,7 +325,7 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
   world(on, {}, () => percent)
   await $.command.run(NAV_CMD)
   for (const p of [10, 20, 30]) { percent = p; await complete($, 'step\n') }
-  expect(await texts($)).toContain('~4 turns left')
+  expect(await texts($)).toContain('compact due') // ~4 turns to 70% at this slope
 })
 
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
@@ -395,10 +399,9 @@ test('(s) a task checklist becomes the route', async ($, on) => {
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('route · 2/3')
-  expect(all).toContain('✓ collect evidence')
-  expect(all).toContain('● add surface')
-  expect(all).toContain('○ ship')
+  expect(all).toContain('● 2/3     add surface')
+  expect(all).toContain('→ then    ship')
+  expect(all).not.toContain('collect evidence')
 })
 
 test('(s2) a numbered plan with ✅ progress headings becomes the route', async ($, on) => {
@@ -412,17 +415,10 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('route · 2/3')
-  expect(all).toContain('✓ 1   Baseline')
-  expect(all).toContain('● 2   Port the scorer')
+  expect(all).toContain('● 2/3     Port the scorer')
   expect(all).not.toContain('keep parity')
-  expect(all).toContain('○ 3   Ship')
-  const ui = await navPane($, 'terminal')
-  const colorOf = async (text: string) =>
-    (await ui.findAll({ type: 'Text' })).find(t => t.text.startsWith(text))?.props?.color
-  expect([await colorOf('✓ 1'), await colorOf('● 2'), await colorOf('○ 3')])
-    .toEqual(['#8b949e', '#7eb8da', '#c9d1d9']) // passed gray, current accent, ahead light
-  await ui.unmount()
+  expect(all).toContain('→ then    Ship')
+  expect(all).not.toContain('Baseline')
 })
 
 // Prometheus of .agent/grafana/docker-compose.yml behind `curl` (the panel never uses
@@ -448,20 +444,17 @@ const prometheus = (_on: On, fetches: string[], up = true) => {
   }
 }
 
-test('(t) the trip panel shows Prometheus numbers for today and 7 days', async ($, on) => {
+test('(t) the session card shows Prometheus numbers when the local stack answers', async ($, on) => {
   world(on, {}, 20)
   const fetches: string[] = []
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('trip · prometheus :9092')
   expect(all).toContain('$4.12')
-  expect(all).toContain('$31.80')
-  expect(all).toContain('1.1M')
-  expect(all).toContain('cache 90%')
-  expect(all).toContain('+820 −214')
-  expect(all).toContain('2h 10m')
-  expect(all).toContain('tokens/min')
+  expect(all).toContain('1.1M · 90% cache')
+  expect(all).toContain('7d $31.80 · 41 commits')
+  expect(all).toContain('tokens/min · prometheus :9092')
+  expect(all).not.toContain('phase —') // the Prometheus lines replace the local ones
   expect(fetches).toHaveLength(12) // probe + range + 10 instant queries
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
 })
@@ -473,18 +466,18 @@ test('(t4) a non-loopback prometheus_url is never read', async ($, on) => {
   const fetches: string[] = []
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
-  expect(await texts($)).not.toContain('trip')
+  expect(await texts($)).not.toContain('prometheus')
   expect(fetches).toHaveLength(0)
 })
 
-test('(t2) a stopped stack hides the panel after one refused probe', async ($, on) => {
+test('(t2) a stopped stack leaves the local session card after one refused probe', async ($, on) => {
   world(on, {}, 20)
   const fetches: string[] = []
   prometheus(on, fetches, false)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).not.toContain('trip')
-  expect(all).toContain('fuel (context)')
+  expect(all).not.toContain('prometheus')
+  expect(all).toContain('phase —')
   expect(fetches).toHaveLength(1)
 })
 
@@ -493,6 +486,62 @@ test('(t3) dashboard.enabled false never fetches', async ($, on) => {
   const fetches: string[] = []
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
-  expect(await texts($)).not.toContain('trip')
+  expect(await texts($)).not.toContain('prometheus')
   expect(fetches).toHaveLength(0)
+})
+
+// The typed judge answers through $.http.fetch; the key comes from the personal file.
+const judged = (on: On, files: Files, caseIndex: number) => {
+  files[`${AGENT}/.nav-config.json`] = JSON.stringify({ judge: { enabled: true } })
+  files['/home/me/.config/typesafe/api_key'] = 'k-test\n'
+  const doc = (JUDGE_CASES[caseIndex] as { doc: unknown }).doc
+  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: JSON.stringify(doc) } }))
+}
+
+test('(u) the judge card: verdict in words, the effect, the axes it overrode; j opens the tally', async ($, on) => {
+  const files: Files = {}
+  judged(on, files, 30) // "make the onboarding better": task, substantial, ambiguous; brief shown
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).not.toContain('judge  ')
+  const r = await submit($, 'make the onboarding better')
+  expect(r.context?.join('\n') ?? '').toContain('NAV-BRIEF')
+  const ui = await navPane($, 'terminal')
+  let all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain('judge  task · substantial · unclear  → brief shown   ↑ complexity, task: jev over rule')
+  expect(all).toContain('jev-1.13.0')
+  expect(all).not.toContain('calls')
+  await ui.press({ key: 'judge' })
+  all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain('1 calls · 0 failed · latency')
+  expect(all).toContain('task        agreed 0 · overrode 1 · undecided 0 · jev over rule 100%')
+  expect(all).toContain('complexity  agreed 0 · overrode 1 · undecided 0 · jev over rule 100%')
+  expect(all).toContain('unclear     agreed 1 · overrode 0 · undecided 0 · jev over rule 0%')
+  await ui.unmount()
+})
+
+test('(u2) a chat prompt reads "chat · direct"; no card without a judgment', async ($, on) => {
+  const files: Files = {}
+  judged(on, files, 9) // "what does loop mode actually do?"
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'what does loop mode actually do?')
+  const all = await texts($)
+  // complexity moved (0.02) but stayed in the same tier: that axis counts as agreed, not overrode
+  expect(all).toContain('judge  chat  → direct   ↑ loop: jev over rule')
+  expect(all).not.toContain('unclear')
+})
+
+test('(v) a pinned memory rides the next prompt once', async ($, on) => {
+  world(on, {}, 20)
+  await $.command.run(NAV_CMD)
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'mem-0' })
+  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('● pinned for your next prompt')
+  await ui.unmount()
+  const first = await submit($, 'go on')
+  expect(first.context?.join('\n') ?? '').toContain('Navigator memory pinned by the user for this prompt: stop gate over-fires on heredoc Bash')
+  const second = await submit($, 'go on')
+  expect(second.context?.join('\n') ?? '').not.toContain('pinned')
+  expect(await texts($)).toContain('▸ pins a memory into your next prompt')
 })

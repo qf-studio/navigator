@@ -29,28 +29,35 @@ session. Nothing to configure.
   ~2,100 Stop cases, plus lifecycle cases) and writes fixtures the mod's kit tests must match
   byte for byte. `make test-all` runs both runtimes' suites.
 
-### `/nav`: the route view
+### `/nav`: one screen, cards
 
-Navigator keeps the path short and tells you where you are:
+Three cards on top, then the task, then what surrounds it:
 
-- **destination**: the goal Claude states in a brief, else the active task;
-- **route**: the steps to the destination, listed one per line: the task's checklist, else the
-  numbered steps of its plan section (`## Work breakdown`, `## Implementation plan`, …) with
-  `### Step n — … ✅` progress headings marking them done, else research → impl → verify →
-  complete. The whole route is listed (passed steps gray, the current one dotted in the accent,
-  the steps ahead light; past 16 lines the early passed steps fold); the next action and how
-  long you've been on it follow;
-- **off route**: two prompts in a row that share nothing with the destination open a warning
-  with **park** (writes a parked task stub), **back**, or **switch**;
-- **fuel (context)**: fill, turns left, and when to compact; **saved**: tokens kept out of
-  context (docs loaded vs the `.agent/` tree, subagent work); tasks behind `t`.
-- **trip**: cost, tokens (with cache hit rate), commits, lines and active time for today and the
-  last 7 days, plus tokens/min over 2 hours, from the Prometheus of `.agent/grafana/` (port 9092).
-  Read on `/nav` and `f` only, never under Pilot; the panel exists only when Prometheus has
-  Claude Code metrics, so a stopped stack costs one refused probe and shows nothing.
-  `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points it at another
-  Prometheus on this machine (loopback URLs only; read with `curl`, so it works with
-  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set and nothing leaves the host).
+- **context**: fill and a bar, one verdict (`compact safe` / `good moment to compact` /
+  `compact due`), and the fill over the last turns as a sparkline;
+- **session**: with the Prometheus of `.agent/grafana/` (port 9092) answering, today's cost,
+  tokens and cache hit rate, the 7-day cost and commit count, and tokens/min over two hours;
+  without it, Claude Code's own cost and rate-limit window, the phase, and the graph size.
+  Read on `/nav` and `r` only, never under Pilot; one probe first, so a stopped stack costs one
+  refused connection. `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points
+  it at another Prometheus on this machine (loopback URLs only; read with `curl`, so it works
+  with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set and nothing leaves the host);
+- **reads**: Read calls this session and how many were docs; `use an Agent` when a turn read
+  three or more code files;
+- **judge** (only after a judged prompt): the typed judge's verdict in words
+  (`task · substantial · unclear`), what Navigator did with it (`→ brief shown`, `task mode`,
+  `loop mode`, `direct`), and the axes where it overrode the keyword rule; `j` opens the
+  session tally per axis;
+- **task**: the destination (the goal Claude states in a brief, else the active task), the
+  current leg numbered (`● 9/14  Docs: …`) with turns spent on it, the next leg, the newest
+  marker. Legs come from the task's checklist, else the numbered steps of its plan section
+  (`## Work breakdown`, `## Implementation plan`, …) with `### Step n — … ✅` progress headings
+  marking them done, else research → impl → verify → complete;
+- **off route** (only while drifting): two prompts in a row that share nothing with the
+  destination open a warning with **park** (writes a parked task stub), **back**, or **switch**;
+- **memories**: up to three recalled for the open tasks, one line each; `▸` pins one into the
+  next prompt;
+- **open tasks**: up to five, the destination marked.
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.

@@ -362,6 +362,21 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### Cards layout (2026-10-02, dogfood: "overloaded, non-informative") ✅
+The route list, saved card, destination card and trip table are gone; the pane is the TASK-83
+card layout again, filled with what the session needs: **context** (fill, one compact verdict,
+sparkline), **session** (Prometheus-fed when the stack answers: today's $ · tokens · cache, 7d $
+· commits, tokens/min; else CC's $ · window, phase, graph size), **reads** (session count, docs
+share, `use an Agent` at 3 code reads in a turn), **judge** (one-line card after a judged
+prompt: `task · substantial · unclear → brief shown ↑ complexity, task: jev over rule`; `j`
+toggles the per-axis session tally read from the shared state file), **task** (destination,
+`● 9/14` current leg + turns on it, `→ then` next leg, marker), **off route** as before,
+**memories** (3, ▸ pins one into the next prompt — back from the spike), **open tasks** (5).
+Judge data: `ctx.judgeAxes` is set by prompt_gate and prompt_brief next to `recordAxes` (in
+memory, not state — parity untouched); `judgeView` words the `Judgment` and reads the effect
+off the injected context. Hotkeys `m c r`, `j` while a judge card exists, `p b s` while off
+route. Pane width 72. 107 kit tests.
+
 ### Trip panel (2026-10-02) ✅
 Claude Code's OTel metrics from the `.agent/grafana/` Prometheus (`http://localhost:9092`):
 cost, tokens + cache hit, commits, lines ±, active time — today (range back to local midnight)
@@ -391,8 +406,8 @@ fallback skips table rows and intent-brief fields.
 1. **Restart the dogfood terminal from the repo root**: `claude --plugin-dir "$PWD"` (plugin name
    `navigator`). Sessions started on the old `mods/nav-status` path keep the deleted spike in
    memory and never reload.
-2. **Dogfood checklist** (done 2026-10-02: route steps, colors, fuel/saved on top, trip panel
-   with the `.agent/grafana` stack up): `/nav` off-route after 2 detour prompts (park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
+2. **Dogfood checklist** (done 2026-10-02: cards layout with the `.agent/grafana` stack up
+   and down, judge card after a judged prompt): `/nav` off-route after 2 detour prompts (park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
    a subagent gets context, a config edit toasts, `/theme` → Pilot, hot reload mid-session.
 3. **Release (needs explicit go-ahead)**: merge `v8` → `main`; `scripts/bump-version.sh 8.0.0`
    (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md`
@@ -401,8 +416,8 @@ fallback skips table rows and intent-brief fields.
 4. **8.1 candidates**: isReadOnly mutation tracking in stop_completion (mem-077 over-fire),
    prefer `last_assistant_message` in stop_state, band reason when Navigator intervenes, shell-level
    fast-exit guard (~38 ms Python spawn per owned event), `$.model.classify` judge experiment,
-   **`next` in the route panel echoes the first line of Claude's last reply** (the next-action
-   fallback reads the answer; seen in dogfood: "No outstanding work — …"), `graph_manager.py stats`
-   spawn per pane refresh whose result the pane no longer shows.
+   the band's `next` echoes the first line of Claude's last reply (the next-action fallback
+   reads the answer; seen in dogfood: "No outstanding work — …"), judge decision trail and y/n
+   labeling behind `j` (feeds `scripts/judge_eval.py`).
 5. Optional: remove the personal `.claude/settings.local.json` dogfood hooks (double session doc on
    the Python fallback).

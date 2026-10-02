@@ -8,8 +8,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type {
-  NavActivity, NavDestination, NavHistory, NavOffRoute, NavPane, NavStatus, NavTrip, NavUsage,
-  NavWaypointClock,
+  NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPane, NavReads, NavStatus, NavTrip,
+  NavUsage, NavWaypointClock,
 } from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
@@ -21,18 +21,20 @@ import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
 import { announce } from './owns'
 import { runEvent } from './runner'
+import type { Judgment } from './lib/scoring'
 import {
-  clockOf, latestMarker, parseGraphStats, parseTasks, rateKind, tokensOf, turnsTo,
+  NO_READS, countRead, endTurnReads, fanOutText, judgeTally, judgeView, latestMarker, parseGraphStats,
+  parseMemories, parseTasks, rateKind, tokensOf, turnsTo,
 } from './ui/nav'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
-  nextTaskNumber, parkedTaskDoc, parseSteps, routeView, slugOf, waypointText,
+  nextTaskNumber, parkedTaskDoc, parseSteps, slugOf,
 } from './ui/route'
 import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
 import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
-  isLoopback, secondsSinceMidnight, tripQueries, tripRows,
+  isLoopback, secondsSinceMidnight, tripQueries,
 } from './ui/trip'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
@@ -44,8 +46,9 @@ const NO_ACTIVITY: NavActivity = {
 }
 const NO_HISTORY: NavHistory = { ctx: [], saved: [] }
 const EMPTY_NAV: NavPane = {
-  tasks: [], marker: null, graph: null, docsTreeBytes: 0,
+  tasks: [], marker: null, graph: null, docsTreeBytes: 0, memories: [],
 }
+const STATE_FILE = '.agent/.nav-runtime-state.json'
 const DOC_DIRS = '.agent/DEVELOPMENT-README.md .agent/tasks .agent/system .agent/sops .agent/philosophy'
 
 const status = atom({ plugin: 'navigator', key: 'status' } as const, null as NavStatus | null)
@@ -56,8 +59,12 @@ const history = atom({ plugin: 'navigator', key: 'history' } as const, NO_HISTOR
 const destination = atom({ plugin: 'navigator', key: 'destination' } as const, null as NavDestination | null)
 const offRoute = atom({ plugin: 'navigator', key: 'offRoute' } as const, null as NavOffRoute | null)
 const waypointClock = atom({ plugin: 'navigator', key: 'waypointClock' } as const, null as NavWaypointClock | null)
-const showTasks = atom({ plugin: 'navigator', key: 'showTasks' } as const, false)
 const trip = atom({ plugin: 'navigator', key: 'trip' } as const, null as NavTrip | null)
+const reads = atom({ plugin: 'navigator', key: 'reads' } as const, NO_READS)
+const judge = atom({ plugin: 'navigator', key: 'judge' } as const, null as NavJudge | null)
+const showJudge = atom({ plugin: 'navigator', key: 'showJudge' } as const, false)
+// A memory the user pinned in the pane; rides the next prompt as context, then clears.
+const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
 
 // $.state survives a hot reload, so a value written by an older version of this module
 // can lack fields added since. Read through these to merge stored values over defaults.
@@ -136,7 +143,7 @@ const readHistory = async ($: EngineInterface): Promise<NavHistory> => {
 const readActivity = async ($: EngineInterface): Promise<NavActivity> =>
   ({ ...NO_ACTIVITY, ...((await read($, activity)) ?? {}) })
 
-/** Collect what the pane shows: open tasks, the active task's steps, newest marker, graph size. */
+/** Collect what the pane shows: open tasks, the active task's steps, memories, newest marker, graph size. */
 const refreshPane = async ($: EngineInterface): Promise<void> => {
   const root = await projectRoot(ioOf($))
   if (root === null) {
@@ -150,6 +157,8 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
     + 'printf "%s|%s\\n" "$f" "$(grep -m1 "^# " "$f")"; done'], root)
   const stats = await run(ioOf($), ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
     '--graph-path', graphPath], root)
+  const memories = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--auto',
+    '--agent-dir', '.agent', '--graph-path', graphPath, '--limit', String(MEMORY_LINES), '--format', 'compact'], root)
   const markers = await $.fs.list(`${root}/.agent/.context-markers`).catch(() => [])
   const treeBytes = Number((await run(ioOf($), ['sh', '-c',
     `find ${DOC_DIRS} -name '*.md' -type f -exec cat {} + 2>/dev/null | wc -c`], root)).trim()) || 0
@@ -169,7 +178,16 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
     marker: latestMarker(markers),
     graph: parseGraphStats(stats),
     docsTreeBytes: treeBytes,
+    memories: parseMemories(memories),
   }))
+}
+
+/** The `judge` section of the shared runtime state (tallies behind the pane's `j`). */
+const judgeSection = async ($: EngineInterface): Promise<unknown> => {
+  const io = ioOf($)
+  const root = await projectRoot(io)
+  if (root === null) return null
+  return (await readJson(io, `${root}/${STATE_FILE}`))?.judge ?? null
 }
 
 // The Prometheus of `.agent/grafana/docker-compose.yml` (host port 9092).
@@ -250,11 +268,9 @@ const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
 
 const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the destination
 const LOW_FUEL_TURNS = 5
-const TRIP_LABEL = 12 // trip panel columns: label, today, 7 days
-const TRIP_COL = 14
-const ROUTE_LINES = 16 // a longer route folds its early passed steps
-// Passed steps gray, the current one in the accent, the steps ahead light.
-const STEP_COLOR = { done: PALETTE.dim, current: PALETTE.accent, todo: PALETTE.label } as const
+const TASK_LABEL = 10 // task card: label column before the text
+const MEMORY_LINES = 3
+const PANE_COLUMNS = 72
 
 /** Where the session is headed: a goal Claude stated in a brief, else the active task. */
 const navState = async ($: EngineInterface) => {
@@ -378,7 +394,7 @@ export const register: Register = on => {
   on('command.run', { command: 'nav' }, async $ => {
     await Promise.all([refreshPane($), refreshTrip($).catch(() => {})])
     await $.ui.open({
-      id: PANE, title: 'Navigator', focus: true, closeOnEscape: true, columns: 64,
+      id: PANE, title: 'Navigator', focus: true, closeOnEscape: true, columns: PANE_COLUMNS,
     })
     return {}
   })
@@ -387,7 +403,11 @@ export const register: Register = on => {
     const pre = await runFor($, 'PreToolUse', toolPayload(e as unknown as Record<string, unknown>))
     if (pre?.deny != null) return { deny: pre.deny }
     const ran = await next(e)
-    if (e.file_path.includes('/.agent/') && ran.deny === undefined) {
+    const isDoc = e.file_path.includes('/.agent/')
+    if (ran.deny === undefined) {
+      await update($, reads, r => countRead({ ...NO_READS, ...r }, isDoc))
+    }
+    if (isDoc && ran.deny === undefined) {
       const bytes = (ran.text ?? '').length
       await update($, activity, a => {
         const x = { ...NO_ACTIVITY, ...a }
@@ -442,8 +462,17 @@ export const register: Register = on => {
     const ctx = await makeCtx(ioOf($), 'UserPromptSubmit', { prompt: e.text })
     const merged = ctx === null ? null : await runEvent(ctx, EVENT_OPS.UserPromptSubmit ?? [])
     if (merged?.drop != null) return { drop: merged.drop }
-    const entered = merged?.context
-      ? await next({ ...e, context: [...(e.context ?? []), merged.context] })
+    if (ctx !== null) {
+      await update($, judge, () => judgeView(ctx.judgment as Judgment | null | undefined, ctx.judgeAxes, merged?.context ?? null))
+    }
+    const memory = await read($, pinned)
+    if (memory !== null) await update($, pinned, () => null)
+    const extra = [
+      ...(merged?.context ? [merged.context] : []),
+      ...(memory === null ? [] : [`Navigator memory pinned by the user for this prompt: ${memory}`]),
+    ]
+    const entered = extra.length > 0
+      ? await next({ ...e, context: [...(e.context ?? []), ...extra] })
       : await next(e)
     if (entered.drop === undefined) {
       const { dest, route } = await navState($)
@@ -492,6 +521,7 @@ export const register: Register = on => {
       const y = { ...NO_ACTIVITY, ...x }
       return { ...y, committed: false, lastTurnCommitted: y.committed }
     })
+    await update($, reads, r => endTurnReads({ ...NO_READS, ...r }))
     await update($, history, () => ({
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
       saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
@@ -538,51 +568,123 @@ export const register: Register = on => {
     const hist = await readHistory($)
     const detour = await read($, offRoute)
     const clock = await read($, waypointClock)
-    const tasksOpen = await read($, showTasks)
     const t = await read($, trip)
+    const r = { ...NO_READS, ...((await read($, reads)) ?? {}) }
+    const j = await read($, judge)
+    const judgeOpen = await read($, showJudge)
+    const chosen = await read($, pinned)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
     const left = turnsTo(hist.ctx, 70)
     const lowFuel = (percent !== null && percent >= 70) || (left !== null && left <= LOW_FUEL_TURNS)
-    const avoided = tokensOf(Math.max(0, p.docsTreeBytes - a.docsBytes))
     const isOff = (detour?.count ?? 0) >= OFF_ROUTE_AFTER
-    const done = arrived(route)
-    const view = routeView(route, ROUTE_LINES)
+    const at = here === null ? 0 : route.indexOf(here) + 1
+    const then = here === null ? null : route.slice(at).find(w => w.state === 'todo') ?? null
     const window = u?.rates[0]
+    const cacheHit = t?.today.cacheHit ?? t?.week.cacheHit ?? null
+    const tally = judgeOpen ? judgeTally(await judgeSection($)) : []
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
     const title = (text: string, color: string = PALETTE.accent) => (
       <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
     )
+    const dimLabel = (text: string) => <Text color={PALETTE.dim}>{text.padEnd(TASK_LABEL)}</Text>
 
     return (
       <Box flexDirection="column">
         <Box flexDirection="row">
-          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('fuel (context)')}
+          <Box {...panel} flexDirection="column" width="31%">
+            {title('context')}
             <Text wrap="truncate-end">
               <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
             </Text>
             <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
-              {left === null ? 'growth flat' : `~${left} turns left`}
+              {lowFuel ? 'compact due' : a.lastTurnCommitted ? 'good moment to compact' : 'compact safe'}
             </Text>
-            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
-              {lowFuel ? 'compact at next waypoint' : a.lastTurnCommitted ? 'good moment to compact' : 'compact: hold'}
-            </Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">
-              {u?.usd == null ? '' : `$${u.usd.toFixed(2)}`}
-              {window ? ` · ${rateKind(window.kind)} ${Math.round(window.percentUsed)}%` : ''}
-            </Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
           </Box>
-          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('saved')}
-            <Text color={PALETTE.success} bold wrap="truncate-end">~{compact(avoided)} tokens</Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">docs {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B</Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">
-              {a.agentRuns === 0 ? 'agents: none yet' : `agents ${compact(a.agentTokens)} outside`}
-            </Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.saved, 14)}</Text>
+          <Box {...panel} flexDirection="column" width="43%">
+            {title('session')}
+            {t === null ? (
+              <Box flexDirection="column">
+                <Text wrap="truncate-end">
+                  <Text color={PALETTE.success} bold>{u?.usd == null ? '--' : `$${u.usd.toFixed(2)}`}</Text>
+                  <Text color={PALETTE.dim}>{window ? `  ${rateKind(window.kind)} ${Math.round(window.percentUsed)}%` : ''}</Text>
+                </Text>
+                <Text color={PALETTE.label} wrap="truncate-end">{s?.phase ? `phase ${s.phase}` : 'phase —'}</Text>
+                <Text color={PALETTE.dim} wrap="truncate-end">{p.graph ? `graph ${compact(p.graph.nodes)} nodes` : 'graph —'}</Text>
+              </Box>
+            ) : (
+              <Box flexDirection="column">
+                <Text wrap="truncate-end">
+                  <Text color={PALETTE.success} bold>${t.today.usd.toFixed(2)}</Text>
+                  <Text color={PALETTE.dim}>  {compact(t.today.tokens)}{cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}</Text>
+                </Text>
+                <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
+                <Text wrap="truncate-end">
+                  <Text color={PALETTE.accent}>{sparkline(t.perMinute, 12)}</Text>
+                  <Text color={PALETTE.dim}>  tokens/min · {t.source}</Text>
+                </Text>
+              </Box>
+            )}
           </Box>
+          <Box {...panel} flexDirection="column" width="26%">
+            {title('reads')}
+            <Text wrap="truncate-end">
+              <Text color={PALETTE.accent} bold>{r.total}</Text>
+              <Text color={PALETTE.dim}>  {r.docs} docs</Text>
+            </Text>
+            <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
+            <Text> </Text>
+          </Box>
+        </Box>
+
+        {j === null ? null : (
+          <Box {...panel} flexDirection="column">
+            <Box flexDirection="row" justifyContent="space-between">
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.accent}>judge  </Text>
+                <Text color={PALETTE.label} bold>{j.verdict}</Text>
+                <Text color={PALETTE.dim}>  → {j.effect}</Text>
+                {j.override === null ? null : <Text color={PALETTE.warning}>   {j.override}</Text>}
+              </Text>
+              <Text color={PALETTE.dim}>{j.model}</Text>
+            </Box>
+            {tally.map(line => <Text color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
+          </Box>
+        )}
+
+        <Box {...panel} flexDirection="column">
+          {title('task')}
+          {dest === null ? (
+            <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or mark a task in progress</Text>
+          ) : (
+            <Text wrap="truncate-end">
+              <Text color={PALETTE.accent} bold>{(dest.taskId ?? 'brief').padEnd(TASK_LABEL)}</Text>
+              <Text color={PALETTE.label}>{dest.title}</Text>
+            </Text>
+          )}
+          {here !== null ? (
+            <Box flexDirection="row" justifyContent="space-between">
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.accent}>{`● ${at}/${route.length}`.padEnd(TASK_LABEL)}</Text>
+                <Text color={PALETTE.label} bold>{here.label}</Text>
+              </Text>
+              {clock && clock.turns > 0 ? (
+                <Text color={PALETTE.dim}>{clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} here</Text>
+              ) : null}
+            </Box>
+          ) : arrived(route) ? (
+            <Text color={PALETTE.success}>arrived · pick the next destination</Text>
+          ) : s?.next ? (
+            <Text wrap="truncate-end">{dimLabel('→ next')}<Text color={PALETTE.label}>{s.next}</Text></Text>
+          ) : null}
+          {then === null ? null : (
+            <Text wrap="truncate-end">{dimLabel('→ then')}<Text color={PALETTE.dim}>{then.label}</Text></Text>
+          )}
+          {p.marker === null ? null : (
+            <Text wrap="truncate-end">{dimLabel('marker')}<Text color={PALETTE.dim}>{p.marker}</Text></Text>
+          )}
         </Box>
 
         {isOff && detour !== null ? (
@@ -600,80 +702,39 @@ export const register: Register = on => {
               <Button key="switch" label="switch" hotkey="s" plain onPress={() => switchToDetour($)} />
             </Box>
           </Box>
-        ) : (
-          <Box {...panel} flexDirection="column">
-            {title('destination')}
-            {dest === null ? (
-              <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or t to pick a task</Text>
-            ) : (
-              <Box flexDirection="row" justifyContent="space-between">
-                <Text bold color={PALETTE.label} wrap="truncate-end">{dest.title}</Text>
-                <Text color={PALETTE.dim}>{dest.taskId ?? (dest.source === 'brief' ? 'from brief' : '')}</Text>
-              </Box>
-            )}
-          </Box>
-        )}
+        ) : null}
 
         <Box {...panel} flexDirection="column">
-          {title(here === null ? 'route' : `route · ${route.indexOf(here) + 1}/${route.length}`)}
-          {view.earlier > 0 ? <Text color={PALETTE.dim}>✓ {view.earlier} earlier</Text> : null}
-          {view.shown.map(w => (
-            <Text color={STEP_COLOR[w.state]} bold={w.state === 'current'} wrap="truncate-end">
-              {waypointText(w)}
-            </Text>
-          ))}
-          {view.more > 0 ? <Text color={PALETTE.dim}>+ {view.more} more</Text> : null}
-          <Text> </Text>
-          {done ? (
-            <Text color={PALETTE.success}>arrived · next: pick a destination</Text>
-          ) : (
-            <Box flexDirection="column">
+          {title('memories')}
+          {p.memories.length === 0 && <Text color={PALETTE.dim}>none for the open tasks</Text>}
+          {p.memories.slice(0, MEMORY_LINES).map((m, i) => (
+            <Box flexDirection="row">
+              <Button key={`mem-${i}`} label={chosen === m.text ? '●' : '▸'} plain
+                onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))} />
               <Text wrap="truncate-end">
-                <Text color={PALETTE.dim}>next   </Text>
-                <Text color={PALETTE.label}>{s?.next ?? '—'}</Text>
+                <Text> </Text>
+                <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
+                <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+                <Text color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>  {m.text}</Text>
               </Text>
-              {clock && here ? (
-                <Text color={PALETTE.dim}>since  {clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} on this waypoint</Text>
-              ) : null}
             </Box>
-          )}
+          ))}
+          <Text color={PALETTE.dim}>
+            {chosen === null ? '▸ pins a memory into your next prompt' : '● pinned for your next prompt'}
+          </Text>
         </Box>
 
-        {t === null ? null : (
-          <Box {...panel} flexDirection="column">
-            {title(`trip · ${t.source}`)}
-            <Text color={PALETTE.dim}>{''.padEnd(TRIP_LABEL)}{'today'.padEnd(TRIP_COL)}7 days</Text>
-            {tripRows(t).map(([label, today, week, note]) => (
-              <Text wrap="truncate-end">
-                <Text color={PALETTE.dim}>{label.padEnd(TRIP_LABEL)}</Text>
-                <Text color={PALETTE.label}>{today.padEnd(TRIP_COL)}{week.padEnd(TRIP_COL)}</Text>
-                <Text color={PALETTE.dim}>{note}</Text>
-              </Text>
-            ))}
-            {t.perMinute.length > 0 ? <Text> </Text> : null}
-            {t.perMinute.length > 0 ? (
-              <Text wrap="truncate-end">
-                <Text color={PALETTE.dim}>{'tokens/min'.padEnd(TRIP_LABEL)}</Text>
-                <Text color={PALETTE.accent}>{sparkline(t.perMinute, 16)}</Text>
-                <Text color={PALETTE.dim}>   last 2h</Text>
-              </Text>
-            ) : null}
-          </Box>
-        )}
-
-        {tasksOpen ? (
-          <Box {...panel} flexDirection="column">
-            {title('open tasks')}
-            {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
-            {[...p.tasks].reverse().slice(0, 6).map(t => (
-              <Text wrap="truncate-end">
-                <Text color={t.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{t.id === dest?.taskId ? '● ' : '○ '}</Text>
-                <Text color={t.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{t.id}</Text>
-                <Text color={PALETTE.dim}>{t.title ? `  ${t.title}` : ''}</Text>
-              </Text>
-            ))}
-          </Box>
-        ) : null}
+        <Box {...panel} flexDirection="column">
+          {title('open tasks')}
+          {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
+          {[...p.tasks].reverse().slice(0, 5).map(task => (
+            <Text wrap="truncate-end">
+              <Text color={task.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{task.id === dest?.taskId ? '● ' : '○ '}</Text>
+              <Text color={task.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{task.id}</Text>
+              <Text color={PALETTE.dim}>{task.title ? `  ${task.title}` : ''}</Text>
+            </Text>
+          ))}
+        </Box>
 
         <Box flexDirection="row" columnGap={2} paddingX={1}>
           <Button key="marker" label="marker" hotkey="m" plain
@@ -681,9 +742,11 @@ export const register: Register = on => {
           <Text color={PALETTE.dim}>·</Text>
           <Button key="compact" label="compact" hotkey="c" plain onPress={() => $.session.compact()} />
           <Text color={PALETTE.dim}>·</Text>
-          <Button key="tasks" label="tasks" hotkey="t" plain onPress={() => update($, showTasks, v => !v)} />
-          <Text color={PALETTE.dim}>·</Text>
-          <Button key="refresh" label="refresh" hotkey="f" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
+          <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
+          {j === null ? null : <Text color={PALETTE.dim}>·</Text>}
+          {j === null ? null : (
+            <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
+          )}
         </Box>
       </Box>
     )

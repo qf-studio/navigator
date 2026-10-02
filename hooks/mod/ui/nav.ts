@@ -1,8 +1,10 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavRate, NavTask } from '../../../types'
+import type { NavGraph, NavJudge, NavMemory, NavRate, NavReads, NavTask } from '../../../types'
+import type { Judgment } from '../lib/scoring'
 
 const TASK_ID_RE = /(TASK-\d+)/
+const MEMORY_RE = /^-\s*([A-Z]+):\s*"(.*)"\s*(?:\((\d+)%\))?/
 const STAT_RE = /^(Total Nodes|Total Edges|Memories):\s*(\d+)/
 
 /** `path|# TASK-80: Title` lines → in-progress tasks with titles, in file order. */
@@ -13,6 +15,14 @@ export const parseTasks = (stdout: string): NavTask[] =>
     if (!m?.[1]) return []
     const title = heading.replace(/^#+\s*/, '').replace(new RegExp(`^${m[1]}:?\\s*`), '').trim()
     return [{ id: m[1], title, path: path.trim() }]
+  })
+
+/** `memory_recall.py --format compact` lines → kind, text, confidence. */
+export const parseMemories = (stdout: string): NavMemory[] =>
+  stdout.split('\n').flatMap(line => {
+    const m = MEMORY_RE.exec(line.trim())
+    if (!m?.[1] || m[2] === undefined) return []
+    return [{ kind: m[1], text: m[2], percent: m[3] === undefined ? null : Number(m[3]) }]
   })
 
 /** `graph_manager.py --action stats` text → counts; null when nothing parsed. */
@@ -83,3 +93,90 @@ export const clockOf = (iso: string | null): string | null => {
 
 /** Estimated tokens for a byte count (~4 bytes per token). */
 export const tokensOf = (bytes: number): number => Math.round(bytes / 4)
+
+export const NO_READS: NavReads = {
+  total: 0, docs: 0, turnTotal: 0, turnDocs: 0, lastTurnTotal: 0, lastTurnDocs: 0,
+}
+/** Code-file Reads in one turn from which the reads card says "use an Agent" (read_guard warns at 3). */
+export const FAN_OUT_AT = 3
+
+export const countRead = (r: NavReads, isDoc: boolean): NavReads => ({
+  ...r,
+  total: r.total + 1,
+  docs: r.docs + (isDoc ? 1 : 0),
+  turnTotal: r.turnTotal + 1,
+  turnDocs: r.turnDocs + (isDoc ? 1 : 0),
+})
+
+/** A turn ended: its counts become the last turn's, the running ones restart. */
+export const endTurnReads = (r: NavReads): NavReads => ({
+  ...r, turnTotal: 0, turnDocs: 0, lastTurnTotal: r.turnTotal, lastTurnDocs: r.turnDocs,
+})
+
+/** The reads card's verdict, from the turn in progress when it has reads, else the last one. */
+export const fanOutText = (r: NavReads): string => {
+  const code = r.turnTotal > 0 ? r.turnTotal - r.turnDocs : r.lastTurnTotal - r.lastTurnDocs
+  return code >= FAN_OUT_AT ? 'use an Agent' : 'fan-out ok'
+}
+
+const AXIS_WORD: Record<string, string> = {
+  loop: 'loop', complexity: 'complexity', task: 'task', ambiguity: 'unclear',
+}
+
+/** What Navigator did with the prompt, read off the context it injected. */
+export const judgeEffect = (context: string | null): string => {
+  if (context === null) return 'direct'
+  if (/Loop trigger: YES/.test(context)) return 'loop mode'
+  if (/NAV-BRIEF/.test(context)) return 'brief shown'
+  if (/Mode: TASK/.test(context)) return 'task mode'
+  return 'direct'
+}
+
+/**
+ * The judge card's line: the verdict in words (`task · medium · unclear`), the effect, and the
+ * axes where the judge overrode the keyword rule. Null when the prompt was not judged.
+ */
+export const judgeView = (
+  j: Judgment | null | undefined, axes: Record<string, string> | undefined, context: string | null,
+  unclearAt = 0.5,
+): NavJudge | null => {
+  if (j == null) return null
+  const task = j.taskVerdict()
+  const words: string[] = [task === false ? 'chat' : task === true ? 'task' : 'task?']
+  if (j.loopVerdict() === true) words.push('loop')
+  const level = j.complexityLevel()
+  if (level !== null && task !== false) words.push(level)
+  const ambiguity = j.ambiguityIfConfident()
+  if (ambiguity !== null && task !== false) words.push(ambiguity >= unclearAt ? 'unclear' : 'clear')
+  const overrode = Object.entries(axes ?? {})
+    .filter(([, outcome]) => outcome === 'overridden')
+    .map(([axis]) => AXIS_WORD[axis] ?? axis)
+  return {
+    verdict: words.join(' · '),
+    effect: judgeEffect(context),
+    override: overrode.length === 0 ? null : `↑ ${overrode.join(', ')}: jev over rule`,
+    model: j.model,
+    latencyMs: j.latencyMs,
+  }
+}
+
+type AxisRow = { agreed?: unknown; overridden?: unknown; undecided?: unknown }
+
+/** `judge` section of the runtime state → the detail lines behind `j`. */
+export const judgeTally = (section: unknown): string[] => {
+  if (section === null || typeof section !== 'object') return ['no judge calls recorded']
+  const b = section as Record<string, unknown>
+  const n = (v: unknown): number => (typeof v === 'number' ? Math.trunc(v) : 0)
+  const head = `${n(b.calls)} calls · ${n(b.failed)} failed · latency ${n(b.latency_last_ms)} ms, max ${n(b.latency_max_ms)} ms`
+  const axes = (b.axes !== null && typeof b.axes === 'object' ? b.axes : {}) as Record<string, AxisRow>
+  const rows = ['task', 'complexity', 'ambiguity', 'loop'].flatMap(axis => {
+    const row = axes[axis]
+    if (row === undefined) return []
+    const agreed = n(row.agreed)
+    const overridden = n(row.overridden)
+    const decided = agreed + overridden
+    const share = decided === 0 ? '' : ` · jev over rule ${Math.round((overridden / decided) * 100)}%`
+    return [`${(AXIS_WORD[axis] ?? axis).padEnd(11)} agreed ${agreed} · overrode ${overridden} · undecided ${n(row.undecided)}${share}`]
+  })
+  return [head, ...rows]
+}
