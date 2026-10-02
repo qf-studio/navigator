@@ -227,11 +227,13 @@ export const register: Register = on => {
     const window = u?.rates[0]
     const fanOut = r.total - r.docs >= 5
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
-    const title = (text: string) => <Text color={PALETTE.accent}>{text}</Text>
+    const title = (text: string) => (
+      <Box marginBottom={1}><Text color={PALETTE.accent}>{text}</Text></Box>
+    )
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" marginBottom={1}>
+        <Box flexDirection="row">
           <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
             {title('context')}
             <Text wrap="truncate-end">
@@ -263,7 +265,7 @@ export const register: Register = on => {
         </Box>
 
         <Box {...panel} flexDirection="column">
-          {title('task')}
+          {title('active task')}
           <Text wrap="truncate-end">
             <Text color={PALETTE.accent} bold>{current?.id ?? 'no task in progress'}</Text>
             <Text color={PALETTE.label}>{current?.title ? `  ${current.title}` : ''}</Text>
