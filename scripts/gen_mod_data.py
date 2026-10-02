@@ -66,6 +66,9 @@ def clamp_corpus():
         for n in (0, 1, 10, 80, 120):
             cases.append((event, "\n".join([line] * n)))
         cases.append((event, "y" * 12000))
+        # astral code points: Python len() counts one per emoji, JS .length counts two
+        cases.append((event, ("🧭 nav " * 1500) + "\nend"))
+        cases.append((event, "\n".join(["é😀" * 60] * 90)))
     return cases
 
 

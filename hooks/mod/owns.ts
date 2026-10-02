@@ -6,7 +6,8 @@ import type { Io } from './lib/types'
 export const OWNED: readonly string[] = [
   'prompt_gate', 'prompt_tier1', 'prompt_adhd', 'prompt_brief',
   'read_guard', 'jit_memory', 'graph_sync', 'profile_sync', 'failure_diagnosis',
-  'stop_completion', 'stop_state',
+  'stop_completion', 'stop_state', 'session_start', 'compact_marker', 'subagent_context',
+  'config_guard', 'setup',
 ]
 
 export const MIN_CC = '2.1.287'

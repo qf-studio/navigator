@@ -64,7 +64,7 @@ export const load = async (
 }
 
 /** Python `datetime.fromtimestamp(ts, tz=utc).isoformat()` (microseconds, +00:00). */
-const isoUtc = (nowS: number): string => {
+export const isoUtc = (nowS: number): string => {
   const ms = Math.floor(nowS * 1000)
   const micros = Math.round((nowS - Math.floor(nowS)) * 1e6)
   const base = new Date(ms).toISOString().slice(0, 19)

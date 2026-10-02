@@ -10,6 +10,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
+import { surfaceHealth } from './lib/life-health'
 import { isPilotExecutor, loadConfig } from './lib/config'
 import { RELEASES_URL, dueForCheck, latestStable, updateNotice, updateSettings } from './lib/update'
 import type { Io } from './lib/types'
@@ -66,6 +67,15 @@ const ioOf = ($: EngineInterface): Io => ({
     const r = await $.process.run(argv, { cwd, timeoutMs })
     return { exitCode: r.exitCode, stdout: r.stdout }
   },
+  stat: async path => {
+    try {
+      const st = await $.fs.stat(path)
+      return { kind: st.kind, mtimeMs: st.mtimeMs }
+    } catch {
+      return null
+    }
+  },
+  localOffsetMinutes: ms => -new Date(ms).getTimezoneOffset(),
   runCapture: async (argv, cwd, timeoutMs) => {
     const r = await $.process.run(argv, { cwd, timeoutMs })
     return { exitCode: r.exitCode, stdout: r.stdout, stderr: r.stderr }
@@ -165,8 +175,14 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
 
 /** Run the ops registered for a (Python-named) event; null outside a Navigator project. */
 const runFor = async ($: EngineInterface, event: string, payload: Record<string, unknown>) => {
-  const ctx = await makeCtx(ioOf($), event, payload)
-  return ctx === null ? null : runEvent(ctx, EVENT_OPS[event] ?? [])
+  const io = ioOf($)
+  const ctx = await makeCtx(io, event, payload)
+  if (ctx === null) return null
+  // runtime._surface_health: SessionStart leads with the last dispatch error, if unsurfaced.
+  const leading = event === 'SessionStart' ? await surfaceHealth(io, `${ctx.root}/.agent`) : null
+  const merged = await runEvent(ctx, EVENT_OPS[event] ?? [], leading)
+  if (merged.toast) $.ui.toast(merged.toast, { timeoutMs: 10000 })
+  return merged
 }
 
 /** The settings-hook payload shape the Python ops read, rebuilt from a tool.call event. */
@@ -222,9 +238,43 @@ export const register: Register = on => {
   // handoff env is in place for it. $.state resets on /clear, /resume and /branch, and
   // session.start does not fire again, so the pane reloads here too.
   on('classic.SessionStart', async ($, e, next) => {
+    // Announce before next(): modules run before settings hooks, so the Python
+    // SessionStart child already sees what the mod owns.
     await announce(ioOf($))
     if (e.source === 'clear' || e.source === 'resume' || e.source === 'fork') await refreshPane($)
-    return next(e)
+    const r = await next(e)
+    const merged = await runFor($, 'SessionStart', e as unknown as Record<string, unknown>)
+    return withContext(r, merged?.context)
+  })
+
+  on('classic.PreCompact', async ($, e, next) => {
+    const r = await next(e)
+    await runFor($, 'PreCompact', e as unknown as Record<string, unknown>)
+    return r
+  })
+
+  on('classic.PostCompact', async ($, e, next) => {
+    const r = await next(e)
+    await runFor($, 'PostCompact', e as unknown as Record<string, unknown>)
+    return r
+  })
+
+  on('classic.SubagentStart', async ($, e, next) => {
+    const r = await next(e)
+    const merged = await runFor($, 'SubagentStart', e as unknown as Record<string, unknown>)
+    return withContext(r, merged?.context)
+  })
+
+  on('classic.ConfigChange', async ($, e, next) => {
+    const r = await next(e)
+    await runFor($, 'ConfigChange', e as unknown as Record<string, unknown>)
+    return r
+  })
+
+  on('classic.Setup', async ($, e, next) => {
+    const r = await next(e)
+    const merged = await runFor($, 'Setup', e as unknown as Record<string, unknown>)
+    return withContext(r, merged?.context)
   })
 
   on('command.run', { command: 'nav' }, async $ => {

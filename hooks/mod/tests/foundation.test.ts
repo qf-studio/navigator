@@ -5,7 +5,7 @@ import { configAllows, deepMerge, getPath } from '../lib/config'
 import { stripAll } from '../lib/sentinels'
 import type { Io, Op, OpCtx, OpResult } from '../lib/types'
 import { announce, compareVersions, ownedNow } from '../owns'
-import { merge, runOps, suppressBlocking } from '../runner'
+import { describeError, merge, runOps, suppressBlocking } from '../runner'
 import { CLAMP_CASES, STRIP_CASES } from './fixtures/foundation.gen'
 
 type FakeIo = Io & { owned: string[]; crashes: Record<string, number>; off: string[] }
@@ -131,5 +131,26 @@ describe('runner', () => {
   test('suppressBlocking keeps non-blocking output', () => {
     expect(suppressBlocking({ decision: 'block', reason: 'x', additional_context: 'keep' }))
       .toEqual({ additional_context: 'keep' })
+  })
+})
+
+describe('crash bookkeeping (runtime._handle_op_crash parity)', () => {
+  test('class name only, never the message', () => {
+    expect(describeError(new TypeError('run until done: secret prompt'))).toBe('TypeError')
+    expect(describeError('plain   text\nvalue')).toBe('plain text value')
+  })
+  test('a crash records op_errors with an ISO ts and writes the health file', async () => {
+    const writes: { path: string; text: string }[] = []
+    const io = { ...fakeIo(), write: async (path: string, text: string) => { writes.push({ path, text }) } }
+    await announce(io)
+    const ctx = { ...ctxOf(io), now: 1_700_000_000 }
+    await runOps(ctx, [op('injectors', () => { throw new RangeError('keep going forever') })])
+    const errors = (ctx.state.meta as { op_errors: { op: string; error: string; ts: string }[] }).op_errors
+    expect(errors[0]).toEqual({ op: 'prompt_adhd', error: 'RangeError', ts: '2023-11-14T22:13:20+00:00' })
+    const health = writes.find(w => w.path.endsWith('.nav-dispatch-health.json'))
+    expect(JSON.parse(health?.text ?? '{}')).toEqual({
+      last_error: { ts: '2023-11-14T22:13:20+00:00', event: 'UserPromptSubmit', op: 'prompt_adhd', error: 'RangeError' },
+      surfaced: false,
+    })
   })
 })

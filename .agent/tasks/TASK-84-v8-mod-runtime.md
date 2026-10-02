@@ -294,3 +294,16 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   exit signal). The mod's Stop block works like v7's decision:block.
 - Follow-ups kept out of parity: isReadOnly mutation tracking (mem-077 fix) and preferring
   `e.last_assistant_message` — need their own fixtures; candidates for v8.1.
+
+### Step 5d — lifecycle ops (2026-10-02) ✅ (fork, merged 1bde46c)
+- session_start (v6 golden reproduces byte for byte), compact_marker (Pre/Post), subagent_context,
+  config_guard, setup — 75 recorded scenarios at parity. Python string/JSON/float semantics in
+  `lib/life-py.ts`; health surfacing in `lib/life-health.ts`.
+- Wiring: classic.SessionStart announces ownership before `next`, then runs session_start with the
+  health line leading the clamped context (runtime._surface_health parity); PreCompact/PostCompact
+  pass-through; SubagentStart/Setup add `additionalContext`; ConfigChange/Setup `system_message`
+  → `$.ui.toast`. Io: `stat`, `localOffsetMinutes`.
+- **All 16 registry ops are owned by the mod.** `test_real_repo_mod_owns_every_registry_op` locks it.
+- Parity fixes found on the way: `clamp` counts code points like Python (astral fixtures added);
+  crash bookkeeping mirrors `_handle_op_crash` (class name only, ISO ts, health file).
+- 82 kit tests, 10 files.

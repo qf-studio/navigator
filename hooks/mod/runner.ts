@@ -3,7 +3,7 @@
 // per-op crash isolation with a breaker, merge in registry order.
 import { clamp } from './lib/budget'
 import { configAllows } from './lib/config'
-import { save } from './lib/state'
+import { isoUtc, save } from './lib/state'
 import type { Merged, Op, OpCtx, OpResult } from './lib/types'
 import { noteCrash, owns } from './owns'
 
@@ -28,7 +28,9 @@ export const suppressBlocking = (r: OpResult): OpResult => {
 }
 
 /** Fold op results (registry order) into what the mod returns for `event`. */
-export const merge = (event: string, results: readonly OpResult[]): Merged => {
+export const merge = (
+  event: string, results: readonly OpResult[], leading: string | null = null,
+): Merged => {
   const contexts: string[] = []
   const messages: string[] = []
   const notes: string[] = []
@@ -44,6 +46,7 @@ export const merge = (event: string, results: readonly OpResult[]): Merged => {
     if (!blocking && r.stderr) notes.push(r.stderr)
     if (r.system_message) messages.push(r.system_message)
   }
+  if (leading) contexts.unshift(leading) // health line survives the clamp (runtime parity)
   const context = contexts.length === 0 ? null : clamp(contexts.join('\n'), event)
   const prompt = event === 'UserPromptSubmit'
   const tool = event === 'PreToolUse'
@@ -57,17 +60,30 @@ export const merge = (event: string, results: readonly OpResult[]): Merged => {
   }
 }
 
-/** runtime._note_op_error: append {op, error, ts} to meta.op_errors (bounded on save). */
-const noteOpError = (ctx: OpCtx, op: string, error: unknown): void => {
+const ERROR_TEXT_LIMIT = 200
+export const HEALTH_FILE = '.agent/.nav-dispatch-health.json'
+
+/** runtime._describe_error: class name only, never the message (it can carry prompt text). */
+export const describeError = (error: unknown): string =>
+  error instanceof Error ? error.name
+    : String(error).split(/\s+/).filter(Boolean).join(' ').slice(0, ERROR_TEXT_LIMIT)
+
+/** runtime._handle_op_crash: op_errors note + health file the next SessionStart surfaces once. */
+const noteOpError = async (ctx: OpCtx, op: string, error: unknown): Promise<void> => {
+  const text = describeError(error)
+  const ts = isoUtc(ctx.now)
   const meta = (ctx.state.meta ?? {}) as Record<string, unknown>
   const list = Array.isArray(meta.op_errors) ? meta.op_errors : []
-  const name = error instanceof Error ? error.name : typeof error
-  list.push({ op, error: `${ctx.event}/${op}: ${name}`, ts: ctx.now })
+  list.push({ op, error: text, ts })
   meta.op_errors = list
   ctx.state.meta = meta
+  const doc = { last_error: { ts, event: ctx.event, op, error: text }, surfaced: false }
+  await ctx.io.write(`${ctx.root}/${HEALTH_FILE}`, `${JSON.stringify(doc, null, 2)}\n`).catch(() => {})
 }
 
-export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> => {
+export const runOps = async (
+  ctx: OpCtx, ops: readonly Op[], leading: string | null = null,
+): Promise<Merged> => {
   const ordered = ops
     .map((op, index) => ({ op, index }))
     .sort((a, b) => PHASE_RANK[a.op.spec.phase] - PHASE_RANK[b.op.spec.phase] || a.index - b.index)
@@ -83,7 +99,7 @@ export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> =>
     try {
       result = await op.run(ctx)
     } catch (error) {
-      noteOpError(ctx, op.spec.name, error)
+      await noteOpError(ctx, op.spec.name, error)
       await noteCrash(ctx.io, op.spec.name)
       continue
     }
@@ -92,12 +108,14 @@ export const runOps = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> =>
     if (isGate && isBlocking(result)) gateBlocked = true
     outcomes.push({ index, result })
   }
-  return merge(ctx.event, outcomes.sort((a, b) => a.index - b.index).map(o => o.result))
+  return merge(ctx.event, outcomes.sort((a, b) => a.index - b.index).map(o => o.result), leading)
 }
 
 /** One event end to end: run the ops, then persist the shared runtime state once. */
-export const runEvent = async (ctx: OpCtx, ops: readonly Op[]): Promise<Merged> => {
-  const merged = await runOps(ctx, ops)
+export const runEvent = async (
+  ctx: OpCtx, ops: readonly Op[], leading: string | null = null,
+): Promise<Merged> => {
+  const merged = await runOps(ctx, ops, leading)
   await save(ctx.io, ctx.root, ctx.state as never, ctx.sessionId, ctx.now)
   return merged
 }

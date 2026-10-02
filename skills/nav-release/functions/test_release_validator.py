@@ -78,6 +78,17 @@ class VerifyModTest(unittest.TestCase):
         ok, problems = verify_mod(root, run_generator=False)
         self.assertEqual(problems, [])
 
+    def test_real_repo_mod_owns_every_registry_op(self):
+        """v8.0 parity contract: every Python op has a mod twin and is owned by it."""
+        import re
+        root = Path(__file__).resolve().parents[3]
+        owns = (root / "hooks" / "mod" / "owns.ts").read_text()
+        block = re.search(r"export const OWNED[^=]*=\s*\[([^\]]*)\]", owns).group(1)
+        owned = set(re.findall(r"'([a-z0-9_]+)'", block))
+        registry = set(re.findall(r'OpSpec\(\s*"([a-z0-9_]+)"',
+                                  (root / "hooks" / "nav_hook_lib" / "registry.py").read_text()))
+        self.assertEqual(owned, registry)
+
 
 def _make_root(tmp: Path, hook_names, manifest_hooks):
     """Build a minimal project root: hooks/ with the given files + a plugin.json."""
