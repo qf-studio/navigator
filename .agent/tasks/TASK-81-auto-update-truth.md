@@ -1,6 +1,6 @@
 # TASK-81: Auto-update — make the session-start check real, and the docs honest
 
-**Status**: 📐 Plan — 2026-09-23 (not started)
+**Status**: 🚧 In Progress — points 1–2 done on branch v8 (TASK-84, 2026-10-02); point 3 (docs) lands with the v8 docs step
 
 ## Context
 
@@ -52,3 +52,13 @@ paraphrase; stop claiming self-update in docs unless an explicit in-hook switch 
 - After a release: notice appears within `check_interval_hours` without any manual step.
 
 Size: ~half a day.
+
+
+## Progress (2026-10-02, branch v8)
+
+- Point 1 → done in the v8 mod instead of the Python session_start op: `hooks/mod/lib/update.ts`,
+  running version from the mod's own manifest, GitHub releases API with a 4 s race, interval via
+  `$.store`, no network under Pilot, read-only toast. Python fallback keeps `--check-drift`.
+- Point 2 → done: nav-start Step 1.5 is one `auto_updater.py` call whose JSON fields the model
+  reports verbatim; the `$NEW_VERSION` template is gone.
+- Point 3 (docs honesty) → TASK-84 step 9.

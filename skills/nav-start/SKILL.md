@@ -85,58 +85,24 @@ fi
 
 ### Step 1.5: Auto-Update (if enabled)
 
-If auto_update is enabled in config AND an update is available, automatically update Navigator:
+Run exactly this one command. It reads `auto_update` from the project config, checks the
+latest release, and updates the plugin only when one is available. It prints one JSON object.
 
 ```bash
-# Resolve the installed plugin directory
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
-
-# Run auto-updater
-AUTO_UPDATE_RESULT=$(python3 "$PLUGIN_DIR/skills/nav-start/functions/auto_updater.py" 2>/dev/null)
-AUTO_UPDATE_STATUS=$(echo "$AUTO_UPDATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
-
-case "$AUTO_UPDATE_STATUS" in
-  "updated")
-    NEW_VERSION=$(echo "$AUTO_UPDATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('new_version',''))" 2>/dev/null)
-    REQUIRES_RESTART=$(echo "$AUTO_UPDATE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('requires_restart', False))" 2>/dev/null)
-    echo "✅ Auto-updated Navigator to v$NEW_VERSION"
-    if [ "$REQUIRES_RESTART" = "True" ]; then
-      echo ""
-      echo "⚠️  RESTART REQUIRED"
-      echo "   Claude Code caches skill paths at session start."
-      echo "   Restart Claude Code to load new skills from v$NEW_VERSION."
-      echo ""
-    fi
-    ;;
-  "up-to-date")
-    # Silently continue
-    ;;
-  "failed")
-    echo "⚠️  Auto-update failed. Run 'nav-upgrade' manually if needed."
-    ;;
-  "disabled"|"skipped")
-    # Silently continue
-    ;;
-esac
+python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/navigator-marketplace}/skills/nav-start/functions/auto_updater.py"
 ```
 
-**Auto-update behavior**:
-- **If updated**: Show "✅ Auto-updated to vX.Y.Z" with restart prompt
-- **If up-to-date**: Continue silently
-- **If failed**: Show warning "⚠️ Auto-update failed, run nav-upgrade manually"
-- **If disabled/skipped**: Continue silently
+Report **only** what that JSON says. Never write an update line from memory or a template:
 
-**IMPORTANT**: When `requires_restart: true`, display:
-```
-⚠️  RESTART REQUIRED
-   Claude Code caches skill paths at session start.
-   Restart Claude Code to load new skills from vX.Y.Z.
-```
+- `"status": "updated"` → `✅ Navigator updated from <current_version> to <new_version>. Restart
+  Claude Code to load it.` (values copied from the JSON)
+- `"status": "failed"` → `⚠️ <message>. Update by hand: claude plugin update navigator@navigator-marketplace`
+- `"up-to-date"`, `"disabled"`, `"skipped"`, or the command did not run → say nothing about updates
 
-This informs users that mid-session updates require a restart to activate new skills.
+Since v8 the Navigator mod also shows a read-only toast at session start when a newer release
+exists (TASK-81). It never updates by itself; this step and `claude plugin update` do.
 
-**Never block session start** due to auto-update failure.
+**Never block session start** because of this step.
 
 ### Step 2: Check Navigator Initialization
 
