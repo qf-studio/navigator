@@ -67,7 +67,7 @@ const world = (on: On, files: Files, percent?: number) => {
     value: {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
-        ? '.agent/tasks/TASK-15-x.md\n.agent/tasks/TASK-80-judge.md\n'
+        ? '.agent/tasks/TASK-15-x.md|# TASK-15: Marketing plan\n.agent/tasks/TASK-80-judge.md|# TASK-80: Typed judge, phase 2\n'
         : String(e.argv[1]).endsWith('graph_manager.py')
           ? 'Total Nodes: 195\nTotal Edges: 843\nMemories: 71\n'
           : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
@@ -232,6 +232,7 @@ test('(f) /nav opens the pane with task, context bar and memories', async ($, on
     expect(texts).toContain('42%')
     expect(texts).toContain('z-newest-by-mtime')
     expect(texts).toContain('TASK-15')
+    expect(texts).toContain('Typed judge, phase 2')
     expect(texts).toContain('graph 195 nodes')
     expect(texts).toContain('stop gate over-fires on heredoc Bash')
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)

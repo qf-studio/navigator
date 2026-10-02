@@ -1,16 +1,19 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavMemory, NavRate } from '../types'
+import type { NavGraph, NavMemory, NavRate, NavTask } from '../types'
 
 const TASK_ID_RE = /(TASK-\d+)/
 const MEMORY_RE = /^-\s*([A-Z]+):\s*"(.*)"\s*(?:\((\d+)%\))?/
 const STAT_RE = /^(Total Nodes|Total Edges|Memories):\s*(\d+)/
 
-/** In-progress task ids from a `grep -l` listing of task files, in file order. */
-export const parseTasks = (stdout: string): string[] =>
+/** `path|# TASK-80: Title` lines → in-progress tasks with titles, in file order. */
+export const parseTasks = (stdout: string): NavTask[] =>
   stdout.split('\n').flatMap(line => {
-    const m = TASK_ID_RE.exec(line.trim())
-    return m?.[1] ? [m[1]] : []
+    const [path = '', heading = ''] = line.split('|')
+    const m = TASK_ID_RE.exec(path)
+    if (!m?.[1]) return []
+    const title = heading.replace(/^#+\s*/, '').replace(new RegExp(`^${m[1]}:?\\s*`), '').trim()
+    return [{ id: m[1], title }]
   })
 
 /** Lines of `memory_recall.py --format compact`: `- KIND: "text" (NN%) …`. */

@@ -16,10 +16,7 @@ import {
   bar, cut, latestMarker, parseGraphStats, parseMemories, parseTasks, usageLine,
 } from './nav'
 import { bandLine, isQuiet, statusOf } from './status'
-import {
-  PALETTE, beside, card, compact, gauge, percentColor, seg, sparkline, splitWidths,
-} from './ui'
-import type { Row } from './ui'
+import { PALETTE, compact, gauge, percentColor, sparkline } from './ui'
 
 const PLUGIN = 'nav-status'
 const PANE = 'nav'
@@ -109,7 +106,8 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
   const graphPath = '.agent/knowledge/graph.json'
   const tasks = await run($, ['sh', '-c',
-    'grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md'], root)
+    'for f in $(grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md); do '
+    + 'printf "%s|%s\\n" "$f" "$(grep -m1 "^# " "$f")"; done'], root)
   const memories = await run($, ['python3', `${functions}/memory_recall.py`, '--auto',
     '--agent-dir', '.agent', '--graph-path', graphPath, '--limit', '4', '--format', 'compact'], root)
   const stats = await run($, ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
@@ -222,89 +220,104 @@ export const register: Register = on => {
     const r = await read($, reads)
     const hist = await read($, history)
     const chosen = await read($, pinned)
-    const width = Math.max(40, e.props.bodyColumns)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
     const current = p.tasks[p.tasks.length - 1] ?? null
-    const [w1, w2, w3] = splitWidths(width, 3)
-    const inner = (w: number) => w - 4
     const window = u?.rates[0]
-    const cards = beside([
-      card('context', [
-        [seg(pct, ctxColor, true), seg('  '), seg(gauge(percent, inner(w1 ?? 20) - pct.length - 2), ctxColor)],
-        [seg(percent !== null && percent >= 70 ? 'compact due' : 'compact safe', PALETTE.dim)],
-        [seg(sparkline(hist.ctx, inner(w1 ?? 20)), PALETTE.accent)],
-      ], w1 ?? 20),
-      card('session', [
-        [seg(u?.usd === null || u === null ? '--' : `$${u.usd.toFixed(2)}`, PALETTE.success, true),
-          seg(window ? `  ${window.kind} ${Math.round(window.percentUsed)}%` : '', PALETTE.dim)],
-        [seg(s?.phase ? `phase ${s.phase}` : 'phase —', PALETTE.label)],
-        [seg(p.graph ? `graph ${compact(p.graph.nodes)} nodes` : 'graph —', PALETTE.dim)],
-      ], w2 ?? 20),
-      card('reads', [
-        [seg(`${r.total}`, r.total - r.docs >= 5 ? PALETTE.warning : PALETTE.accent, true),
-          seg(`  ${r.docs} docs`, PALETTE.dim)],
-        [seg(r.total - r.docs >= 5 ? 'use an Agent' : 'fan-out ok', PALETTE.dim)],
-        [seg(sparkline(hist.reads, inner(w3 ?? 20)), PALETTE.accent)],
-      ], w3 ?? 20),
-    ])
-    const taskRows: Row[] = [
-      [seg(current ?? 'no task in progress', PALETTE.accent, true),
-        seg(p.marker === null ? '' : `  marker ${p.marker}`, PALETTE.dim)],
-      ...(s?.next ? [[seg('→ ', PALETTE.dim), seg(s.next, PALETTE.label)]] : []),
-    ]
-    const taskCard = card('task', taskRows, width)
-    const openRow: Row = p.tasks.length === 0
-      ? [seg('none marked in progress', PALETTE.dim)]
-      : p.tasks.slice(-5).flatMap((t, i) => [
-        seg(i === 0 ? '' : '  '),
-        seg(t === current ? '● ' : '○ ', t === current ? PALETTE.success : PALETTE.dim),
-        seg(t, t === current ? PALETTE.label : PALETTE.dim),
-      ])
-    const openCard = card('open tasks', [openRow], width)
-    const line = (row: Row) => (
-      <Text>
-        {row.map(x => <Text color={x.color} bold={x.bold}>{x.text}</Text>)}
-      </Text>
-    )
-    const frame = (rows: Row[]) => rows.map(line)
-    const memTitle = `─ memories `
-    const memTop: Row = [
-      seg('╭', PALETTE.border), seg(memTitle, PALETTE.accent),
-      seg('─'.repeat(Math.max(0, width - 2 - memTitle.length)) + '╮', PALETTE.border),
-    ]
-    const memBottom: Row = [seg(`╰${'─'.repeat(width - 2)}╯`, PALETTE.border)]
+    const fanOut = r.total - r.docs >= 5
+    const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
+    const title = (text: string) => <Text color={PALETTE.accent}>{text}</Text>
 
     return (
       <Box flexDirection="column">
-        {frame(cards)}
-        {frame(taskCard)}
-        {line(memTop)}
-        {p.memories.length === 0 && line([seg('│ ', PALETTE.border), seg('none for the open tasks', PALETTE.dim)])}
-        {p.memories.map((m, i) => (
-          <Box flexDirection="row">
-            <Text color={PALETTE.border}>│ </Text>
-            <Button
-              key={`mem-${i}`}
-              label={chosen === m.text ? '●' : '▸'}
-              plain
-              onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
-            />
-            <Box width={width - 6} marginLeft={1}>
-              <Text wrap="wrap" color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>
-                <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
-                <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
-                {'  '}{m.text}
-              </Text>
-            </Box>
+        <Box flexDirection="row">
+          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
+            {title('context')}
+            <Text wrap="truncate-end">
+              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
+            </Text>
+            <Text color={PALETTE.dim}>{percent !== null && percent >= 70 ? 'compact due' : 'compact safe'}</Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
           </Box>
-        ))}
-        {line([seg('│ ', PALETTE.border),
-          seg(chosen === null ? '▸ pins a memory into your next prompt' : '● pinned for your next prompt', PALETTE.dim)])}
-        {line(memBottom)}
-        {frame(openCard)}
-        <Box flexDirection="row" columnGap={2}>
+          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
+            {title('session')}
+            <Text wrap="truncate-end">
+              <Text color={PALETTE.success} bold>{u?.usd == null ? '--' : `$${u.usd.toFixed(2)}`}</Text>
+              <Text color={PALETTE.dim}>{window ? `  ${window.kind} ${Math.round(window.percentUsed)}%` : ''}</Text>
+            </Text>
+            <Text color={PALETTE.label} wrap="truncate-end">{s?.phase ? `phase ${s.phase}` : 'phase —'}</Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">
+              {p.graph ? `graph ${compact(p.graph.nodes)} nodes` : 'graph —'}
+            </Text>
+          </Box>
+          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
+            {title('reads')}
+            <Text wrap="truncate-end">
+              <Text color={fanOut ? PALETTE.warning : PALETTE.accent} bold>{r.total}</Text>
+              <Text color={PALETTE.dim}>  {r.docs} docs</Text>
+            </Text>
+            <Text color={PALETTE.dim}>{fanOut ? 'use an Agent' : 'fan-out ok'}</Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.reads, 14)}</Text>
+          </Box>
+        </Box>
+
+        <Box {...panel} flexDirection="column">
+          {title('task')}
+          <Text wrap="truncate-end">
+            <Text color={PALETTE.accent} bold>{current?.id ?? 'no task in progress'}</Text>
+            <Text color={PALETTE.label}>{current?.title ? `  ${current.title}` : ''}</Text>
+          </Text>
+          {s?.next ? (
+            <Text wrap="truncate-end"><Text color={PALETTE.dim}>→ </Text><Text color={PALETTE.label}>{s.next}</Text></Text>
+          ) : null}
+          <Text color={PALETTE.dim} wrap="truncate-end">
+            {p.marker === null ? 'no marker yet' : `marker ${p.marker}`}
+          </Text>
+        </Box>
+
+        <Box {...panel} flexDirection="column">
+          {title('memories')}
+          {p.memories.length === 0 && <Text color={PALETTE.dim}>none for the open tasks</Text>}
+          {p.memories.map((m, i) => (
+            <Box flexDirection="row" columnGap={1}>
+              <Button
+                key={`mem-${i}`}
+                label={chosen === m.text ? '●' : '▸'}
+                plain
+                onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
+              />
+              <Box flexGrow={1} flexShrink={1}>
+                <Text wrap="wrap" color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>
+                  <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
+                  <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+                  {'  '}{m.text}
+                </Text>
+              </Box>
+            </Box>
+          ))}
+          <Text color={PALETTE.dim}>
+            {chosen === null ? '▸ pins a memory into your next prompt' : '● pinned for your next prompt'}
+          </Text>
+        </Box>
+
+        <Box {...panel} flexDirection="column">
+          {title('open tasks')}
+          {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
+          {[...p.tasks].reverse().slice(0, 6).map(t => (
+            <Text wrap="truncate-end">
+              <Text color={t.id === current?.id ? PALETTE.success : PALETTE.dim}>
+                {t.id === current?.id ? '● ' : '○ '}
+              </Text>
+              <Text color={t.id === current?.id ? PALETTE.label : PALETTE.dim} bold={t.id === current?.id}>
+                {t.id}
+              </Text>
+              <Text color={PALETTE.dim}>{t.title ? `  ${t.title}` : ''}</Text>
+            </Text>
+          ))}
+        </Box>
+
+        <Box flexDirection="row" columnGap={2} paddingX={1}>
           <Button
             key="marker"
             label="marker"

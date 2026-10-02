@@ -10,8 +10,10 @@ export type NavMemory = { kind: string; text: string; percent: number | null }
 export type NavGraph = { nodes: number; edges: number; memories: number }
 export type NavRate = { kind: string; percentUsed: number }
 
+export type NavTask = { id: string; title: string }
+
 export type NavPane = {
-  tasks: string[]
+  tasks: NavTask[]
   marker: string | null
   memories: NavMemory[]
   graph: NavGraph | null
