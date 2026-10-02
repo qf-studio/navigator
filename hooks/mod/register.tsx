@@ -497,6 +497,34 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
+        <Box flexDirection="row">
+          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
+            {title('fuel (context)')}
+            <Text wrap="truncate-end">
+              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
+            </Text>
+            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
+              {left === null ? 'growth flat' : `~${left} turns left`}
+            </Text>
+            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
+              {lowFuel ? 'compact at next waypoint' : a.lastTurnCommitted ? 'good moment to compact' : 'compact: hold'}
+            </Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">
+              {u?.usd == null ? '' : `$${u.usd.toFixed(2)}`}
+              {window ? ` · ${rateKind(window.kind)} ${Math.round(window.percentUsed)}%` : ''}
+            </Text>
+          </Box>
+          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
+            {title('saved')}
+            <Text color={PALETTE.success} bold wrap="truncate-end">~{compact(avoided)} tokens</Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">docs {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B</Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">
+              {a.agentRuns === 0 ? 'agents: none yet' : `agents ${compact(a.agentTokens)} outside`}
+            </Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.saved, 14)}</Text>
+          </Box>
+        </Box>
+
         {isOff && detour !== null ? (
           <Box {...panel} borderColor={PALETTE.warning} flexDirection="column">
             {title('⚠ off route', PALETTE.warning)}
@@ -549,34 +577,6 @@ export const register: Register = on => {
               ) : null}
             </Box>
           )}
-        </Box>
-
-        <Box flexDirection="row">
-          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('fuel (context)')}
-            <Text wrap="truncate-end">
-              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
-            </Text>
-            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
-              {left === null ? 'growth flat' : `~${left} turns left`}
-            </Text>
-            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
-              {lowFuel ? 'compact at next waypoint' : a.lastTurnCommitted ? 'good moment to compact' : 'compact: hold'}
-            </Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">
-              {u?.usd == null ? '' : `$${u.usd.toFixed(2)}`}
-              {window ? ` · ${rateKind(window.kind)} ${Math.round(window.percentUsed)}%` : ''}
-            </Text>
-          </Box>
-          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('saved')}
-            <Text color={PALETTE.success} bold wrap="truncate-end">~{compact(avoided)} tokens</Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">docs {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B</Text>
-            <Text color={PALETTE.dim} wrap="truncate-end">
-              {a.agentRuns === 0 ? 'agents: none yet' : `agents ${compact(a.agentTokens)} outside`}
-            </Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.saved, 14)}</Text>
-          </Box>
         </Box>
 
         {tasksOpen ? (

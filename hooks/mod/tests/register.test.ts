@@ -251,6 +251,8 @@ test('(f) /nav shows destination, route steps, fuel (context) and saved', async 
     expect(texts).not.toContain('you are here')
     expect(texts).toContain('wire the band')
     expect(texts).toContain('fuel (context)')
+    expect(texts.indexOf('fuel (context)')).toBeLessThan(texts.indexOf('destination')) // fuel/saved on top
+    expect(texts.indexOf('saved')).toBeLessThan(texts.indexOf('destination'))
     expect(texts).toContain('42%')
     expect(texts).toContain('~100.0K tokens')
     expect(texts).not.toContain('stop gate over-fires on heredoc Bash') // memories left the pane
