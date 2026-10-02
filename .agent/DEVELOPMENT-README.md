@@ -186,6 +186,16 @@ Other threads:
   removal); v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
   a new `/skills/nav-features` page. First release whose specs live only in issues — the
   precedent for `task_id_source: github` in this repo, not yet switched on here
+- **TASK-82** ✅ — ADHD mode: `ops/prompt_adhd.py` + `nav_hook_lib/adhd.py` + `personal.py`.
+  Exact phrases `adhd mode on|off|status` answer via decision:block (zero model turn) and
+  write the person's switch (`~/.config/navigator/adhd-mode.json`); while on, the reply-shape
+  rule block (~206 tokens) rides every UserPromptSubmit; repo pin `adhd_mode.on`. Released
+  v7.9.0 2026-10-01 together with the hard removal of the multi-Claude orchestration (skills,
+  scripts, templates, SOPs, `multi_agent` block; TASK-25 archived). Lessons: subprocess test
+  suites must set `NAVIGATOR_CONFIG_HOME` or a developer's own switch leaks into golden/
+  dispatch output; `stop_completion` reads `python3 - <<EOF` heredocs as mutating (unknown
+  command → over-fire direction), so read-only diagnostic turns can trigger a forced
+  continuation in this repo where `continue_enabled` is on. Docs site synced same day
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
   three releases. Plan: real release check + one-line notice in session_start, single

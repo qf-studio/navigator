@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-01T12:12:54.218604+00:00",
+  "last_updated": "2026-10-02T07:24:45.160561+00:00",
   "stats": {
-    "total_nodes": 186,
-    "total_edges": 832,
-    "memory_count": 67
+    "total_nodes": 188,
+    "total_edges": 834,
+    "memory_count": 69
   },
   "nodes": {
     "tasks": {
@@ -2685,6 +2685,30 @@
         ],
         "created": "2026-09-13",
         "last_validated": "2026-09-13"
+      },
+      "mem-076": {
+        "type": "pitfall",
+        "summary": "Subprocess test suites that spawn hooks/nav_dispatch.py must set NAVIGATOR_CONFIG_HOME to a temp dir: per-person settings (ADHD switch, ~/.config/navigator) otherwise leak from the developer's machine into golden/dispatch output. Three suites failed at the v7.9.0 release until tier1, nav_dispatch, manifest, golden corpus and session_start tests isolated it (4b2ae38). [hooks/nav_hook_lib/personal.py]",
+        "path": "memories/pitfalls/mem-076.md",
+        "confidence": 0.95,
+        "concepts": [
+          "testing",
+          "hooks"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-077": {
+        "type": "learning",
+        "summary": "stop_completion classifies a Bash command it does not recognise as mutating (over-fire direction by design), so a read-only turn that uses a python3 heredoc, sed or grep pipeline can trigger a forced continuation when stop_completion.continue_enabled is on (this repo). Expect 'this turn mutated the codebase' on diagnostic turns; either accept it, extend the read-only allowlist, or turn continue_enabled off locally. [hooks/ops/stop_completion.py]",
+        "path": "memories/learnings/mem-077.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks",
+          "workflow"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
       }
     },
     "files": {}
@@ -7192,6 +7216,16 @@
       "from": "TASK-74",
       "to": "testing",
       "type": "implements"
+    },
+    {
+      "from": "mem-076",
+      "to": "TASK-82",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-077",
+      "to": "TASK-82",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -7370,7 +7404,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "TASK-74"
+      "TASK-74",
+      "mem-076"
     ],
     "context": [
       "TASK-32",
@@ -7788,7 +7823,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "mem-074"
+      "mem-074",
+      "mem-077"
     ],
     "backend": [
       "TASK-16",
@@ -8244,7 +8280,9 @@
       "mem-053",
       "mem-054",
       "mem-055",
-      "mem-075"
+      "mem-075",
+      "mem-076",
+      "mem-077"
     ],
     "session-lifecycle": [
       "mem-026",

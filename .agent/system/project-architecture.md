@@ -237,6 +237,13 @@ features for themselves without touching the shared file.
 guide and `.completed` live under `~/.config/navigator/onboarding/<repo-id>/`
 (`skills/nav-onboard/functions/onboarding_paths.py`; `NAVIGATOR_ONBOARDING_HOME` overrides).
 
+**Per-person switches** (v7.9.0, TASK-82): `hooks/nav_hook_lib/personal.py` keeps small JSON
+files under `~/.config/navigator/<name>.json` (`NAVIGATOR_CONFIG_HOME` overrides). ADHD mode is
+the first: `adhd-mode.json` `{"on": true}` is written when the user says `adhd mode on`. The
+repo config block `adhd_mode` only pins (`on: true|false`) or defers (`null`); `enabled` makes
+the machinery available. Resolution in `nav_hook_lib/adhd.py`: repo pin > personal file > off.
+Tests that spawn the dispatcher must set `NAVIGATOR_CONFIG_HOME` to a temp dir.
+
 **Not committed to plugin repo**: Generated per-project
 
 ---
