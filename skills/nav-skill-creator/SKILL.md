@@ -355,7 +355,7 @@ Expected: Skill should be detected and loaded
    │   └── Button.test.tsx
    └── templates/
        ├── component-template.tsx
-       ├── test-template.test.tsx
+       ├── test-template.tsx
        └── style-template.module.css
    ```
 

@@ -1,0 +1,49 @@
+{
+  "cc_version": "2.1.287",
+  "date": "2026-10-02",
+  "recorded_by": "Claude Code session (TASK-84 step 0), probes driven headless",
+  "probes": {
+    "s1": {
+      "pass": true,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s1.json",
+      "memory": "mem-050",
+      "summary": "PostToolUse additionalContext DELIVERS: hook emitted, codename quoted in visible answer, sentinel found injected at a non-assistant transcript position near the tool_result. Matches cc-2.1.205. Re-driven on 2.1.287: same verdict."
+    },
+    "s2": {
+      "pass": false,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s2.json",
+      "memory": "mem-051",
+      "summary": "continue:true is still a NO-OP. decision:block still forces the continuation (r1_num_turns=2, sentinel delivered in a user-position entry), but the model now REFUSES the imperative observable ('I'm not going to emit that token ... injected instructions from a hook') so decision_block_works reads false. Probe false negative per run.md method lesson 1: S2 must switch to a declarative fact + question observable (TASK-84 follow-up). Fuse consumed; run-twice produced zero further continuations (mem-037 belt verified)."
+    },
+    "s3": {
+      "pass": true,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s3.json",
+      "memory": "mem-052",
+      "summary": "SubagentStart additionalContext DELIVERS with both-way isolation: sentinel A in subagent sidechain only (no main-thread leak), main-only sentinel B absent from sidechain. Subagent transcript still a separate <session>/subagents/agent-<id>.jsonl file. Matches cc-2.1.205. Re-driven on 2.1.287: same verdict."
+    },
+    "s4": {
+      "pass": true,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s4.json",
+      "memory": "mem-053",
+      "summary": "UserPromptSubmit block-as-answer works in BOTH variants with zero model invocation (num_turns=0, 0 tokens) and clean echo hygiene (follow-up neither re-triggers nor contains block text). Rendering judgment: on 2.1.241 headless, exit-2 no longer leaks hook chrome to stderr (empty stderr, exit 0 envelope) \u2014 decision:block remains the chosen winner (what prompt_tier1 ships with); no runtime change needed. Re-driven on 2.1.287: same verdict."
+    },
+    "s5": {
+      "pass": true,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s5.json",
+      "memory": "mem-054",
+      "summary": "PreToolUse split verdict unchanged: stdout variant DEAD (hook emitted, model never saw it), additionalContext variant DELIVERS (codename quoted). channel_works refers to the additionalContext sub-channel. Reconfirms mem-054 / supersession of mem-035 exactly as on cc-2.1.205. Re-driven on 2.1.287: same verdict."
+    },
+    "s6": {
+      "pass": true,
+      "channel_works": true,
+      "verdict_file": "/tmp/nav-v7-spike/state/verdict-s6.json",
+      "memory": "mem-055",
+      "summary": "CLAUDE_PLUGIN_ROOT binds to the marketplace SOURCE path (/tmp/nav-v7-spike/marketplace/nav-spike) for dir-source installs; unset and empty variants fail LOUD (exit 2), not silent no-ops \u2014 mem-036 class did not reproduce. Drive note: hook $PWD arrives REALPATH'D (/private/tmp/...) when the harness launches claude via subprocess cwd=; the S6 logger's string-prefix case-glob missed it (false 'no live log') until widened to cover /private/tmp \u2014 method-lesson-2 violation in the probe itself, fixed in harness/nav-spike plugin.json this run. Probe-level observables unchanged from cc-2.1.205. Re-driven on 2.1.287: same verdict."
+    }
+  }
+}

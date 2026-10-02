@@ -1,6 +1,6 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavMemory, NavRate, NavTask } from '../types'
+import type { NavGraph, NavMemory, NavRate, NavTask } from '../../../types'
 
 const TASK_ID_RE = /(TASK-\d+)/
 const MEMORY_RE = /^-\s*([A-Z]+):\s*"(.*)"\s*(?:\((\d+)%\))?/

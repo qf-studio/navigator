@@ -1,5 +1,4 @@
-// nav-status: Navigator's status band, Navigator pane and ADHD-mode injection as a
-// Claude Code mod.
+// Navigator mod (v8 runtime, TASK-84): status band, /nav pane, ADHD-mode injection.
 //
 // Spike for the v8 runtime question (see memory project-claude-code-mods-assessment).
 // While loaded it owns ADHD mode end to end and tells the Python runtime so through
@@ -8,18 +7,18 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../types'
+import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../../types'
 import {
   RULE_BLOCK, classify, personalBody, personalPath, resolve, toggleReason,
-} from './adhd'
+} from './lib/adhd'
 import {
   clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
   tokensOf, turnsTo,
-} from './nav'
-import { bandLine, isQuiet, statusOf } from './status'
-import { PALETTE, compact, gauge, percentColor, sparkline } from './ui'
+} from './ui/nav'
+import { bandLine, isQuiet, statusOf } from './ui/status'
+import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
-const PLUGIN = 'nav-status'
+const PLUGIN = 'navigator'
 const PANE = 'nav'
 const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
@@ -34,12 +33,12 @@ const EMPTY_NAV: NavPane = {
 }
 const DOC_DIRS = '.agent/DEVELOPMENT-README.md .agent/tasks .agent/system .agent/sops .agent/philosophy'
 
-const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
-const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
-const activity = atom({ plugin: 'nav-status', key: 'activity' } as const, NO_ACTIVITY)
-const usage = atom({ plugin: 'nav-status', key: 'usage' } as const, null as NavUsage | null)
-const history = atom({ plugin: 'nav-status', key: 'history' } as const, NO_HISTORY)
-const pinned = atom({ plugin: 'nav-status', key: 'pinned' } as const, null as string | null)
+const status = atom({ plugin: 'navigator', key: 'status' } as const, null as NavStatus | null)
+const pane = atom({ plugin: 'navigator', key: 'pane' } as const, null as NavPane | null)
+const activity = atom({ plugin: 'navigator', key: 'activity' } as const, NO_ACTIVITY)
+const usage = atom({ plugin: 'navigator', key: 'usage' } as const, null as NavUsage | null)
+const history = atom({ plugin: 'navigator', key: 'history' } as const, NO_HISTORY)
+const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
 
 // $.state survives a hot reload, so a value written by an older version of this module
 // can lack fields added since. Read through these to merge stored values over defaults.
@@ -125,7 +124,7 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
     await update($, pane, () => EMPTY_NAV)
     return
   }
-  const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
+  const functions = `${$.plugin.root}/skills/nav-graph/functions`
   const graphPath = '.agent/knowledge/graph.json'
   const tasks = await run($, ['sh', '-c',
     'for f in $(grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md); do '
@@ -158,7 +157,7 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
   if (root === null) return
   const hits = matchConcepts(prompt, current.concepts)
   if (hits.length === 0) return
-  const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
+  const functions = `${$.plugin.root}/skills/nav-graph/functions`
   const out = await run($, ['python3', `${functions}/memory_recall.py`, '--concepts', hits.join(','),
     '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
   const memories = parseMemories(out)

@@ -220,7 +220,7 @@ The logger includes comprehensive unit tests covering:
 
 **Run tests:**
 ```bash
-npm test src/utils/__tests__/logger.test.ts
+npm test src/utils/__tests__/logger.spec.ts
 ```
 
 **Coverage:**
@@ -437,5 +437,5 @@ Part of the Navigator project. See project LICENSE for details.
 ## Related Documentation
 
 - Implementation Plan: `.agent/tasks/TASK-22-simple-console-logger.md`
-- Test Suite: `src/utils/__tests__/logger.test.ts`
+- Test Suite: `src/utils/__tests__/logger.spec.ts`
 - Source Code: `src/utils/logger.ts`

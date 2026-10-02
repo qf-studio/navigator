@@ -36,7 +36,7 @@ export type NavHistory = { ctx: number[]; saved: number[] }
 
 declare module 'claude-code' {
   interface PluginState {
-    'nav-status': {
+    'navigator': {
       status: NavStatus | null
       pane: NavPane | null
       usage: NavUsage | null

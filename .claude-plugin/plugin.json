@@ -205,5 +205,9 @@
         ]
       }
     ]
+  },
+  "types": "./types/index.d.ts",
+  "experimental": {
+    "themes": "./themes/"
   }
 }

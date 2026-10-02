@@ -211,7 +211,7 @@ python3 functions/component_generator.py \
 python3 functions/file_generator.py \
   --component-name "UserProfile" \
   --component-path "src/components/UserProfile/UserProfile.tsx" \
-  --template "templates/test-template.test.tsx" \
+  --template "templates/test-template.tsx" \
   --output "src/components/UserProfile/UserProfile.test.tsx"
 ```
 
@@ -438,7 +438,7 @@ Generates test file with React Testing Library.
 python3 functions/file_generator.py \
   --component-name "UserProfile" \
   --component-path "src/components/UserProfile/UserProfile.tsx" \
-  --template "templates/test-template.test.tsx" \
+  --template "templates/test-template.tsx" \
   --output "src/components/UserProfile/UserProfile.test.tsx"
 ```
 
@@ -491,7 +491,7 @@ Basic functional component template.
 > `useState`/`useEffect` declarations or fetch logic inline — no dedicated
 > with-hooks/container template ships.
 
-### test-template.test.tsx
+### test-template.tsx
 
 React Testing Library test template.
 

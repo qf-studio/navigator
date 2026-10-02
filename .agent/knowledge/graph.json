@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T10:26:14.584163+00:00",
+  "last_updated": "2026-10-02T11:21:48.449019+00:00",
   "stats": {
-    "total_nodes": 197,
+    "total_nodes": 200,
     "total_edges": 843,
-    "memory_count": 72
+    "memory_count": 74
   },
   "nodes": {
     "tasks": {
@@ -1684,6 +1684,11 @@
         "name": "State",
         "aliases": [],
         "domain": "general"
+      },
+      "conformance": {
+        "name": "Conformance",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2785,6 +2790,32 @@
         "concepts": [
           "mods",
           "state"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-081": {
+        "type": "learning",
+        "summary": "Claude Code hooks modules (mods): on CC < 2.1.287 they are behind rollout flag tengu_plugin_hooks_modules / CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1; with the flag off, a plugin whose hooks/hooks.json carries 'modules' still loads its classic hooks and only logs 'hooks module not loaded' (stderr under -p). Verified on 2.1.284, 2026-10-02 (TASK-84 M6).",
+        "path": "memories/learnings/mem-081.md",
+        "confidence": 0.9,
+        "concepts": [
+          "mods",
+          "hooks-runtime",
+          "harness-behavior"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-082": {
+        "type": "pitfall",
+        "summary": "Conformance probe S2 on CC 2.1.287: Stop decision:block still forces the continuation (num_turns=2) but the model refuses the imperative 'emit this token' observable as a hook injection, so the probe reads false. False negative per run.md method lesson 1; S2 needs a declarative fact+question observable. Results: tests/harness-conformance/results/cc-2.1.287.json.",
+        "path": "memories/pitfalls/mem-082.md",
+        "confidence": 0.9,
+        "concepts": [
+          "harness-behavior",
+          "hooks",
+          "conformance"
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
@@ -8415,7 +8446,8 @@
       "mem-055",
       "mem-075",
       "mem-076",
-      "mem-077"
+      "mem-077",
+      "mem-082"
     ],
     "session-lifecycle": [
       "mem-026",
@@ -8517,7 +8549,9 @@
       "mem-053",
       "mem-054",
       "mem-055",
-      "mem-075"
+      "mem-075",
+      "mem-081",
+      "mem-082"
     ],
     "sessionstart": [
       "mem-036"
@@ -8605,11 +8639,13 @@
     "mods": [
       "mem-078",
       "mem-079",
-      "mem-080"
+      "mem-080",
+      "mem-081"
     ],
     "hooks-runtime": [
       "mem-078",
-      "mem-079"
+      "mem-079",
+      "mem-081"
     ],
     "adhd": [
       "mem-078"
@@ -8619,6 +8655,9 @@
     ],
     "state": [
       "mem-080"
+    ],
+    "conformance": [
+      "mem-082"
     ]
   }
 }

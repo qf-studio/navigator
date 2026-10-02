@@ -1,7 +1,7 @@
 // Band content, mirrored from hooks/ops/stop_state.py (phase regex) and the
 // NAVIGATOR_STATUS layout in skills/nav-loop/SKILL.md. Pure.
 
-import type { NavPhase, NavStatus } from '../types'
+import type { NavPhase, NavStatus } from '../../../types'
 
 const PHASE_RE = /\bPhase:\s*(INIT|RESEARCH|IMPL|VERIFY|COMPLETE)\b/
 const NEXT_ACTION_RE = /^(?:\*\*)?Next(?: action)?:(?:\*\*)?\s*(.+)$/im

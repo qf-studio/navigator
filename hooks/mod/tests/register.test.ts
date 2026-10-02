@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-const PLUGIN = 'nav-status'
+const PLUGIN = 'navigator'
 const CWD = '/repo'
 const AGENT = `${CWD}/.agent`
 const CFG = '/cfg'

@@ -24,3 +24,27 @@ jobs:
         # `make test` runs per-directory unittest discovery across all genuine
         # suites (see Makefile TEST_DIRS) — same command used locally.
         run: make test
+
+  mod-tests:
+    name: Mod kit tests (Claude Code 2.1.287)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Claude Code (pinned minimum for mods)
+        # validate + test run offline with no credentials (verified locally on 2.1.287).
+        run: npm install -g @anthropic-ai/claude-code@2.1.287
+
+      - name: Validate plugin manifest and hooks module
+        # Non-strict: the baseline carries three known, benign warnings (CLAUDE.md at the
+        # plugin root; marketplace displayName/breaking_changes). Errors still fail.
+        run: make mod-validate
+
+      - name: Run mod kit tests
+        run: make mod-test
