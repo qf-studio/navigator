@@ -200,8 +200,9 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
 - **TASK-84** 🚧 — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
-  `/nav` route view (destination · route · off-route park/back/switch · fuel (context) · saved),
-  one-line band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
+  `/nav` route view (fuel (context) + saved on top · destination · route = the task's steps from
+  its checklist or numbered plan, passed gray / current accent / ahead light · off-route
+  park/back/switch · trip panel from the local Prometheus when it has data), one-line band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
   Branch `v8`, verified headless; next: dogfood → release v8.0.0 (`tasks/TASK-84-v8-mod-runtime.md`,
   section "Resume here").
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
@@ -285,6 +286,9 @@ owns.ts, ops/, lib/, ui/, tests/}`; `$` never crosses an import (an `Io` port bu
 register.tsx does). Parity: `scripts/gen_mod_data.py` runs the Python ops over generated
 corpora and writes `hooks/mod/tests/fixtures/*.gen.ts`; `make mod-test` asserts byte equality;
 `release_validator.py --verify-mod` gates releases. UI: `/nav` pane, status band, Pilot theme.
+Pane model is pure (`hooks/mod/ui/route.ts` steps + band, `ui/trip.ts` Prometheus queries); the
+trip panel reads the `.agent/grafana/` Prometheus (:9092) with `curl`, loopback only, because
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` makes the engine refuse every plugin `$.http.fetch`.
 
 The v7 description below still applies to the Python fallback.
 

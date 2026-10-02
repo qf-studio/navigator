@@ -391,15 +391,18 @@ fallback skips table rows and intent-brief fields.
 1. **Restart the dogfood terminal from the repo root**: `claude --plugin-dir "$PWD"` (plugin name
    `navigator`). Sessions started on the old `mods/nav-status` path keep the deleted spike in
    memory and never reload.
-2. **Dogfood checklist**: `/nav` route view (destination, route dot, off-route after 2 detour prompts,
-   park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
+2. **Dogfood checklist** (done 2026-10-02: route steps, colors, fuel/saved on top, trip panel
+   with the `.agent/grafana` stack up): `/nav` off-route after 2 detour prompts (park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
    a subagent gets context, a config edit toasts, `/theme` → Pilot, hot reload mid-session.
 3. **Release (needs explicit go-ahead)**: merge `v8` → `main`; `scripts/bump-version.sh 8.0.0`
-   (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md` and
-   add the route view to it; tag `v8.0.0` + push (CI `validate` + `validate-mod` + publish); docs site
+   (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md`
+   (route view, route steps and trip panel already in it); docs site gets a `/nav` page update; tag `v8.0.0` + push (CI `validate` + `validate-mod` + publish); docs site
    sync + `vercel --prod` from the site dir (no git remote).
 4. **8.1 candidates**: isReadOnly mutation tracking in stop_completion (mem-077 over-fire),
    prefer `last_assistant_message` in stop_state, band reason when Navigator intervenes, shell-level
-   fast-exit guard (~38 ms Python spawn per owned event), `$.model.classify` judge experiment.
+   fast-exit guard (~38 ms Python spawn per owned event), `$.model.classify` judge experiment,
+   **`next` in the route panel echoes the first line of Claude's last reply** (the next-action
+   fallback reads the answer; seen in dogfood: "No outstanding work — …"), `graph_manager.py stats`
+   spawn per pane refresh whose result the pane no longer shows.
 5. Optional: remove the personal `.claude/settings.local.json` dogfood hooks (double session doc on
    the Python fallback).
