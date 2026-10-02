@@ -29,7 +29,8 @@ from nav_hook_lib import adhd, config as nav_config, personal  # noqa: E402
 HOOKS_DIR = Path(__file__).resolve().parent.parent
 DISPATCH = str(HOOKS_DIR / "nav_dispatch.py")
 ENV_VARS = ("PILOT_EXECUTOR", "CLAUDE_USER_MESSAGE", "CLAUDE_PROJECT_DIR",
-            "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DIR", personal.ENV_OVERRIDE)
+            "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DIR", personal.ENV_OVERRIDE,
+            nav_config.MOD_OWNS_ENV)
 
 
 class _Base(unittest.TestCase):
@@ -96,6 +97,28 @@ class ToggleTest(_Base):
     def test_mention_is_not_a_toggle(self):
         self.assertIsNone(prompt_adhd.run(self.ctx("I have ADHD, keep replies short")))
         self.assertIsNone(adhd.personal_on())
+
+
+class HandoffTest(_Base):
+    """A loaded nav-status mod claims ADHD via NAVIGATOR_MOD_OWNS; the op steps aside."""
+
+    def test_mod_owning_adhd_silences_injection_and_toggles(self):
+        adhd.set_personal(True)
+        os.environ[nav_config.MOD_OWNS_ENV] = "adhd"
+        self.assertIsNone(prompt_adhd.run(self.ctx("fix the login bug")))
+        self.assertIsNone(prompt_adhd.run(self.ctx("adhd mode off")))
+        self.assertIs(adhd.personal_on(), True, "the op must not write while the mod owns it")
+
+    def test_ownership_is_feature_scoped(self):
+        adhd.set_personal(True)
+        os.environ[nav_config.MOD_OWNS_ENV] = "band"
+        out = prompt_adhd.run(self.ctx("fix the login bug"))
+        self.assertEqual(out, {"additional_context": adhd.RULE_BLOCK})
+
+    def test_comma_list_is_honoured(self):
+        adhd.set_personal(True)
+        os.environ[nav_config.MOD_OWNS_ENV] = "band, adhd"
+        self.assertIsNone(prompt_adhd.run(self.ctx("fix the login bug")))
 
 
 class InjectionTest(_Base):

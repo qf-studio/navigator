@@ -13,9 +13,11 @@ Two jobs in one responder-phase op (registry row after prompt_tier1):
     the rules exist nowhere in the context.
 
 Resolution and phrases live in ``nav_hook_lib.adhd``; the op stays thin.
-Silent under the Pilot executor (no human reader) and when the repo pins
-``adhd_mode.on`` — a pin wins over the personal switch, and a toggle phrase
-says so instead of silently writing.
+Silent under the Pilot executor (no human reader), while a loaded
+``nav-status`` mod owns ADHD for the session (``config.mod_owns``, set
+through the mods-handoff env var), and when the repo pins ``adhd_mode.on`` —
+a pin wins over the personal switch, and a toggle phrase says so instead
+of silently writing.
 """
 from __future__ import annotations
 
@@ -58,8 +60,8 @@ def _toggle_reason(kind: str, ctx) -> str:
 
 
 def run(ctx):
-    if ctx.pilot_executor:
-        return None
+    if ctx.pilot_executor or config.mod_owns("adhd"):
+        return None  # no human reader, or the nav-status mod owns ADHD this session
     message = _user_message(ctx.payload).strip()
     if not message:
         return None  # malformed/empty payload: nothing to answer or shape

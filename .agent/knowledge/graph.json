@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T07:24:45.160561+00:00",
+  "last_updated": "2026-10-02T08:00:39.615883+00:00",
   "stats": {
-    "total_nodes": 188,
-    "total_edges": 834,
-    "memory_count": 69
+    "total_nodes": 195,
+    "total_edges": 843,
+    "memory_count": 71
   },
   "nodes": {
     "tasks": {
@@ -901,6 +901,22 @@
           "database",
           "testing"
         ]
+      },
+      "TASK-83": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-83-mods-spike.md",
+        "title": "Claude Code mods spike \u2014 `nav-status`",
+        "status": "completed",
+        "concepts": [
+          "workflow",
+          "context",
+          "skills",
+          "markers",
+          "testing",
+          "deployment",
+          "knowledge",
+          "theory of mind",
+          "api"
+        ]
       }
     },
     "system": {
@@ -1641,6 +1657,26 @@
       },
       "lsp": {
         "name": "Lsp",
+        "aliases": [],
+        "domain": "general"
+      },
+      "mods": {
+        "name": "Mods",
+        "aliases": [],
+        "domain": "general"
+      },
+      "hooks-runtime": {
+        "name": "Hooks-Runtime",
+        "aliases": [],
+        "domain": "general"
+      },
+      "adhd": {
+        "name": "Adhd",
+        "aliases": [],
+        "domain": "general"
+      },
+      "handoff": {
+        "name": "Handoff",
         "aliases": [],
         "domain": "general"
       }
@@ -2706,6 +2742,32 @@
         "concepts": [
           "hooks",
           "workflow"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-078": {
+        "type": "pattern",
+        "summary": "Mod-to-Python handoff: a loaded mod claims a feature via $.env.set('NAVIGATOR_MOD_OWNS', ...) in session.start; the Python op defers through config.mod_owns(feature) (single policy point beside is_pilot_executor); unset var = no mod = classic path keeps the job. Verified 2026-10-02: the var reaches hook children and Bash.",
+        "path": "memories/patterns/mem-078.md",
+        "confidence": 0.9,
+        "concepts": [
+          "mods",
+          "hooks-runtime",
+          "adhd",
+          "handoff"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-079": {
+        "type": "pitfall",
+        "summary": "Claude Code mods (2.1.287) static scan: $.env.get/set names and atom({plugin,key}) refs must be string literals (a const indirection fails the module load); a destructured binding named 'on' inside a hook is refused as shadowing; test bottom ui.render must answer {type:'engine',ref:0} or $.ui.mount rejects; turn.complete input is {answer, agentId?} not {text}.",
+        "path": "memories/pitfalls/mem-079.md",
+        "confidence": 0.9,
+        "concepts": [
+          "mods",
+          "hooks-runtime"
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
@@ -7226,6 +7288,51 @@
       "from": "mem-077",
       "to": "TASK-82",
       "type": "learned-from"
+    },
+    {
+      "from": "TASK-83",
+      "to": "workflow",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "context",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "markers",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "knowledge",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "theory of mind",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-83",
+      "to": "api",
+      "type": "implements"
     }
   ],
   "concept_index": {
@@ -7405,7 +7512,8 @@
       "mem-072",
       "mem-073",
       "TASK-74",
-      "mem-076"
+      "mem-076",
+      "TASK-83"
     ],
     "context": [
       "TASK-32",
@@ -7524,7 +7632,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "skills": [
       "TASK-32",
@@ -7646,7 +7755,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "session": [
       "TASK-32",
@@ -7824,7 +7934,8 @@
       "mem-072",
       "mem-073",
       "mem-074",
-      "mem-077"
+      "mem-077",
+      "TASK-83"
     ],
     "backend": [
       "TASK-16",
@@ -7939,7 +8050,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "markers": [
       "TASK-18",
@@ -8017,7 +8129,8 @@
       "mem-068",
       "TASK-68",
       "TASK-65",
-      "TASK-69"
+      "TASK-69",
+      "TASK-83"
     ],
     "deployment": [
       "TASK-11",
@@ -8087,7 +8200,8 @@
       "mem-071",
       "mem-072",
       "mem-073",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "code quality": [
       "TASK-19",
@@ -8161,7 +8275,8 @@
       "TASK-66",
       "TASK-69",
       "mem-074",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "theory of mind": [
       "TASK-19",
@@ -8194,7 +8309,8 @@
       "mem-068",
       "TASK-66",
       "TASK-69",
-      "TASK-74"
+      "TASK-74",
+      "TASK-83"
     ],
     "simplification": [
       "TASK-02",
@@ -8468,6 +8584,20 @@
     ],
     "lsp": [
       "mem-075"
+    ],
+    "mods": [
+      "mem-078",
+      "mem-079"
+    ],
+    "hooks-runtime": [
+      "mem-078",
+      "mem-079"
+    ],
+    "adhd": [
+      "mem-078"
+    ],
+    "handoff": [
+      "mem-078"
     ]
   }
 }

@@ -83,3 +83,6 @@ workshop/
 
 # Real-session judge eval prompts (TASK-80 A): private, never commit
 hooks/nav_hook_lib/fixtures/judge_eval_real*
+
+# Claude Code mods: engine-written type copies (laid on every load)
+mods/*/.claude-plugin/types/

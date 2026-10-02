@@ -196,6 +196,9 @@ Other threads:
   dispatch output; `stop_completion` reads `python3 - <<EOF` heredocs as mutating (unknown
   command → over-fire direction), so read-only diagnostic turns can trigger a forced
   continuation in this repo where `continue_enabled` is on. Docs site synced same day
+- **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
+  injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
+  Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
   three releases. Plan: real release check + one-line notice in session_start, single
@@ -283,7 +286,7 @@ Hook commands resolve via `${CLAUDE_PLUGIN_ROOT}` (the installed plugin director
 | `profile_sync.py` | PostToolUse Write/Edit on `.user-profile.json` (recorder) | Convert new corrections into graph memories |
 | `prompt_gate.py` | UserPromptSubmit (gate) | Soft-warn on Loop Mode trigger, hard-block (exit 2) when prior turn skipped WORKFLOW CHECK AND `strict_block=true` (config key stays `workflow_enforcer_hook`) |
 | `prompt_brief.py` | UserPromptSubmit (injector) | Score prompt ambiguity (TASK-56, shipped v6.18.0); on ambiguous task-shaped prompts inject a NAV-BRIEF instruction + relevant graph memories so the model renders an intent brief before implementing. Never blocks (exit 0 only — mem-034). Composes with `prompt_gate` on the same event. Live-validated 2026-07-09: full cycle (brief → confirmation → BRIEF DRIFT on scope growth → re-confirmation) ran on a real bug, and the hook's own memory recall surfaced the graph corruption fixed in v6.18.1 — see `sops/debugging/knowledge-graph-memory-corruption.md` |
-| `prompt_adhd.py` | UserPromptSubmit (responder) | ADHD mode (TASK-82): exact phrases `adhd mode on/off/status` flip or report the personal switch (`~/.config/navigator/adhd-mode.json`) via decision:block at zero model invocation; while on, injects the reply-shape rule block on every prompt ahead of the brief. Repo pin `adhd_mode.on` wins; silent under Pilot |
+| `prompt_adhd.py` | UserPromptSubmit (responder) | ADHD mode (TASK-82): exact phrases `adhd mode on/off/status` flip or report the personal switch (`~/.config/navigator/adhd-mode.json`) via decision:block at zero model invocation; while on, injects the reply-shape rule block on every prompt ahead of the brief. Repo pin `adhd_mode.on` wins; silent under Pilot and while the nav-status mod owns ADHD (`config.mod_owns`, TASK-83) |
 | `read_guard.py` | PreToolUse Read on `.agent/` (gate) | Count non-allowlisted reads per turn; warn at 3, block at 5 (`strict_block=true`); deny-only channel (mem-035) |
 
 ### Composition lessons captured

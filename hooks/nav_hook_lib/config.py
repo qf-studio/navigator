@@ -273,3 +273,19 @@ def is_pilot_executor() -> bool:
     semantics: any non-empty value is truthy, unset/empty is False.
     """
     return bool(os.environ.get("PILOT_EXECUTOR"))
+
+
+MOD_OWNS_ENV = "NAVIGATOR_MOD_OWNS"
+
+
+def mod_owns(feature: str) -> bool:
+    """True when a loaded Claude Code mod has claimed ``feature`` for this session.
+
+    THE ONLY place the NAVIGATOR_MOD_OWNS env var is read anywhere under
+    hooks/ (guard test in test_config.py). A mod sets it from ``session.start``
+    via ``$.env.set``; the value is a comma-separated feature list, matched
+    exactly per item. Unset means no mod is loaded and the Python op keeps
+    the job — the mods handoff fails open to the classic path.
+    """
+    raw = os.environ.get(MOD_OWNS_ENV, "")
+    return feature in {item.strip() for item in raw.split(",") if item.strip()}

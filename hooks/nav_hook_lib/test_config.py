@@ -10,6 +10,7 @@ stdlib unittest only. Covers:
   - Deep merge: user leaves override, sibling defaults survive, unknown user
     keys preserved, missing/corrupt file -> DEFAULTS copy.
   - is_pilot_executor(): the single PILOT_EXECUTOR policy point.
+  - mod_owns(): the single NAVIGATOR_MOD_OWNS policy point (mods handoff).
 
 Guard tests (lib-wide, glob-based so modules added by other task groups are
 picked up automatically):
@@ -306,20 +307,45 @@ class StdlibPurityGuardTest(unittest.TestCase):
         self.assertEqual(offenders, [], "\n".join(offenders))
 
 
-class PilotExecutorSinglePolicyPointTest(unittest.TestCase):
-    """config.is_pilot_executor() is THE only PILOT_EXECUTOR read under hooks/.
+class ModOwnsTest(unittest.TestCase):
+    def test_unset_is_false(self):
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(config.MOD_OWNS_ENV, None)
+            self.assertFalse(config.mod_owns("adhd"))
 
-    Widened from lib-only to ALL of hooks/**/*.py (TASK-59 audit gap): a new
-    hook or op reading the env var directly would fork Pilot-executor policy.
-    Test files are excluded: setting the env var in test setup is not a
-    policy read.
+    def test_exact_feature_match(self):
+        with mock.patch.dict(os.environ, {config.MOD_OWNS_ENV: "adhd"}):
+            self.assertTrue(config.mod_owns("adhd"))
+            self.assertFalse(config.mod_owns("band"))
+
+    def test_comma_list_with_spaces(self):
+        with mock.patch.dict(os.environ, {config.MOD_OWNS_ENV: " band ,adhd "}):
+            self.assertTrue(config.mod_owns("adhd"))
+            self.assertTrue(config.mod_owns("band"))
+
+    def test_substring_is_not_a_match(self):
+        with mock.patch.dict(os.environ, {config.MOD_OWNS_ENV: "adhd-mode"}):
+            self.assertFalse(config.mod_owns("adhd"))
+
+
+class EnvSinglePolicyPointTest(unittest.TestCase):
+    """config.py is THE only reader of each runtime-policy env var under hooks/.
+
+    PILOT_EXECUTOR -> config.is_pilot_executor() (widened to all of hooks/**/*.py
+    in the TASK-59 audit); NAVIGATOR_MOD_OWNS -> config.mod_owns() (the mods
+    handoff). A hook or op reading either directly would fork policy. Test
+    files are excluded: setting the env var in test setup is not a policy read.
     """
 
-    # TASK-61 Phase 7: the v6 hooks are deleted; config.is_pilot_executor()
-    # is the only PILOT_EXECUTOR read under hooks/. Keep empty.
+    POLICY_VARS = (
+        ("PILOT_EXECUTOR", "is_pilot_executor"),
+        ("NAVIGATOR_MOD_OWNS", "mod_owns"),
+    )
+
+    # TASK-61 Phase 7: the v6 hooks are deleted; keep empty.
     V6_HOOK_ALLOWLIST = frozenset()
 
-    def test_no_pilot_executor_mentions_outside_config(self):
+    def _offenders(self, var):
         hooks_dir = LIB_DIR.parent
         policy_point = LIB_DIR / "config.py"
         offenders = []
@@ -332,13 +358,19 @@ class PilotExecutorSinglePolicyPointTest(unittest.TestCase):
             for lineno, line in enumerate(
                 src.read_text(encoding="utf-8", errors="replace").splitlines(), start=1
             ):
-                if "PILOT_EXECUTOR" in line:
+                if var in line:
                     offenders.append(f"{rel}:{lineno}: {line.strip()}")
-        self.assertEqual(
-            offenders, [],
-            "PILOT_EXECUTOR must only be read via config.is_pilot_executor():\n"
-            + "\n".join(offenders),
-        )
+        return offenders
+
+    def test_no_policy_var_mentions_outside_config(self):
+        for var, helper in self.POLICY_VARS:
+            with self.subTest(var=var):
+                offenders = self._offenders(var)
+                self.assertEqual(
+                    offenders, [],
+                    f"{var} must only be read via config.{helper}():\n"
+                    + "\n".join(offenders),
+                )
 
 
 if __name__ == "__main__":
