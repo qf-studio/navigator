@@ -8,7 +8,12 @@ without rewriting fixtures.
 
 import unittest
 
-from ambiguity_scorer import score_ambiguity
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+# v8: the ambiguity_scorer shim is gone; tested on scoring directly.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "hooks" / "nav_hook_lib"))
+from scoring import score_ambiguity  # noqa: E402
 
 THRESHOLD = 0.5  # default brief_hook.ambiguity_threshold
 

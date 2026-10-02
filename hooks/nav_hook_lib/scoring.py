@@ -19,11 +19,10 @@ Unified model (``score()`` -> ``ScoreCard``):
     into complexity (TASK-48 precedent: a small task can be highly ambiguous).
   - triggers: matched loop/indicator/signal tags for observability.
 
-v6 compatibility: every public name of the four legacy modules is re-exported
-here with byte-identical behavior; ``v6_exports(module_name)`` returns the
-exact public namespace so the old files can be <=5-line re-export shims
-(deleted in v8). The two legacy ``calculate_complexity`` variants have
-different signatures, hence the per-module export maps instead of ``__all__``.
+v6 compatibility: the four legacy modules' behaviour lives here byte-identical.
+v8 (TASK-84) deleted the re-export shims and ``v6_exports``; the nav-workflow skill
+keeps two thin CLIs (complexity_detector.py, skill_detector.py) that import by name.
+The Navigator mod ports the runtime-used part to hooks/mod/lib/scoring.ts.
 
 Pure stdlib. No sibling imports — importable standalone and as a library part.
 """
@@ -1276,73 +1275,3 @@ def score(prompt: str, config: dict = None, judgment=None) -> ScoreCard:
         ambiguity=ambiguity,
         triggers=triggers,
     )
-
-
-# ---------------------------------------------------------------------------
-# v6 shim support — exact public namespaces of the four legacy modules
-# ---------------------------------------------------------------------------
-
-_V6_EXPORTS = {
-    "workflow_detector": {
-        "LOOP_TRIGGERS": LOOP_TRIGGERS,
-        "COMPLEXITY_INDICATORS": COMPLEXITY_INDICATORS,
-        "MULTI_FILE_INDICATORS": MULTI_FILE_INDICATORS,
-        "_contains_phrase": contains_phrase,
-        "detect_loop_trigger": detect_loop_trigger,
-        "calculate_complexity": calculate_message_complexity,
-        "detect_workflow": detect_workflow,
-        "main": workflow_detector_main,
-    },
-    "complexity_detector": {
-        "ComplexityResult": ComplexityResult,
-        "COMPLEXITY_SIGNALS": COMPLEXITY_SIGNALS,
-        "SIMPLICITY_SIGNALS": SIMPLICITY_SIGNALS,
-        "detect_signals": detect_signals,
-        "calculate_complexity": calculate_signal_complexity,
-        "get_recommendation": get_recommendation,
-        "detect_complexity": detect_complexity,
-        "main": complexity_detector_main,
-    },
-    "skill_detector": {
-        "SkillMatch": SkillMatch,
-        "SKILL_TRIGGERS": SKILL_TRIGGERS,
-        "calculate_match_score": calculate_match_score,
-        "detect_skill_match": detect_skill_match,
-        "main": skill_detector_main,
-    },
-    "ambiguity_scorer": {
-        "QUESTION_STARTERS": QUESTION_STARTERS,
-        "CONFIRMATION_PREFIXES": CONFIRMATION_PREFIXES,
-        "CONFIRMATION_MAX_WORDS": CONFIRMATION_MAX_WORDS,
-        "TASK_SHAPED_VERBS": TASK_SHAPED_VERBS,
-        "VAGUE_SCOPE_SIGNALS": VAGUE_SCOPE_SIGNALS,
-        "LIMITER_WORDS": LIMITER_WORDS,
-        "ACCEPTANCE_PHRASES": ACCEPTANCE_PHRASES,
-        "APPROACH_CONNECTORS": APPROACH_CONNECTORS,
-        "PATH_RE": PATH_RE,
-        "FILE_RE": FILE_RE,
-        "NUMBER_RE": NUMBER_RE,
-        "WORD_RE": WORD_RE,
-        "BASE_SCORE": BASE_SCORE,
-        "VAGUE_BONUS": VAGUE_BONUS,
-        "CREDIT_FILE_PATH": CREDIT_FILE_PATH,
-        "CREDIT_NUMBER": CREDIT_NUMBER,
-        "CREDIT_LIMITER": CREDIT_LIMITER,
-        "CREDIT_ACCEPTANCE": CREDIT_ACCEPTANCE,
-        "_contains_phrase": _amb_contains_phrase,
-        "_first_match": _first_match,
-        "_is_question": _is_question,
-        "_is_confirmation": _is_confirmation,
-        "_has_file_reference": _has_file_reference,
-        "score_ambiguity": score_ambiguity,
-    },
-}
-
-
-def v6_exports(module_name: str) -> dict:
-    """Exact public namespace of a legacy v6 scorer module.
-
-    Shim support only (skills/*/functions/*.py are <=5-line re-export shims
-    over this map). Scheduled for deletion in v8 along with the shims.
-    """
-    return dict(_V6_EXPORTS[module_name])

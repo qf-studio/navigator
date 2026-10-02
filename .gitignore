@@ -87,3 +87,6 @@ hooks/nav_hook_lib/fixtures/judge_eval_real*
 
 # Claude Code mods: engine-written type copies at the plugin root
 .claude-plugin/types/
+
+# Agent worktrees (Claude Code isolation: worktree)
+.claude/worktrees/

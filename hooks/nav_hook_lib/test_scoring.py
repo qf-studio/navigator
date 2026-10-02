@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import scoring
-from scoring import ScoreCard, contains_phrase, score, v6_exports
+from scoring import ScoreCard, contains_phrase, score
 
 TIER_RANK = {"DIRECT": 0, "TASK": 1, "LOOP": 2}
 
@@ -337,63 +337,10 @@ class UnifiedComplexityModelTest(unittest.TestCase):
         self.assertEqual(plain, hedged)
 
 
-class V6ExportsTest(unittest.TestCase):
-    """Shim support: exact public namespace per legacy module."""
-
-    EXPECTED = {
-        "workflow_detector": {
-            "LOOP_TRIGGERS", "COMPLEXITY_INDICATORS", "MULTI_FILE_INDICATORS",
-            "_contains_phrase", "detect_loop_trigger", "calculate_complexity",
-            "detect_workflow", "main",
-        },
-        "complexity_detector": {
-            "ComplexityResult", "COMPLEXITY_SIGNALS", "SIMPLICITY_SIGNALS",
-            "detect_signals", "calculate_complexity", "get_recommendation",
-            "detect_complexity", "main",
-        },
-        "skill_detector": {
-            "SkillMatch", "SKILL_TRIGGERS", "calculate_match_score",
-            "detect_skill_match", "main",
-        },
-        "ambiguity_scorer": {
-            "score_ambiguity", "TASK_SHAPED_VERBS", "VAGUE_SCOPE_SIGNALS",
-            "LIMITER_WORDS", "ACCEPTANCE_PHRASES", "QUESTION_STARTERS",
-            "CONFIRMATION_PREFIXES",
-        },
-    }
-
-    def test_expected_names_present(self):
-        for module_name, names in self.EXPECTED.items():
-            exported = v6_exports(module_name)
-            for name in names:
-                with self.subTest(module=module_name, name=name):
-                    self.assertIn(name, exported)
-
-    def test_calculate_complexity_disambiguated(self):
-        """Same legacy name, two variants: each shim gets its own."""
-        wd_variant = v6_exports("workflow_detector")["calculate_complexity"]
-        cd_variant = v6_exports("complexity_detector")["calculate_complexity"]
-        # workflow_detector variant: message -> (score, matched)
-        wd_score, matched = wd_variant("Please refactor this")
-        self.assertAlmostEqual(wd_score, 0.3, places=2)
-        self.assertIn("high:refactor", matched)
-        # complexity_detector variant: (signals, weights) -> base-0.5 score
-        self.assertEqual(cd_variant({}, {}), 0.5)
-
-    def test_returns_copy(self):
-        exports = v6_exports("skill_detector")
-        exports["detect_skill_match"] = None
-        self.assertIsNotNone(v6_exports("skill_detector")["detect_skill_match"])
-
-    def test_unknown_module_raises(self):
-        with self.assertRaises(KeyError):
-            v6_exports("no_such_module")
-
-
 class V6CompatBehaviorTest(unittest.TestCase):
     """Spot checks that compat wrappers keep v6 behavior byte-identical.
 
-    (The full legacy suites still run against the shims in their own dirs.)
+    (The legacy suites now import scoring directly, in their own dirs.)
     """
 
     def test_detect_workflow_loop(self):

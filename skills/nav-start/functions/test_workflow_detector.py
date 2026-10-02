@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Tests for workflow_detector.py"""
+"""Tests for the v6 workflow_detector behaviour, now on hooks/nav_hook_lib/scoring.py."""
 
 import sys
 import unittest
 from pathlib import Path
 
-# Import module for direct testing
-sys.path.insert(0, str(Path(__file__).parent))
-from workflow_detector import (
+# v8: the workflow_detector shim is gone; the same behaviour is tested on scoring directly.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "hooks" / "nav_hook_lib"))
+from scoring import (  # noqa: E402
     detect_loop_trigger,
-    calculate_complexity,
+    calculate_message_complexity as calculate_complexity,
     detect_workflow,
     LOOP_TRIGGERS,
     COMPLEXITY_INDICATORS,

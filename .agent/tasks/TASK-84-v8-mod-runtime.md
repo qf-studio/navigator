@@ -252,3 +252,11 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   prompt. Put the prompt first: `claude -p "<prompt>" --debug`.
 - `scripts/gen_mod_data.py` now also loads `scripts/mod_fixtures/*.py` (each exports TARGETS), so
   op groups add fixture builders without editing the generator.
+
+### Step 7 — v6 shims deleted (2026-10-02) ✅ (done early, in parallel with forks 5b–5d)
+- `scoring.v6_exports` / `_V6_EXPORTS` and `V6ExportsTest` removed.
+- Deleted `skills/nav-start/functions/workflow_detector.py`, `skills/nav-brief/functions/ambiguity_scorer.py`
+  (no remaining caller); their test suites now import `scoring` directly with unchanged assertions.
+- `skills/nav-workflow/functions/{complexity_detector,skill_detector}.py` are still run by the
+  nav-workflow skill, so they stay as explicit thin CLIs importing scoring by name (no v6_exports).
+- `.claude/worktrees/` git-ignored (agent worktrees live inside the repo).
