@@ -16,8 +16,67 @@ sys.path.insert(0, str(Path(__file__).parent))
 from release_validator import (  # noqa: E402
     verify_hook_paths,
     check_version_match,
+    verify_mod,
     _strip_dot_slash,
 )
+
+
+def _make_mod_root(tmp: Path, modules, owned, op_files, registry_ops):
+    """Minimal plugin root for verify_mod: hooks.json, owns.ts, op files, registry.py."""
+    (tmp / "hooks" / "mod" / "ops").mkdir(parents=True)
+    (tmp / "hooks" / "nav_hook_lib").mkdir(parents=True)
+    (tmp / "hooks" / "hooks.json").write_text(json.dumps({"modules": modules}))
+    if "./mod/register.tsx" in modules:
+        (tmp / "hooks" / "mod" / "register.tsx").write_text("export const register = () => {}\n")
+    names = ", ".join(f"'{n}'" for n in owned)
+    (tmp / "hooks" / "mod" / "owns.ts").write_text(
+        f"export const OWNED: readonly string[] = [{names}]\n")
+    for name in op_files:
+        (tmp / "hooks" / "mod" / "ops" / f"{name}.ts").write_text("export {}\n")
+    rows = ",\n".join(f'        OpSpec("{n}", "injectors", None, None, 100)' for n in registry_ops)
+    (tmp / "hooks" / "nav_hook_lib" / "registry.py").write_text(
+        f'EVENT_OPS = {{\n    "X": [\n{rows}\n    ],\n}}\n')
+
+
+class VerifyModTest(unittest.TestCase):
+    """TASK-84: the v8 mod must be declared, and every op it owns must exist on both sides."""
+
+    def test_consistent_mod_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            _make_mod_root(tmp, ["./mod/register.tsx"], ["a_op"], ["a_op"], ["a_op", "b_op"])
+            ok, problems = verify_mod(tmp, run_generator=False)
+            self.assertEqual(problems, [])
+            self.assertTrue(ok)
+
+    def test_owned_op_missing_ts_file_is_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            _make_mod_root(tmp, ["./mod/register.tsx"], ["a_op"], [], ["a_op"])
+            ok, problems = verify_mod(tmp, run_generator=False)
+            self.assertFalse(ok)
+            self.assertTrue(any("a_op" in p and ".ts" in p for p in problems))
+
+    def test_owned_op_unknown_to_python_is_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            _make_mod_root(tmp, ["./mod/register.tsx"], ["ghost"], ["ghost"], ["a_op"])
+            ok, problems = verify_mod(tmp, run_generator=False)
+            self.assertFalse(ok)
+            self.assertTrue(any("ghost" in p and "registry" in p for p in problems))
+
+    def test_missing_module_file_is_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            _make_mod_root(tmp, ["./mod/gone.tsx"], [], [], ["a_op"])
+            ok, problems = verify_mod(tmp, run_generator=False)
+            self.assertFalse(ok)
+            self.assertTrue(any("gone.tsx" in p for p in problems))
+
+    def test_real_repo_mod_is_consistent(self):
+        root = Path(__file__).resolve().parents[3]
+        ok, problems = verify_mod(root, run_generator=False)
+        self.assertEqual(problems, [])
 
 
 def _make_root(tmp: Path, hook_names, manifest_hooks):

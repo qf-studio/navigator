@@ -439,6 +439,69 @@ def verify_hook_paths(root: Path, plugin: dict) -> Tuple[List[str], List[str]]:
     return resolved, missing
 
 
+_OWNED_RE = re.compile(r"export const OWNED[^=]*=\s*\[([^\]]*)\]")
+_OPSPEC_RE = re.compile(r'OpSpec\(\s*"([a-z0-9_]+)"')
+
+
+def verify_mod(root: Path, run_generator: bool = True) -> Tuple[bool, List[str]]:
+    """
+    Static gate for the v8 Navigator mod (TASK-84).
+
+    - hooks/hooks.json names exactly one hooks module, and that file exists;
+    - every op name in hooks/mod/owns.ts OWNED is a Python op in
+      hooks/nav_hook_lib/registry.py (else NAVIGATOR_MOD_OWNS would silence nothing, or the
+      Python fallback for it would not exist) and has hooks/mod/ops/<name>.ts
+      (the mem-070 missing-artifact class);
+    - generated TS data matches the Python runtime (scripts/gen_mod_data.py --check).
+
+    Returns (ok, problems).
+    """
+    problems: List[str] = []
+    hooks_json = root / "hooks" / "hooks.json"
+    try:
+        modules = json.loads(hooks_json.read_text(encoding="utf-8")).get("modules")
+    except (OSError, ValueError):
+        modules = None
+    if not isinstance(modules, list) or len(modules) != 1:
+        problems.append("hooks/hooks.json: expected exactly one entry in 'modules'")
+    else:
+        module_path = (hooks_json.parent / str(modules[0])).resolve()
+        if not module_path.is_file():
+            problems.append(f"hooks/hooks.json: module {modules[0]} does not exist")
+
+    owns = root / "hooks" / "mod" / "owns.ts"
+    try:
+        match = _OWNED_RE.search(owns.read_text(encoding="utf-8"))
+    except OSError:
+        match = None
+    if match is None:
+        problems.append("hooks/mod/owns.ts: OWNED list not found")
+        owned: List[str] = []
+    else:
+        owned = re.findall(r"'([a-z0-9_]+)'", match.group(1))
+
+    try:
+        registry_ops = set(_OPSPEC_RE.findall(
+            (root / "hooks" / "nav_hook_lib" / "registry.py").read_text(encoding="utf-8")))
+    except OSError:
+        registry_ops = set()
+        problems.append("hooks/nav_hook_lib/registry.py: not readable")
+    for name in owned:
+        if name not in registry_ops:
+            problems.append(f"owned op '{name}' is not in the Python registry (no fallback)")
+        if not (root / "hooks" / "mod" / "ops" / f"{name}.ts").is_file():
+            problems.append(f"owned op '{name}' has no hooks/mod/ops/{name}.ts")
+
+    if run_generator:
+        gen = root / "scripts" / "gen_mod_data.py"
+        if gen.is_file():
+            out = subprocess.run([sys.executable, str(gen), "--check"], cwd=root,
+                                 capture_output=True, text=True)
+            if out.returncode != 0:
+                problems.append("generated mod data is stale: " + (out.stdout or out.stderr).strip())
+    return not problems, problems
+
+
 def check_version_match(root: Path, expected: str) -> Tuple[Dict[str, str], List[str]]:
     """
     Compare an expected version (e.g. a release tag) against every
@@ -466,6 +529,8 @@ def main():
                         help="Smoke-test plugin manifest hook commands under set/unset CLAUDE_PLUGIN_ROOT")
     parser.add_argument("--verify-hook-paths", action="store_true",
                         help="Statically assert every plugin.json hook command resolves to an existing hooks/<name>.py file")
+    parser.add_argument("--verify-mod", action="store_true",
+                        help="Static gate for the v8 mod: hooks module, OWNED ops on both sides, fresh generated data")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
@@ -492,6 +557,16 @@ def main():
                 print(f"  ✓  {chk['event']:18} [{chk['env_state']:5}] "
                       f"exit={chk['exit_code']} out={chk['stdout_len']}B err={chk['stderr_len']}B")
         return 0 if not failed else 1
+
+    if args.verify_mod:
+        ok, problems = verify_mod(root)
+        if args.json:
+            print(json.dumps({"ok": ok, "problems": problems}, indent=2))
+        else:
+            print("Mod check (TASK-84): " + ("PASSED ✓" if ok else f"FAILED ✗ — {len(problems)} problem(s)"))
+            for problem in problems:
+                print(f"  ❌ {problem}")
+        return 0 if ok else 1
 
     if args.verify_hook_paths:
         resolved, missing = verify_hook_paths(root, plugin)

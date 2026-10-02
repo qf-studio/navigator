@@ -92,6 +92,10 @@ sys.exit(1 if failed else 0)
 PY
 
 echo
+echo "Regenerating mod data (a fixture embeds the plugin version) ..."
+python3 scripts/gen_mod_data.py
+
+echo
 echo "Verifying all files agree on v$NEW_VERSION ..."
 python3 skills/nav-release/functions/release_validator.py --check-version "$NEW_VERSION"
 

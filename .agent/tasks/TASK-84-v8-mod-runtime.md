@@ -260,3 +260,11 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - `skills/nav-workflow/functions/{complexity_detector,skill_detector}.py` are still run by the
   nav-workflow skill, so they stay as explicit thin CLIs importing scoring by name (no v6_exports).
 - `.claude/worktrees/` git-ignored (agent worktrees live inside the repo).
+
+### Step 6 — release tooling (2026-10-02) ✅
+- `release_validator.py --verify-mod`: one hooks module declared and present; every `OWNED` op is
+  in `registry.py` (Python fallback exists) and has `hooks/mod/ops/<name>.ts`; `gen_mod_data.py
+  --check` clean. 5 unit tests incl. one against the real repo.
+- release.yml: `--verify-mod` in validate; new `validate-mod` job (CC 2.1.287, `make mod-validate`,
+  `make mod-test`); `release` needs both.
+- `scripts/bump-version.sh` regenerates mod data (tier1 fixture embeds the plugin version).

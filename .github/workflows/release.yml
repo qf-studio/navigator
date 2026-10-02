@@ -44,9 +44,33 @@ jobs:
       - name: Verify tag contains all skills
         run: python3 skills/nav-release/functions/release_validator.py --verify-tag "${GITHUB_REF#refs/tags/}"
 
+      - name: Verify the v8 mod (module declared, owned ops on both sides, generated data fresh)
+        run: python3 skills/nav-release/functions/release_validator.py --verify-mod
+
+  validate-mod:
+    name: Validate mod (Claude Code 2.1.287)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Claude Code (pinned minimum for mods)
+        run: npm install -g @anthropic-ai/claude-code@2.1.287
+
+      - name: Validate plugin manifest and hooks module
+        run: make mod-validate
+
+      - name: Run mod kit tests
+        run: make mod-test
+
   release:
     name: Create GitHub Release
-    needs: validate
+    needs: [validate, validate-mod]
     runs-on: ubuntu-latest
 
     steps:
