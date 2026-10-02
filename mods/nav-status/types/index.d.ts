@@ -18,7 +18,8 @@ export type NavPane = {
 }
 
 export type NavUsage = { rates: NavRate[]; usd: number | null }
-export type NavReads = { total: number; docs: number }
+export type NavReads = { total: number; docs: number; turn: number }
+export type NavHistory = { ctx: number[]; reads: number[] }
 
 declare module 'claude-code' {
   interface PluginState {
@@ -27,6 +28,7 @@ declare module 'claude-code' {
       pane: NavPane | null
       usage: NavUsage | null
       reads: NavReads
+      history: NavHistory
       pinned: string | null
     }
   }

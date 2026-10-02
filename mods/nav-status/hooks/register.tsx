@@ -8,7 +8,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { NavPane, NavReads, NavStatus, NavUsage } from '../types'
+import type { NavHistory, NavPane, NavReads, NavStatus, NavUsage } from '../types'
 import {
   RULE_BLOCK, classify, personalBody, personalPath, resolve, toggleReason,
 } from './adhd'
@@ -16,18 +16,24 @@ import {
   bar, cut, latestMarker, parseGraphStats, parseMemories, parseTasks, usageLine,
 } from './nav'
 import { bandLine, isQuiet, statusOf } from './status'
+import {
+  PALETTE, beside, card, compact, gauge, percentColor, seg, sparkline, splitWidths,
+} from './ui'
+import type { Row } from './ui'
 
 const PLUGIN = 'nav-status'
 const PANE = 'nav'
 const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
-const NO_READS: NavReads = { total: 0, docs: 0 }
+const NO_READS: NavReads = { total: 0, docs: 0, turn: 0 }
+const NO_HISTORY: NavHistory = { ctx: [], reads: [] }
 const EMPTY_NAV: NavPane = { tasks: [], marker: null, memories: [], graph: null }
 
 const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
 const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
 const reads = atom({ plugin: 'nav-status', key: 'reads' } as const, NO_READS)
 const usage = atom({ plugin: 'nav-status', key: 'usage' } as const, null as NavUsage | null)
+const history = atom({ plugin: 'nav-status', key: 'history' } as const, NO_HISTORY)
 const pinned = atom({ plugin: 'nav-status', key: 'pinned' } as const, null as string | null)
 
 type Json = Record<string, unknown>
@@ -141,7 +147,9 @@ export const register: Register = on => {
 
   on('tool.call', { tool: 'Read' }, async ($, e, next) => {
     const isDoc = e.file_path.includes('/.agent/')
-    await update($, reads, r => ({ total: r.total + 1, docs: r.docs + (isDoc ? 1 : 0) }))
+    await update($, reads, r => ({
+      total: r.total + 1, docs: r.docs + (isDoc ? 1 : 0), turn: r.turn + 1,
+    }))
     return next(e)
   })
 
@@ -186,6 +194,12 @@ export const register: Register = on => {
       rates: u.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed })),
       usd: u.cost?.usd ?? null,
     }))
+    const turnReads = (await read($, reads)).turn
+    await update($, reads, r => ({ ...r, turn: 0 }))
+    await update($, history, h => ({
+      ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
+      reads: [...h.reads, turnReads].slice(-64),
+    }))
     return next(e)
   })
 
@@ -206,75 +220,91 @@ export const register: Register = on => {
     const p = (await read($, pane)) ?? EMPTY_NAV
     const u = await read($, usage)
     const r = await read($, reads)
+    const hist = await read($, history)
     const chosen = await read($, pinned)
-    const width = Math.max(24, e.props.bodyColumns)
+    const width = Math.max(40, e.props.bodyColumns)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
-    const filled = bar(percent, Math.max(10, width - 16))
-    const at = filled.indexOf('░')
-    const [full, empty] = at < 0 ? [filled, ''] : [filled.slice(0, at), filled.slice(at)]
-    const phase = s?.phase ? `phase ${s.phase}` : 'phase —'
+    const ctxColor = percentColor(percent)
     const current = p.tasks[p.tasks.length - 1] ?? null
-    const marker = p.marker === null ? 'no marker yet' : cut(p.marker, width - 10)
-    const rates = u === null ? '' : usageLine(u.rates, u.usd)
-    const fanOut = r.total - r.docs >= 5
-    const graph = p.graph === null
-      ? 'graph not initialized'
-      : `graph ${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
-    const row = (label: string, value: string) => (
-      <Box flexDirection="row">
-        <Box width={10}><Text dimColor>{label}</Text></Box>
-        <Text wrap="truncate-end">{value}</Text>
-      </Box>
+    const [w1, w2, w3] = splitWidths(width, 3)
+    const inner = (w: number) => w - 4
+    const window = u?.rates[0]
+    const cards = beside([
+      card('context', [
+        [seg(pct, ctxColor, true), seg('  '), seg(gauge(percent, inner(w1 ?? 20) - pct.length - 2), ctxColor)],
+        [seg(percent !== null && percent >= 70 ? 'compact due' : 'compact safe', PALETTE.dim)],
+        [seg(sparkline(hist.ctx, inner(w1 ?? 20)), PALETTE.accent)],
+      ], w1 ?? 20),
+      card('session', [
+        [seg(u?.usd === null || u === null ? '--' : `$${u.usd.toFixed(2)}`, PALETTE.success, true),
+          seg(window ? `  ${window.kind} ${Math.round(window.percentUsed)}%` : '', PALETTE.dim)],
+        [seg(s?.phase ? `phase ${s.phase}` : 'phase —', PALETTE.label)],
+        [seg(p.graph ? `graph ${compact(p.graph.nodes)} nodes` : 'graph —', PALETTE.dim)],
+      ], w2 ?? 20),
+      card('reads', [
+        [seg(`${r.total}`, r.total - r.docs >= 5 ? PALETTE.warning : PALETTE.accent, true),
+          seg(`  ${r.docs} docs`, PALETTE.dim)],
+        [seg(r.total - r.docs >= 5 ? 'use an Agent' : 'fan-out ok', PALETTE.dim)],
+        [seg(sparkline(hist.reads, inner(w3 ?? 20)), PALETTE.accent)],
+      ], w3 ?? 20),
+    ])
+    const taskRows: Row[] = [
+      [seg(current ?? 'no task in progress', PALETTE.accent, true),
+        seg(p.marker === null ? '' : `  marker ${p.marker}`, PALETTE.dim)],
+      ...(s?.next ? [[seg('→ ', PALETTE.dim), seg(s.next, PALETTE.label)]] : []),
+    ]
+    const taskCard = card('task', taskRows, width)
+    const openRow: Row = p.tasks.length === 0
+      ? [seg('none marked in progress', PALETTE.dim)]
+      : p.tasks.slice(-5).flatMap((t, i) => [
+        seg(i === 0 ? '' : '  '),
+        seg(t === current ? '● ' : '○ ', t === current ? PALETTE.success : PALETTE.dim),
+        seg(t, t === current ? PALETTE.label : PALETTE.dim),
+      ])
+    const openCard = card('open tasks', [openRow], width)
+    const line = (row: Row) => (
+      <Text>
+        {row.map(x => <Text color={x.color} bold={x.bold}>{x.text}</Text>)}
+      </Text>
     )
+    const frame = (rows: Row[]) => rows.map(line)
+    const memTitle = `─ memories `
+    const memTop: Row = [
+      seg('╭', PALETTE.border), seg(memTitle, PALETTE.accent),
+      seg('─'.repeat(Math.max(0, width - 2 - memTitle.length)) + '╮', PALETTE.border),
+    ]
+    const memBottom: Row = [seg(`╰${'─'.repeat(width - 2)}╯`, PALETTE.border)]
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" columnGap={2}>
-          <Text bold>{current ?? 'no task in progress'}</Text>
-          <Text dimColor>{phase}</Text>
-        </Box>
-        {s?.next ? <Text wrap="truncate-end">{s.next}</Text> : null}
-        <Text> </Text>
-        <Box flexDirection="row">
-          <Box width={10}><Text dimColor>context</Text></Box>
-          <Text>{full}<Text dimColor>{empty}</Text> {pct}</Text>
-        </Box>
-        {row('compact', percent !== null && percent >= 70 ? 'due' : 'safe')}
-        {row('marker', marker)}
-        {rates ? row('usage', rates) : null}
-        {row('reads', `${r.total} (${r.docs} docs)${fanOut ? '  use an Agent' : ''}`)}
-        {row('graph', graph.replace(/^graph /, ''))}
-        <Text> </Text>
-        <Text bold>Memories</Text>
-        {p.memories.length === 0 && <Text dimColor>none for the open tasks</Text>}
+        {frame(cards)}
+        {frame(taskCard)}
+        {line(memTop)}
+        {p.memories.length === 0 && line([seg('│ ', PALETTE.border), seg('none for the open tasks', PALETTE.dim)])}
         {p.memories.map((m, i) => (
-          <Box flexDirection="row" columnGap={1}>
+          <Box flexDirection="row">
+            <Text color={PALETTE.border}>│ </Text>
             <Button
               key={`mem-${i}`}
               label={chosen === m.text ? '●' : '▸'}
               plain
               onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
             />
-            <Text wrap="wrap" dimColor={chosen !== null && chosen !== m.text}>
-              <Text bold>{m.kind.toLowerCase()}</Text>
-              {m.percent === null ? '' : ` ${m.percent}%`}  {m.text}
-            </Text>
+            <Box width={width - 6} marginLeft={1}>
+              <Text wrap="wrap" color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>
+                <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
+                <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+                {'  '}{m.text}
+              </Text>
+            </Box>
           </Box>
         ))}
-        <Text dimColor>
-          {chosen === null ? '▸ pins a memory into your next prompt' : 'pinned for your next prompt'}
-        </Text>
-        <Text> </Text>
-        <Text bold>Open tasks</Text>
-        {p.tasks.length === 0 && <Text dimColor>none marked in progress</Text>}
+        {line([seg('│ ', PALETTE.border),
+          seg(chosen === null ? '▸ pins a memory into your next prompt' : '● pinned for your next prompt', PALETTE.dim)])}
+        {line(memBottom)}
+        {frame(openCard)}
         <Box flexDirection="row" columnGap={2}>
-          {p.tasks.slice(-5).map(t => (
-            <Text bold={t === current} dimColor={t !== current}>{t}</Text>
-          ))}
-        </Box>
-        <Text> </Text>
-        <Box flexDirection="row" columnGap={3}>
           <Button
             key="marker"
             label="marker"
@@ -282,6 +312,7 @@ export const register: Register = on => {
             plain
             onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })}
           />
+          <Text color={PALETTE.dim}>·</Text>
           <Button
             key="compact"
             label="compact"
@@ -289,6 +320,7 @@ export const register: Register = on => {
             plain
             onPress={() => $.session.compact()}
           />
+          <Text color={PALETTE.dim}>·</Text>
           <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => refreshPane($)} />
         </Box>
       </Box>

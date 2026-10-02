@@ -232,7 +232,7 @@ test('(f) /nav opens the pane with task, context bar and memories', async ($, on
     expect(texts).toContain('42%')
     expect(texts).toContain('z-newest-by-mtime')
     expect(texts).toContain('TASK-15')
-    expect(texts).toContain('195 nodes')
+    expect(texts).toContain('graph 195 nodes')
     expect(texts).toContain('stop gate over-fires on heredoc Bash')
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
     await ui.unmount()
