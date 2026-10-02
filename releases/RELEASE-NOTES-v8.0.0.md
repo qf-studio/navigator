@@ -46,9 +46,11 @@ Navigator keeps the path short and tells you where you are:
   context (docs loaded vs the `.agent/` tree, subagent work); tasks behind `t`.
 - **trip**: cost, tokens (with cache hit rate), commits, lines and active time for today and the
   last 7 days, plus tokens/min over 2 hours, from the Prometheus of `.agent/grafana/` (port 9092).
-  Fetched on `/nav` and `f` only, never under Pilot; the panel exists only when Prometheus has
+  Read on `/nav` and `f` only, never under Pilot; the panel exists only when Prometheus has
   Claude Code metrics, so a stopped stack costs one refused probe and shows nothing.
-  `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points it elsewhere.
+  `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points it at another
+  Prometheus on this machine (loopback URLs only; read with `curl`, so it works with
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set and nothing leaves the host).
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.

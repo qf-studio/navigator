@@ -20,6 +20,11 @@ export const PER_MINUTE = 'sum(rate(claude_code_token_usage_total[5m])) * 60'
 export const PER_MINUTE_SPAN_SEC = 2 * 3600
 export const PER_MINUTE_STEP_SEC = 450
 
+const LOOPBACK_RE = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/.*)?$/i
+
+/** The panel reads a Prometheus on this machine only: nothing it fetches leaves the host. */
+export const isLoopback = (url: string): boolean => LOOPBACK_RE.test(url)
+
 /** `today.usd`, `week.tokens`, … → PromQL; today is a range back to local midnight. */
 export const tripQueries = (sinceMidnightSec: number): Record<string, string> => {
   const spans = { today: `${Math.max(60, Math.round(sinceMidnightSec))}s`, week: '7d' }

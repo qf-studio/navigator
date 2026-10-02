@@ -371,6 +371,13 @@ stack costs one refused connection and the panel does not exist. Fetched on `/na
 timeout per request, never under Pilot. Config: `dashboard.enabled` (default on: localhost only,
 nothing leaves the machine), `dashboard.prometheus_url`. Pure model `hooks/mod/ui/trip.ts`
 (5 tests), pane tests (t)/(t2)/(t3). Removed the stale `pinned` state key. 102 kit tests.
+Dogfood fix: the live session showed nothing because `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
+(user settings env) makes the engine refuse every `$.http.fetch` ("nonessential network traffic
+is disabled for this session"), loopback included; the catch hid it. The panel now reads with
+`curl -sfg --noproxy '*' --max-time 1` via `$.process.run`, and only for loopback URLs
+(`isLoopback`), so nothing leaves the host. Verified live: probe 351 chars, 11 queries ~25 ms each.
+The same setting silently blocks the TASK-81 update notice (GitHub fetch) — left as is: that one
+is real outbound traffic the user opted out of. Tests (t4) non-loopback URL never read. 104 kit tests.
 
 ### Band format (e0b416a)
 `on route: Ship v8 · ● verify 3/5 · next: run headless matrix` · `low fuel: … · compact after this

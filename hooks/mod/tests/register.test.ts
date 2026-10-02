@@ -75,8 +75,14 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
         mtimeMs: (files[f] ?? '').length, isLink: false,
       })),
   }))
-  on('process.run', (_$, e) => ({
-    value: {
+  curlReply = null
+  on('process.run', (_$, e) => {
+    if (e.argv[0] === 'curl') {
+      const out = curlReply?.(String(e.argv[e.argv.length - 1])) ?? null
+      const exitCode = out === null ? 7 : 0
+      return { value: { exitCode, stdout: out ?? '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
+    return { value: {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
         ? String(e.argv[2]).startsWith('find')
@@ -88,8 +94,8 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
           : e.argv.includes('--concepts')
             ? '- PATTERN: "hooks dispatch through one entry point" (88%)\n'
             : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
-    },
-  }))
+    } }
+  })
   return { writes, allWrites, envSets, opened }
 }
 
@@ -419,26 +425,27 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   await ui.unmount()
 })
 
-// Prometheus of .agent/grafana/docker-compose.yml, answering the trip panel's queries.
-const prometheus = (on: On, fetches: string[], up = true) => {
+// Prometheus of .agent/grafana/docker-compose.yml behind `curl` (the panel never uses
+// $.http.fetch: sessions with nonessential traffic disabled refuse it, loopback included).
+let curlReply: ((url: string) => string | null) | null = null
+const prometheus = (_on: On, fetches: string[], up = true) => {
   const vector = (rows: [Record<string, string>, number][]) => JSON.stringify({
     status: 'success',
     data: { resultType: 'vector', result: rows.map(([metric, v]) => ({ metric, value: [1, String(v)] })) },
   })
-  on('http.fetch', (_$, e) => {
-    fetches.push(e.url)
-    if (!up) return { deny: 'connect ECONNREFUSED 127.0.0.1:9092' }
-    const q = decodeURIComponent(/query=([^&]*)/.exec(e.url)?.[1] ?? '')
+  curlReply = url => {
+    fetches.push(url)
+    if (!up) return null
+    const q = decodeURIComponent(/query=([^&]*)/.exec(url)?.[1] ?? '')
     const week = q.includes('[7d]')
-    const text = e.url.includes('/query_range')
+    return url.includes('/query_range')
       ? JSON.stringify({ status: 'success', data: { resultType: 'matrix', result: [{ metric: {}, values: [[1, '10'], [2, '40']] }] } })
       : q.includes('cost') ? vector([[{}, week ? 31.8 : 4.12]])
       : q.includes('token_usage') ? vector([[{ type: 'input' }, 100_000], [{ type: 'cacheRead' }, 900_000], [{ type: 'output' }, 50_000]])
       : q.includes('commit') ? vector([[{}, week ? 41 : 6]])
       : q.includes('lines') ? vector([[{ type: 'added' }, 820], [{ type: 'removed' }, 214]])
       : vector([[{}, 7800]])
-    return { value: { status: 200, ok: true, headers: {}, text } }
-  })
+  }
 }
 
 test('(t) the trip panel shows Prometheus numbers for today and 7 days', async ($, on) => {
@@ -457,6 +464,17 @@ test('(t) the trip panel shows Prometheus numbers for today and 7 days', async (
   expect(all).toContain('tokens/min')
   expect(fetches).toHaveLength(12) // probe + range + 10 instant queries
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
+})
+
+test('(t4) a non-loopback prometheus_url is never read', async ($, on) => {
+  world(on, {
+    [`${AGENT}/.nav-config.json`]: JSON.stringify({ dashboard: { prometheus_url: 'http://prom.example.com:9090' } }),
+  }, 20)
+  const fetches: string[] = []
+  prometheus(on, fetches)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).not.toContain('trip')
+  expect(fetches).toHaveLength(0)
 })
 
 test('(t2) a stopped stack hides the panel after one refused probe', async ($, on) => {

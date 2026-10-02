@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import {
-  buildTrip, duration, lines, parseMatrix, parseVector, secondsSinceMidnight, tripQueries, tripRows,
+  buildTrip, duration, isLoopback, lines, parseMatrix, parseVector, secondsSinceMidnight, tripQueries, tripRows,
 } from '../ui/trip'
 
 const vector = (rows: [Record<string, string>, number][]) => JSON.stringify({
@@ -21,6 +21,14 @@ describe('trip dashboard model', () => {
     expect(q['week.lines']).toBe('sum by (type) (increase(claude_code_lines_of_code_count_total[7d]))')
     expect(Object.keys(q)).toHaveLength(10)
     expect(tripQueries(0)['today.usd']).toContain('[60s]') // just after midnight: a 1-minute floor
+  })
+  test('only loopback Prometheus URLs are read', () => {
+    for (const url of ['http://localhost:9092', 'http://127.0.0.1:9090/', 'https://[::1]:9443', 'http://localhost']) {
+      expect(isLoopback(url)).toBe(true)
+    }
+    for (const url of ['http://prom.internal:9090', 'http://localhost.evil.com', 'http://127.0.0.1.nip.io', 'file:///etc/passwd', 'localhost:9092']) {
+      expect(isLoopback(url)).toBe(false)
+    }
   })
   test('local midnight', () => {
     const at = new Date(2026, 9, 2, 14, 30, 15).getTime()

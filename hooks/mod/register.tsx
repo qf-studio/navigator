@@ -32,7 +32,7 @@ import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
 import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
-  secondsSinceMidnight, tripQueries, tripRows,
+  isLoopback, secondsSinceMidnight, tripQueries, tripRows,
 } from './ui/trip'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
@@ -174,27 +174,30 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
 
 // The Prometheus of `.agent/grafana/docker-compose.yml` (host port 9092).
 const PROMETHEUS_URL = 'http://localhost:9092'
-const TRIP_TIMEOUT_MS = 1000
+const TRIP_TIMEOUT_S = 1
 
 /**
- * The trip panel's numbers from Prometheus; null (panel hidden) when the stack is down, has no
- * Claude Code metrics, `dashboard.enabled` is false, or under Pilot. Runs on /nav and refresh.
+ * The trip panel's numbers from a Prometheus on this machine; null (panel hidden) when the stack
+ * is down, has no Claude Code metrics, the URL is not loopback, `dashboard.enabled` is false, or
+ * under Pilot. Runs on /nav and refresh. Read with curl, not $.http.fetch: a session with
+ * CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC refuses every plugin fetch, loopback included, and
+ * nothing here leaves the host.
  */
 const refreshTrip = async ($: EngineInterface): Promise<void> => {
   const io = ioOf($)
   const root = await projectRoot(io)
   const cfg = root === null ? null : await loadConfig(io, root)
-  if (cfg === null || getPath(cfg, 'dashboard.enabled', true) !== true || await isPilotExecutor(io)) {
+  const base = String(getPath(cfg, 'dashboard.prometheus_url', PROMETHEUS_URL)).replace(/\/+$/, '')
+  if (root === null || cfg === null || getPath(cfg, 'dashboard.enabled', true) !== true
+    || !isLoopback(base) || await isPilotExecutor(io)) {
     await update($, trip, () => null)
     return
   }
-  const base = String(getPath(cfg, 'dashboard.prometheus_url', PROMETHEUS_URL)).replace(/\/+$/, '')
   const get = async (path: string, query: string, extra = ''): Promise<string | null> => {
-    const r = await Promise.race([
-      $.http.fetch(`${base}/api/v1/${path}?query=${encodeURIComponent(query)}${extra}`),
-      $.clock.sleep(TRIP_TIMEOUT_MS).then(() => null),
-    ]).catch(() => null)
-    return r?.ok ? r.text : null
+    const url = `${base}/api/v1/${path}?query=${encodeURIComponent(query)}${extra}`
+    const out = await run(io, ['curl', '-sfg', '--noproxy', '*', '--max-time', String(TRIP_TIMEOUT_S), url],
+      root, (TRIP_TIMEOUT_S + 1) * 1000)
+    return out === '' ? null : out
   }
   const now = await $.clock.now()
   const end = Math.floor(now / 1000)
