@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T11:28:45.205267+00:00",
+  "last_updated": "2026-10-02T14:08:07.149608+00:00",
   "stats": {
-    "total_nodes": 202,
+    "total_nodes": 204,
     "total_edges": 843,
-    "memory_count": 75
+    "memory_count": 76
   },
   "nodes": {
     "tasks": {
@@ -1694,6 +1694,11 @@
         "name": "Architecture",
         "aliases": [],
         "domain": "general"
+      },
+      "navigation": {
+        "name": "Navigation",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2834,6 +2839,19 @@
           "mods",
           "hooks-runtime",
           "architecture"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-084": {
+        "type": "decision",
+        "summary": "Navigator /nav UI is a car-navigator model, not a decisions log: destination (brief goal > active task), route (task checklist > phases, current waypoint dotted), off-route after 2 substantive prompts with no shared word stem \u2192 park/back/switch, fuel (context), saved. Band is one 'state: what' line. Rejected after Threads feedback: per-tool-call cost and a decisions log (model reasoning is invisible to mods; narrating it costs context).",
+        "path": "memories/decisions/mem-084.md",
+        "confidence": 0.95,
+        "concepts": [
+          "mods",
+          "frontend",
+          "navigation"
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
@@ -8058,7 +8076,8 @@
       "TASK-45",
       "TASK-49",
       "TASK-55",
-      "TASK-69"
+      "TASK-69",
+      "mem-084"
     ],
     "api": [
       "TASK-01",
@@ -8660,7 +8679,8 @@
       "mem-079",
       "mem-080",
       "mem-081",
-      "mem-083"
+      "mem-083",
+      "mem-084"
     ],
     "hooks-runtime": [
       "mem-078",
@@ -8679,6 +8699,9 @@
     ],
     "conformance": [
       "mem-082"
+    ],
+    "navigation": [
+      "mem-084"
     ]
   }
 }

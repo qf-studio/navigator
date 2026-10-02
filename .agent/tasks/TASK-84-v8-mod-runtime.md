@@ -1,6 +1,6 @@
 # TASK-84: Navigator v8 — mod-first runtime with Python fallback
 
-**Status**: 🚧 In Progress — branch `v8`, started 2026-10-02. One v8.0.0 release at parity.
+**Status**: 🚧 In Progress — branch `v8` (26 commits, head e0b416a), built and verified headless; awaiting interactive dogfood + go-ahead to release. One v8.0.0 release at parity.
 
 ## Context
 
@@ -345,3 +345,28 @@ stem with the destination open a warning panel with park (writes a `📋 Parked`
 switch. Band is one quiet dim line: `→ destination · waypoint`, `⚠ off route · /nav`, or nothing.
 UI-only change: ops, parity and the Python fallback untouched. 92 kit tests (pure route model +
 pane/band integration). Files: `hooks/mod/ui/route.ts`, register.tsx pane/band.
+
+### Band format (e0b416a)
+`on route: Ship v8 · ● verify 3/5 · next: run headless matrix` · `low fuel: … · compact after this
+waypoint` · `off route: <topic> · /nav to park or go back` · empty otherwise. The next-action
+fallback skips table rows and intent-brief fields.
+
+---
+
+## ▶ Resume here (next session)
+
+1. **Restart the dogfood terminal from the repo root**: `claude --plugin-dir "$PWD"` (plugin name
+   `navigator`). Sessions started on the old `mods/nav-status` path keep the deleted spike in
+   memory and never reload.
+2. **Dogfood checklist**: `/nav` route view (destination, route dot, off-route after 2 detour prompts,
+   park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
+   a subagent gets context, a config edit toasts, `/theme` → Pilot, hot reload mid-session.
+3. **Release (needs explicit go-ahead)**: merge `v8` → `main`; `scripts/bump-version.sh 8.0.0`
+   (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md` and
+   add the route view to it; tag `v8.0.0` + push (CI `validate` + `validate-mod` + publish); docs site
+   sync + `vercel --prod` from the site dir (no git remote).
+4. **8.1 candidates**: isReadOnly mutation tracking in stop_completion (mem-077 over-fire),
+   prefer `last_assistant_message` in stop_state, band reason when Navigator intervenes, shell-level
+   fast-exit guard (~38 ms Python spawn per owned event), `$.model.classify` judge experiment.
+5. Optional: remove the personal `.claude/settings.local.json` dogfood hooks (double session doc on
+   the Python fallback).

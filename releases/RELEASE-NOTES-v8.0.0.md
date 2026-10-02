@@ -29,14 +29,20 @@ session. Nothing to configure.
   ~2,100 Stop cases, plus lifecycle cases) and writes fixtures the mod's kit tests must match
   byte for byte. `make test-all` runs both runtimes' suites.
 
-### `/nav` pane, status band, Pilot theme
+### `/nav`: the route view
 
-- **`/nav`** opens a pane: the active task, a "do next" line, context fill with a
-  turns-to-70% forecast, session cost and rate windows, **live token savings** (docs actually
-  loaded vs the whole `.agent/` doc tree, and subagent tokens kept out of your context),
-  memories matched to the concepts in each prompt (▸ pins one into your next prompt), open
-  tasks, and marker / compact / refresh hotkeys.
-- A status **band** above the prompt: phase · context % · next action.
+Navigator keeps the path short and tells you where you are:
+
+- **destination**: the goal Claude states in a brief, else the active task;
+- **route**: the task's checklist (or research → impl → verify → complete), the current waypoint
+  dotted, the next action and how long you've been on it;
+- **off route**: two prompts in a row that share nothing with the destination open a warning
+  with **park** (writes a parked task stub), **back**, or **switch**;
+- **fuel (context)**: fill, turns left, and when to compact; **saved**: tokens kept out of
+  context (docs loaded vs the `.agent/` tree, subagent work); memories **on this route**,
+  matched to each prompt (▸ pins one into the next prompt); tasks behind `t`.
+- A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
+  `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.
 
 ### Truthful update notice (TASK-81)

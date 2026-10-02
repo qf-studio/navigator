@@ -199,9 +199,11 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
-- **TASK-84** 🚧 — v8 runtime: every op ported to the mod with byte parity (Python stays as
-  fallback), `/nav` pane + band + Pilot theme shipped in the plugin, update notice (TASK-81),
-  v6 shims deleted. Branch `v8`; one v8.0.0 release (`tasks/TASK-84-v8-mod-runtime.md`).
+- **TASK-84** 🚧 — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
+  `/nav` route view (destination · route · off-route park/back/switch · fuel (context) · saved),
+  one-line band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
+  Branch `v8`, verified headless; next: dogfood → release v8.0.0 (`tasks/TASK-84-v8-mod-runtime.md`,
+  section "Resume here").
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
   three releases. Plan: real release check + one-line notice in session_start, single
