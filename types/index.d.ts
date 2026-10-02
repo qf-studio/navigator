@@ -9,7 +9,7 @@ export type NavStatus = {
 export type NavMemory = { kind: string; text: string; percent: number | null }
 export type NavGraph = { nodes: number; edges: number; memories: number }
 export type NavRate = { kind: string; percentUsed: number; resetsAt: string | null }
-export type NavTask = { id: string; title: string }
+export type NavTask = { id: string; title: string; path?: string }
 
 export type NavPane = {
   tasks: NavTask[]
@@ -19,6 +19,8 @@ export type NavPane = {
   graph: NavGraph | null
   concepts: string[]
   docsTreeBytes: number
+  /** `- [ ]` / `- [x]` items of the active task doc (the route when present). */
+  checklist?: { label: string; done: boolean }[]
 }
 
 export type NavUsage = { rates: NavRate[]; usd: number | null }
@@ -33,6 +35,9 @@ export type NavActivity = {
 }
 
 export type NavHistory = { ctx: number[]; saved: number[] }
+export type NavDestination = { title: string; taskId: string | null; source: 'brief' | 'task' }
+export type NavOffRoute = { topic: string; prompt: string; count: number }
+export type NavWaypointClock = { label: string; turns: number }
 
 declare module 'claude-code' {
   interface PluginState {
@@ -44,6 +49,10 @@ declare module 'claude-code' {
       history: NavHistory
       pinned: string | null
       disowned: string[]
+      destination: NavDestination | null
+      offRoute: NavOffRoute | null
+      waypointClock: NavWaypointClock | null
+      showTasks: boolean
       crashes: Record<string, number>
     }
   }

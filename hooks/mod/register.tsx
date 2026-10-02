@@ -7,7 +7,9 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../../types'
+import type {
+  NavActivity, NavDestination, NavHistory, NavOffRoute, NavPane, NavStatus, NavUsage, NavWaypointClock,
+} from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
 import { surfaceHealth } from './lib/life-health'
@@ -22,7 +24,12 @@ import {
   clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
   tokensOf, turnsTo,
 } from './ui/nav'
-import { bandLine, isQuiet, statusOf } from './ui/status'
+import {
+  arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
+  nextTaskNumber, parkedTaskDoc, parseChecklist, routeLine, slugOf,
+} from './ui/route'
+import type { Waypoint } from './ui/route'
+import { statusOf } from './ui/status'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
 const PLUGIN = 'navigator'
@@ -43,6 +50,10 @@ const pane = atom({ plugin: 'navigator', key: 'pane' } as const, null as NavPane
 const activity = atom({ plugin: 'navigator', key: 'activity' } as const, NO_ACTIVITY)
 const usage = atom({ plugin: 'navigator', key: 'usage' } as const, null as NavUsage | null)
 const history = atom({ plugin: 'navigator', key: 'history' } as const, NO_HISTORY)
+const destination = atom({ plugin: 'navigator', key: 'destination' } as const, null as NavDestination | null)
+const offRoute = atom({ plugin: 'navigator', key: 'offRoute' } as const, null as NavOffRoute | null)
+const waypointClock = atom({ plugin: 'navigator', key: 'waypointClock' } as const, null as NavWaypointClock | null)
+const showTasks = atom({ plugin: 'navigator', key: 'showTasks' } as const, false)
 const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
 
 // $.state survives a hot reload, so a value written by an older version of this module
@@ -146,8 +157,19 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   const graphJson = await readJson(ioOf($), `${root}/${graphPath}`)
   const index = graphJson?.concept_index
   const concepts = index !== null && typeof index === 'object' ? Object.keys(index as Json) : []
+  const taskList = parseTasks(tasks)
+  const active = taskList[taskList.length - 1]
+  let checklist: { label: string; done: boolean }[] = []
+  if (active?.path) {
+    try {
+      checklist = parseChecklist(String(await $.fs.read(`${root}/${active.path}`)))
+    } catch {
+      checklist = []
+    }
+  }
   await update($, pane, () => ({
-    tasks: parseTasks(tasks),
+    tasks: taskList,
+    checklist,
     marker: latestMarker(markers),
     memories: parseMemories(memories),
     memoriesFor: null,
@@ -197,6 +219,49 @@ const withContext = <R extends { additionalContext?: string[] }>(r: R, text: str
 
 // MultiEdit no longer exists as a tool on CC 2.1.287; Python's matcher still lists it (harmless).
 const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
+
+const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the destination
+const LOW_FUEL_TURNS = 5
+
+/** Where the session is headed: a goal Claude stated in a brief, else the active task. */
+const navState = async ($: EngineInterface) => {
+  const p = await readPane($)
+  const s = await read($, status)
+  const chosen = await read($, destination)
+  const task = p.tasks[p.tasks.length - 1] ?? null
+  const dest: NavDestination | null = chosen
+    ?? (task ? { title: task.title || task.id, taskId: task.id, source: 'task' } : null)
+  const route: Waypoint[] = buildRoute(p.checklist ?? [], s?.phase ?? null)
+  return { p, s, dest, route, here: currentWaypoint(route) }
+}
+
+const destinationWords = (dest: NavDestination | null, route: readonly Waypoint[]): Set<string> =>
+  dest === null ? new Set() : contentWords([dest.title, dest.taskId ?? '', ...route.map(w => w.label)].join(' '))
+
+/** Write a task stub for the detour and return to the route. */
+const parkDetour = async ($: EngineInterface): Promise<void> => {
+  const detour = await read($, offRoute)
+  const root = await projectRoot(ioOf($))
+  if (detour === null || root === null) return
+  const { dest } = await navState($)
+  const names = (await $.fs.list(`${root}/.agent/tasks`).catch(() => [])).map(f => f.name)
+  const id = `TASK-${nextTaskNumber(names)}`
+  const date = new Date(await $.clock.now()).toISOString().slice(0, 10)
+  await $.fs.write(`${root}/.agent/tasks/${id}-${slugOf(detour.topic)}.md`,
+    parkedTaskDoc(id, detour.topic, detour.prompt, dest?.title ?? 'no destination', date))
+  await update($, offRoute, () => null)
+  $.ui.toast(`Parked as ${id}: ${detour.topic}`)
+}
+
+/** Make the detour the destination; the old one stays in the task list. */
+const switchToDetour = async ($: EngineInterface): Promise<void> => {
+  const detour = await read($, offRoute)
+  if (detour === null) return
+  const title = detour.prompt.split('\n')[0]?.trim().slice(0, 60) || detour.topic
+  await update($, destination, (): NavDestination => ({ title, taskId: null, source: 'brief' }))
+  await update($, offRoute, () => null)
+  await update($, waypointClock, () => null)
+}
 
 /** TASK-81: one read-only notice when a newer stable release exists; never updates. */
 const checkForUpdate = async ($: EngineInterface): Promise<void> => {
@@ -353,7 +418,19 @@ export const register: Register = on => {
     const entered = extra.length === 0
       ? await next(e)
       : await next({ ...e, context: [...(e.context ?? []), ...extra] })
-    if (entered.drop === undefined) await recallFor($, e.text)
+    if (entered.drop === undefined) {
+      await recallFor($, e.text)
+      const { dest, route } = await navState($)
+      if (isOffRoute(e.text, destinationWords(dest, route))) {
+        await update($, offRoute, prev => ({
+          topic: prev?.topic ?? detourTopic(e.text),
+          prompt: prev?.prompt ?? e.text,
+          count: (prev?.count ?? 0) + 1,
+        }))
+      } else if (contentWords(e.text).size >= 4) {
+        await update($, offRoute, () => null) // back on the destination's vocabulary
+      }
+    }
     return entered
   })
 
@@ -393,117 +470,142 @@ export const register: Register = on => {
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
       saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
     }))
+    const goal = captureGoal(e.answer)
+    if (goal !== null) await update($, destination, (): NavDestination => ({ title: goal, taskId: null, source: 'brief' }))
+    const { here } = await navState($)
+    const label = here?.label ?? null
+    await update($, waypointClock, prev => (label === null ? null
+      : prev?.label === label ? { label, turns: prev.turns + 1 } : { label, turns: 0 }))
     return next(e)
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const s = await read($, status)
-    if (e.props.hasSurvey || isQuiet(s) || s === null) return next(e)
+    if (e.props.hasSurvey) return next(e)
+    const { s, dest, here } = await navState($)
+    const detour = await read($, offRoute)
+    const left = turnsTo((await readHistory($)).ctx, 70)
+    const percent = s?.ctxPercent ?? null
+    const text = bandText({
+      destination: dest?.title ?? null,
+      waypoint: here?.label ?? null,
+      offRoute: (detour?.count ?? 0) >= OFF_ROUTE_AFTER,
+      lowFuel: (percent !== null && percent >= 70) || (left !== null && left <= LOW_FUEL_TURNS),
+    }, e.props.bodyColumns)
+    if (!text) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     return (
       <Box>
-        <Text dimColor wrap="truncate-end">{bandLine(s, e.props.bodyColumns)}</Text>
+        <Text color={PALETTE.dim} wrap="truncate-end">{text}</Text>
       </Box>
     )
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
-    const s = await read($, status)
-    const p = await readPane($)
+    const { p, s, dest, route, here } = await navState($)
     const u = await read($, usage)
     const a = await readActivity($)
     const hist = await readHistory($)
     const chosen = await read($, pinned)
+    const detour = await read($, offRoute)
+    const clock = await read($, waypointClock)
+    const tasksOpen = await read($, showTasks)
+    const width = Math.max(30, e.props.bodyColumns - 4)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
-    const current = p.tasks[p.tasks.length - 1] ?? null
     const left = turnsTo(hist.ctx, 70)
-    const compactHint = percent !== null && percent >= 70 ? 'compact now: context is high'
-      : a.lastTurnCommitted ? 'good moment to compact: just committed'
-        : 'compact: hold, mid-task'
+    const lowFuel = (percent !== null && percent >= 70) || (left !== null && left <= LOW_FUEL_TURNS)
     const avoided = tokensOf(Math.max(0, p.docsTreeBytes - a.docsBytes))
+    const isOff = (detour?.count ?? 0) >= OFF_ROUTE_AFTER
+    const done = arrived(route)
+    const window = u?.rates[0]
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
-    const title = (text: string, note?: string) => (
-      <Box marginBottom={1}>
-        <Text>
-          <Text color={PALETTE.accent}>{text}</Text>
-          <Text color={PALETTE.dim}>{note ? `  ${note}` : ''}</Text>
-        </Text>
-      </Box>
+    const title = (text: string, color: string = PALETTE.accent) => (
+      <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
     )
 
     return (
       <Box flexDirection="column">
-        {s?.next ? (
-          <Box {...panel} flexDirection="column">
-            {title('do next')}
-            <Text color={PALETTE.label} bold wrap="wrap">{s.next}</Text>
+        {isOff && detour !== null ? (
+          <Box {...panel} borderColor={PALETTE.warning} flexDirection="column">
+            {title('⚠ off route', PALETTE.warning)}
+            <Text wrap="truncate-end" color={PALETTE.label}>last {detour.count} prompts are about "{detour.topic}"</Text>
+            <Text wrap="truncate-end" color={PALETTE.dim}>
+              destination is "{dest?.title ?? 'not set'}"{here ? ` (${here.label})` : ''}
+            </Text>
+            <Text> </Text>
+            <Box flexDirection="row" columnGap={3}>
+              <Button key="park" label="park as new task" hotkey="p" plain onPress={() => parkDetour($)} />
+              <Button key="back" label="back to route" hotkey="b" plain
+                onPress={() => update($, offRoute, () => null)} />
+              <Button key="switch" label="switch" hotkey="s" plain onPress={() => switchToDetour($)} />
+            </Box>
           </Box>
-        ) : null}
+        ) : (
+          <Box {...panel} flexDirection="column">
+            {title('destination')}
+            {dest === null ? (
+              <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or t to pick a task</Text>
+            ) : (
+              <Box flexDirection="row" justifyContent="space-between">
+                <Text bold color={PALETTE.label} wrap="truncate-end">{dest.title}</Text>
+                <Text color={PALETTE.dim}>{dest.taskId ?? (dest.source === 'brief' ? 'from brief' : '')}</Text>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        <Box {...panel} flexDirection="column">
+          {title('route')}
+          <Text color={done ? PALETTE.success : PALETTE.label} wrap="truncate-end">{routeLine(route, width)}</Text>
+          <Text> </Text>
+          {done ? (
+            <Text color={PALETTE.success}>arrived · next: pick a destination</Text>
+          ) : (
+            <Box flexDirection="column">
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.dim}>next   </Text>
+                <Text color={PALETTE.label}>{s?.next ?? '—'}</Text>
+              </Text>
+              {clock && here ? (
+                <Text color={PALETTE.dim}>since  {clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} on this waypoint</Text>
+              ) : null}
+            </Box>
+          )}
+        </Box>
 
         <Box flexDirection="row">
           <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('context')}
+            {title('fuel (context)')}
             <Text wrap="truncate-end">
-              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 12)}</Text>
+              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
+            </Text>
+            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
+              {left === null ? 'growth flat' : `~${left} turns left`}
+            </Text>
+            <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
+              {lowFuel ? 'compact at next waypoint' : a.lastTurnCommitted ? 'good moment to compact' : 'compact: hold'}
             </Text>
             <Text color={PALETTE.dim} wrap="truncate-end">
-              {left === null ? 'growth flat' : `~${left} turns to 70%`}
+              {u?.usd == null ? '' : `$${u.usd.toFixed(2)}`}
+              {window ? ` · ${rateKind(window.kind)} ${Math.round(window.percentUsed)}%` : ''}
             </Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 18)}</Text>
           </Box>
           <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
-            {title('session')}
-            <Text color={PALETTE.success} bold>{u?.usd == null ? '--' : `$${u.usd.toFixed(2)}`}</Text>
-            {(u?.rates ?? []).slice(0, 2).map(r => (
-              <Text color={PALETTE.dim} wrap="truncate-end">
-                {rateKind(r.kind)} {Math.round(r.percentUsed)}%
-                {clockOf(r.resetsAt) === null ? '' : ` · resets ${clockOf(r.resetsAt)}`}
-              </Text>
-            ))}
+            {title('saved')}
+            <Text color={PALETTE.success} bold wrap="truncate-end">~{compact(avoided)} tokens</Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">docs {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B</Text>
+            <Text color={PALETTE.dim} wrap="truncate-end">
+              {a.agentRuns === 0 ? 'agents: none yet' : `agents ${compact(a.agentTokens)} outside`}
+            </Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.saved, 14)}</Text>
           </Box>
         </Box>
 
         <Box {...panel} flexDirection="column">
-          {title('saved this session', 'estimates, ~4 bytes per token')}
-          <Text wrap="truncate-end">
-            <Text color={PALETTE.success} bold>~{compact(avoided)} tokens</Text>
-            <Text color={PALETTE.label}> kept out of context</Text>
-          </Text>
-          <Text wrap="truncate-end">
-            <Text color={PALETTE.dim}>docs    </Text>
-            <Text color={PALETTE.label}>
-              loaded {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B in .agent/
-            </Text>
-            <Text color={PALETTE.dim}>{a.docsReads > 0 ? `  (${a.docsReads} reads)` : ''}</Text>
-          </Text>
-          <Text wrap="truncate-end">
-            <Text color={PALETTE.dim}>agents  </Text>
-            <Text color={PALETTE.label}>
-              {a.agentRuns === 0 ? 'none yet'
-                : `${a.agentRuns} turns · ${compact(a.agentTokens)} tokens processed outside`}
-            </Text>
-          </Text>
-          <Text color={PALETTE.accent}>{sparkline(hist.saved, 24)}</Text>
-        </Box>
-
-        <Box {...panel} flexDirection="column">
-          {title('active task')}
-          <Text wrap="truncate-end">
-            <Text color={PALETTE.accent} bold>{current?.id ?? 'no task in progress'}</Text>
-            <Text color={PALETTE.label}>{current?.title ? `  ${current.title}` : ''}</Text>
-          </Text>
-          <Text color={PALETTE.dim} wrap="truncate-end">
-            {p.marker === null ? 'no marker yet' : `marker ${p.marker}`}
-          </Text>
-          <Text color={percent !== null && percent >= 70 ? PALETTE.warning : PALETTE.dim}>{compactHint}</Text>
-        </Box>
-
-        <Box {...panel} flexDirection="column">
-          {title('memories', p.memoriesFor === null ? 'for open tasks' : `for: ${p.memoriesFor}`)}
-          {p.memories.length === 0 && <Text color={PALETTE.dim}>none matched</Text>}
+          {title(p.memoriesFor === null ? 'on this route' : `on this route · ${p.memoriesFor}`)}
+          {p.memories.length === 0 && <Text color={PALETTE.dim}>nothing recorded yet</Text>}
           {p.memories.map((m, i) => (
             <Box flexDirection="row" columnGap={1}>
               <Button
@@ -515,51 +617,36 @@ export const register: Register = on => {
               <Box flexGrow={1} flexShrink={1}>
                 <Text wrap="wrap" color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>
                   <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
-                  <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
                   {'  '}{m.text}
                 </Text>
               </Box>
             </Box>
           ))}
-          <Text color={PALETTE.dim}>
-            {chosen === null ? '▸ pins a memory into your next prompt' : '● pinned for your next prompt'}
-          </Text>
         </Box>
 
-        <Box {...panel} flexDirection="column">
-          {title('open tasks')}
-          {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
-          {[...p.tasks].reverse().slice(0, 6).map(t => (
-            <Text wrap="truncate-end">
-              <Text color={t.id === current?.id ? PALETTE.success : PALETTE.dim}>
-                {t.id === current?.id ? '● ' : '○ '}
+        {tasksOpen ? (
+          <Box {...panel} flexDirection="column">
+            {title('open tasks')}
+            {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
+            {[...p.tasks].reverse().slice(0, 6).map(t => (
+              <Text wrap="truncate-end">
+                <Text color={t.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{t.id === dest?.taskId ? '● ' : '○ '}</Text>
+                <Text color={t.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{t.id}</Text>
+                <Text color={PALETTE.dim}>{t.title ? `  ${t.title}` : ''}</Text>
               </Text>
-              <Text color={t.id === current?.id ? PALETTE.label : PALETTE.dim} bold={t.id === current?.id}>
-                {t.id}
-              </Text>
-              <Text color={PALETTE.dim}>{t.title ? `  ${t.title}` : ''}</Text>
-            </Text>
-          ))}
-        </Box>
+            ))}
+          </Box>
+        ) : null}
 
         <Box flexDirection="row" columnGap={2} paddingX={1}>
-          <Button
-            key="marker"
-            label="marker"
-            hotkey="m"
-            plain
-            onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })}
-          />
+          <Button key="marker" label="marker" hotkey="m" plain
+            onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })} />
           <Text color={PALETTE.dim}>·</Text>
-          <Button
-            key="compact"
-            label="compact"
-            hotkey="c"
-            plain
-            onPress={() => $.session.compact()}
-          />
+          <Button key="compact" label="compact" hotkey="c" plain onPress={() => $.session.compact()} />
           <Text color={PALETTE.dim}>·</Text>
-          <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => refreshPane($)} />
+          <Button key="tasks" label="tasks" hotkey="t" plain onPress={() => update($, showTasks, v => !v)} />
+          <Text color={PALETTE.dim}>·</Text>
+          <Button key="refresh" label="refresh" hotkey="f" plain onPress={() => refreshPane($)} />
         </Box>
       </Box>
     )

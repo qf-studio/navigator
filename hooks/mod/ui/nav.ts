@@ -13,7 +13,7 @@ export const parseTasks = (stdout: string): NavTask[] =>
     const m = TASK_ID_RE.exec(path)
     if (!m?.[1]) return []
     const title = heading.replace(/^#+\s*/, '').replace(new RegExp(`^${m[1]}:?\\s*`), '').trim()
-    return [{ id: m[1], title }]
+    return [{ id: m[1], title, path: path.trim() }]
   })
 
 /** Lines of `memory_recall.py --format compact`: `- KIND: "text" (NN%) …`. */

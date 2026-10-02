@@ -165,26 +165,25 @@ test('(c3) a prompt that merely mentions ADHD is not a toggle', async ($, on) =>
   expect(writes).toHaveLength(0)
 })
 
-test('(d) the band shows phase, context percent and next action', async ($, on) => {
+test('(d) the band is one quiet line: waypoint, then destination once known', async ($, on) => {
   world(on, {}, 42)
   await complete($, 'NAVIGATOR_STATUS\nPhase: IMPL\nIteration: 2/5\nNext Action: run tests\n')
   for (const surface of SURFACES) {
     const ui = await band($, surface)
-    const text = (await ui.find({ type: 'Text' }))?.text ?? ''
-    expect(text).toContain('phase IMPL')
-    expect(text).toContain('ctx 42%')
-    expect(text).toContain('next: run tests')
+    expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('● impl')
     await ui.unmount()
   }
+  await $.command.run(NAV_CMD)
+  const ui = await band($, 'terminal')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('→ Typed judge, phase 2 · impl')
+  await ui.unmount()
 })
 
-test('(d2) the band reads a bold Next action: line', async ($, on) => {
+test('(d2) a goal stated in a brief becomes the destination', async ($, on) => {
   world(on, {})
-  await complete($, '**Next action:** run the tests.\n\n- detail one\n')
+  await complete($, '| Goal | Ship the route view |\n| Scope | pane + band |\nPhase: RESEARCH\n')
   const ui = await band($, 'terminal')
-  const text = (await ui.find({ type: 'Text' }))?.text ?? ''
-  expect(text).toContain('next: run the tests.')
-  expect(text).not.toContain('ctx')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('→ Ship the route view · research')
   await ui.unmount()
 })
 
@@ -233,27 +232,30 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
     },
   })
 
-test('(f) /nav opens the pane with task, context bar and memories', async ($, on) => {
+test('(f) /nav shows destination, route, fuel (context), saved and memories', async ($, on) => {
   const { opened } = world(on, {
     [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
-    [`${AGENT}/.context-markers/z-newest-by-mtime.md`]: 'xx',
-    [`${AGENT}/.context-markers/a-older.md`]: '',
   }, 42)
-  await complete($, 'Phase: IMPL\n')
+  await complete($, 'Phase: IMPL\nNext: wire the band\n')
   await $.command.run(NAV_CMD)
   expect(opened).toContain('nav')
   for (const surface of SURFACES) {
     const ui = await navPane($, surface)
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
-    expect(texts).toContain('TASK-80')
-    expect(texts).toContain('42%')
-    expect(texts).toContain('z-newest-by-mtime')
-    expect(texts).toContain('TASK-15')
     expect(texts).toContain('Typed judge, phase 2')
+    expect(texts).toContain('TASK-80')
+    expect(texts).toContain('✓ research ── ● impl ── ○ verify ── ○ complete')
+    expect(texts).not.toContain('you are here')
+    expect(texts).toContain('wire the band')
+    expect(texts).toContain('fuel (context)')
+    expect(texts).toContain('42%')
     expect(texts).toContain('~100.0K tokens')
     expect(texts).toContain('stop gate over-fires on heredoc Bash')
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
-    expect(texts).toContain('compact: hold, mid-task')
+    expect(texts).not.toContain('TASK-15') // tasks list hidden until t
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(6)
+    await ui.press({ key: 'tasks' })
+    expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('TASK-15')
+    await ui.press({ key: 'tasks' })
     await ui.unmount()
   }
 })
@@ -270,15 +272,15 @@ test('(g) a pinned memory rides the next prompt once', async ($, on) => {
   await ui.unmount()
 })
 
-test('(h) phase is sticky across turns and a "Next:" line feeds the band', async ($, on) => {
+test('(h) phase is sticky across turns and a "Next:" line feeds the route', async ($, on) => {
   world(on, {}, 10)
+  await $.command.run(NAV_CMD)
   await complete($, 'Phase: IMPL\n')
   await complete($, 'Removed the marker.\n\nNext: run the mod tests.\n')
-  const ui = await band($, 'terminal')
-  const text = (await ui.find({ type: 'Text' }))?.text ?? ''
-  expect(text).toContain('phase IMPL')
-  expect(text).toContain('next: run the mod tests.')
-  await ui.unmount()
+  const all = await texts($)
+  expect(all).toContain('● impl')
+  expect(all).toContain('run the mod tests.')
+  expect(all).toContain('since  1 turn on this waypoint')
 })
 
 const texts = async ($: Engine) => {
@@ -288,7 +290,7 @@ const texts = async ($: Engine) => {
   return all
 }
 
-test('(i) doc reads and subagent turns feed the savings panel', async ($, on) => {
+test('(i) doc reads and subagent turns feed the saved panel', async ($, on) => {
   world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
   await $.command.run(NAV_CMD)
   await $.tool.call({ tool: 'Read', file_path: `${AGENT}/tasks/TASK-80.md` } as never)
@@ -301,19 +303,18 @@ test('(i) doc reads and subagent turns feed the savings panel', async ($, on) =>
   } as never)
   await complete($, 'Next: commit it\n')
   const all = await texts($)
-  expect(all).toContain('loaded 8.0KB of 400.0KB')
-  expect(all).toContain('(1 reads)')
-  expect(all).toContain('1 turns · 31.5K tokens processed outside')
+  expect(all).toContain('docs 8.0KB of 400.0KB')
+  expect(all).toContain('agents 31.5K outside')
   expect(all).toContain('~98.0K tokens')
   expect(all).toContain('commit it')
 })
 
-test('(j) a committed turn turns the compact hint into a nudge', async ($, on) => {
+test('(j) a committed turn turns the fuel hint into a nudge', async ($, on) => {
   world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
   await $.command.run(NAV_CMD)
   await $.tool.call({ tool: 'Bash', command: 'git commit -m x' } as never)
   await complete($, 'Committed.\n')
-  expect(await texts($)).toContain('good moment to compact: just committed')
+  expect(await texts($)).toContain('good moment to compact')
 })
 
 test('(k) memories follow the concepts the prompt names', async ($, on) => {
@@ -324,7 +325,7 @@ test('(k) memories follow the concepts the prompt names', async ($, on) => {
   await $.command.run(NAV_CMD)
   await submit($, 'why do the hooks fire twice')
   const all = await texts($)
-  expect(all).toContain('for: hooks')
+  expect(all).toContain('on this route · hooks')
   expect(all).toContain('hooks dispatch through one entry point')
 })
 
@@ -333,7 +334,7 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
   world(on, {}, () => percent)
   await $.command.run(NAV_CMD)
   for (const p of [10, 20, 30]) { percent = p; await complete($, 'step\n') }
-  expect(await texts($)).toContain('~4 turns to 70%')
+  expect(await texts($)).toContain('~4 turns left')
 })
 
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
@@ -351,4 +352,60 @@ test('(o) read_guard through tool.call: warn as context at 3, deny at 5', async 
   expect(results[0]?.context ?? []).toEqual([])
   expect((results[2]?.context ?? []).join('\n')).toContain('[nav-read-guard] 3 .agent/ files read this turn')
   expect(results[4]?.deny ?? '').toContain('blocked at 5 .agent/ reads')
+})
+
+test('(p) two substantive prompts away from the destination open the off-route panel', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'what should I post on threads about marketing feedback replies')
+  let ui = await band($, 'terminal')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').not.toContain('off route')
+  await ui.unmount()
+  await submit($, 'draft another threads reply for the marketing audience please')
+  ui = await band($, 'terminal')
+  expect((await ui.find({ type: 'Text' }))?.text ?? '').toBe('⚠ off route · /nav')
+  await ui.unmount()
+  const all = await texts($)
+  expect(all).toContain('⚠ off route')
+  expect(all).toContain('last 2 prompts are about')
+  expect(all).toContain('destination is "Typed judge, phase 2"')
+})
+
+test('(q) short replies never count, and an on-topic prompt clears the detour', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'yes go ahead')
+  await submit($, 'ok')
+  expect(await texts($)).not.toContain('⚠ off route')
+  await submit($, 'what should I post on threads about marketing feedback replies')
+  await submit($, 'draft another threads reply for the marketing audience please')
+  await submit($, 'back to the typed judge phase 2 evidence collection')
+  expect(await texts($)).not.toContain('⚠ off route')
+})
+
+test('(r) park writes a task stub and returns to the route', async ($, on) => {
+  const { allWrites } = world(on, {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${AGENT}/tasks/TASK-84-v8.md`]: '# TASK-84: v8',
+  }, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'what should I post on threads about marketing feedback replies')
+  await submit($, 'draft another threads reply for the marketing audience please')
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'park' })
+  await ui.unmount()
+  const stub = allWrites.find(w => /\/\.agent\/tasks\/TASK-85-.+\.md$/.test(w.path))
+  expect(stub?.text ?? '').toContain('# TASK-85: ')
+  expect(stub?.text ?? '').toContain('Parked')
+  expect(stub?.text ?? '').toContain('> what should I post on threads')
+  expect(await texts($)).not.toContain('⚠ off route')
+})
+
+test('(s) a task checklist becomes the route', async ($, on) => {
+  world(on, {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n',
+  }, 20)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).toContain('✓ collect evidence ── ● add surface ── ○ ship')
 })

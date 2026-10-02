@@ -334,3 +334,14 @@ session block in v7 dogfood sessions).
 2. Go-ahead for the outward steps: merge `v8` → `main`, `scripts/bump-version.sh 8.0.0`, CHANGELOG,
    tag push (CI publishes the release), docs-site sync + `vercel --prod`.
 3. Optional: drop the `.claude/settings.local.json` dogfood hooks (redundant with the plugin).
+
+### Route view (2026-10-02, after Threads feedback) ✅
+Navigator as a car navigator: **destination** (a goal Claude states in a brief, else the active
+task), **route** (the active task's `- [ ]` checklist, else research → impl → verify → complete;
+the current waypoint is a dot, no "you are here"), **next** + time on the waypoint, **fuel
+(context)** with turns left and a compact nudge, **saved**, **on this route** memories, tasks
+behind `t`. **Off route**: two consecutive substantive prompts (4+ content words) sharing no word
+stem with the destination open a warning panel with park (writes a `📋 Parked` task stub) / back /
+switch. Band is one quiet dim line: `→ destination · waypoint`, `⚠ off route · /nav`, or nothing.
+UI-only change: ops, parity and the Python fallback untouched. 92 kit tests (pure route model +
+pane/band integration). Files: `hooks/mod/ui/route.ts`, register.tsx pane/band.
