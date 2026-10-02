@@ -1,0 +1,76 @@
+// Contracts shared by the runner and the ops (TASK-84). OpResult mirrors the Python op
+// dict keys (hooks/ops/README.md) so parity tests compare like with like.
+export type Phase = 'gates' | 'responders' | 'injectors' | 'recorders'
+
+export type OpResult = {
+  additional_context?: string
+  decision?: 'block'
+  reason?: string
+  permission_decision?: 'deny' | 'ask'
+  permission_reason?: string
+  exit_code?: number
+  stderr?: string
+  system_message?: string
+  continue_?: boolean
+}
+
+export type Json = Record<string, unknown>
+
+export type EnvSnapshot = {
+  PILOT_EXECUTOR?: string
+  NAVIGATOR_CONFIG_HOME?: string
+  XDG_CONFIG_HOME?: string
+  HOME?: string
+}
+
+/**
+ * The mods API, narrowed to what ops need. The engine's static scan follows `$` only into
+ * functions declared in the hooks module itself, so register.tsx builds this object (each
+ * method a direct `$.noun.method` call there) and passes it to imported modules instead.
+ */
+export type Io = {
+  pluginRoot: string
+  read: (path: string) => Promise<string>
+  write: (path: string, text: string) => Promise<void>
+  exists: (path: string) => Promise<boolean>
+  list: (path: string) => Promise<{ name: string; mtimeMs: number }[]>
+  run: (argv: readonly string[], cwd: string, timeoutMs: number) =>
+    Promise<{ exitCode: number; stdout: string }>
+  cwd: () => Promise<string>
+  nowMs: () => Promise<number>
+  version: () => Promise<{ version: string; base?: string }>
+  env: () => Promise<EnvSnapshot>
+  setOwned: (value: string) => Promise<void>
+  disowned: () => Promise<string[]>
+  noteCrash: (op: string) => Promise<number>
+  disown: (op: string) => Promise<void>
+}
+
+export type OpCtx = {
+  io: Io
+  event: string
+  payload: Json
+  config: Json
+  root: string
+  pilotExecutor: boolean
+  now: number
+}
+
+export type OpSpec = {
+  name: string
+  phase: Phase
+  configKey: string | null
+  /** Optional filter on the event payload (tool name for tool events). */
+  matcher?: (payload: Json) => boolean
+}
+
+export type Op = { spec: OpSpec; run: (ctx: OpCtx) => Promise<OpResult | null> }
+
+/** What one event's ops add up to, in the mod's own vocabulary. */
+export type Merged = {
+  context: string | null
+  drop: string | null
+  deny: string | null
+  block: string | null
+  toast: string | null
+}

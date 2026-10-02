@@ -194,3 +194,23 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   (before `next`, so the Python SessionStart child already sees it).
 - Tests: `ModOwnershipTest` (skip, fast-exit no state write, unset runs all); dispatcher-level
   `HandoffTest` (owned → no ADHD block, unowned → block); kit test (n). make test green, 19/19.
+
+### Step 3 — TS foundation (2026-10-02) ✅
+- **Architecture constraint found**: the engine's static scan follows `$` only into functions
+  declared in the hooks module itself, never across an import ("$ is passed to announce,
+  imported from ./owns"). So `register.tsx` builds an `Io` port (`ioOf($)`, each method a direct
+  `$.noun.method` call) and imported modules (lib/, ops/, owns, runner) take `io`. `validate`
+  still lists every API call ("via ioOf"). State atoms used by the breaker live in register.tsx.
+- Files: `hooks/mod/lib/{types,config,sentinels,budget,project,context,adhd}.ts`,
+  `hooks/mod/{owns,runner}.ts`, `hooks/mod/ops/{index,prompt_adhd}.ts`.
+- `scripts/gen_mod_data.py` generates `lib/gen/config-defaults.gen.ts`, `lib/gen/sentinels.gen.ts`
+  and `tests/fixtures/foundation.gen.ts` (strip/clamp parity) from Python; `--check` in CI
+  (`make mod-gen-check`).
+- Runner mirrors `_dispatch`: phase order, gate short-circuit, Pilot belt, registry-order merge,
+  per-op crash isolation, breaker at 3 crashes → `disown` + re-announce (Python takes over).
+  Version gate: CC < 2.1.287 owns nothing.
+- `prompt_adhd` runs through the runner; ops run only inside a Navigator project (v7 parity —
+  the spike injected ADHD everywhere).
+- Guard: `ModPilotPolicyPointTest` keeps `PILOT_EXECUTOR` to register.tsx (io read),
+  lib/config.ts (decision), lib/types.ts.
+- Checks: 32/32 kit tests (stripAll + clamp byte parity), tsc clean, make test green.

@@ -1,7 +1,7 @@
 # Navigator Plugin - Quality Gate Targets
 # These targets support the CI/CD quality gates
 
-.PHONY: build test lint clean conformance-check mod-validate mod-test mod-typecheck test-all
+.PHONY: build test lint clean conformance-check mod-validate mod-test mod-typecheck mod-gen-check test-all
 
 # Build target - for a plugin, validate JSON and check Python syntax
 build:
@@ -71,13 +71,17 @@ mod-validate:
 mod-test:
 	@claude plugin test .
 
+# Generated TS tables/fixtures must match the Python runtime (scripts/gen_mod_data.py).
+mod-gen-check:
+	@python3 scripts/gen_mod_data.py --check
+
 # Type-check against the engine-written types in .claude-plugin/types/ (laid the first
 # time a 2.1.287+ session loads the plugin, e.g. `claude -p --plugin-dir . ok`).
 mod-typecheck:
 	@test -f .claude-plugin/types/tsconfig.json || { echo "mod-typecheck: load the plugin once with claude >= 2.1.287 to lay .claude-plugin/types/"; exit 1; }
 	@npx --no-install tsc -p . --noEmit
 
-test-all: test mod-validate mod-test
+test-all: test mod-gen-check mod-validate mod-test
 
 # Conformance gate (TASK-58) — a results file must exist for the installed
 # Claude Code version. Probes are live-driven and cannot run in CI; when this

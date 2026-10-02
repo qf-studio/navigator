@@ -19,6 +19,9 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   const writes: Write[] = []
   const envSets: EnvSet[] = []
   const opened: string[] = []
+  // A Navigator project: ops only run where `.agent/` exists (v7 parity).
+  if (!(`${AGENT}/.nav-config.json` in files)) files[`${AGENT}/.nav-config.json`] = '{}'
+  on('session.version', () => ({ value: { version: '2.1.287', base: '2.1.287', builtAt: '' } }))
   mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
   mock.clock(on, { now: 1_700_000_000_000 })
   on('session.cwd', () => ({ value: CWD }))

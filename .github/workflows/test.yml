@@ -25,6 +25,9 @@ jobs:
         # suites (see Makefile TEST_DIRS) — same command used locally.
         run: make test
 
+      - name: Generated mod data matches the Python runtime
+        run: make mod-gen-check
+
   mod-tests:
     name: Mod kit tests (Claude Code 2.1.287)
     runs-on: ubuntu-latest

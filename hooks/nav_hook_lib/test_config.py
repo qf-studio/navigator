@@ -373,5 +373,25 @@ class EnvSinglePolicyPointTest(unittest.TestCase):
                 )
 
 
+class ModPilotPolicyPointTest(unittest.TestCase):
+    """In the TS mod, PILOT_EXECUTOR is read only by the io port (register.tsx) and decided
+    only by lib/config.ts isPilotExecutor (TASK-84). Tests and generated files excluded."""
+
+    ALLOWED = {"register.tsx", "lib/config.ts", "lib/types.ts"}
+
+    def test_pilot_executor_only_in_policy_files(self):
+        mod_dir = LIB_DIR.parent / "mod"
+        offenders = []
+        for src in sorted(list(mod_dir.rglob("*.ts")) + list(mod_dir.rglob("*.tsx"))):
+            rel = src.relative_to(mod_dir).as_posix()
+            if rel.startswith("tests/") or ".gen." in rel or rel in self.ALLOWED:
+                continue
+            for lineno, line in enumerate(src.read_text(encoding="utf-8").splitlines(), 1):
+                if "PILOT_EXECUTOR" in line:
+                    offenders.append(f"{rel}:{lineno}: {line.strip()}")
+        self.assertEqual(offenders, [], "PILOT_EXECUTOR outside the mod policy files:\n"
+                         + "\n".join(offenders))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -8,9 +8,13 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../../types'
-import {
-  RULE_BLOCK, classify, personalBody, personalPath, resolve, toggleReason,
-} from './lib/adhd'
+import { readJson } from './lib/config'
+import { makeCtx } from './lib/context'
+import type { Io } from './lib/types'
+import { projectRoot, run } from './lib/project'
+import { EVENT_OPS } from './ops'
+import { announce } from './owns'
+import { runOps } from './runner'
 import {
   clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
   tokensOf, turnsTo,
@@ -20,8 +24,6 @@ import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
 const PLUGIN = 'navigator'
 const PANE = 'nav'
-const SHARED_CONFIG = '.agent/.nav-config.json'
-const LOCAL_CONFIG = '.agent/.nav-config.local.json'
 const NO_ACTIVITY: NavActivity = {
   docsBytes: 0, docsReads: 0, agentRuns: 0, agentTokens: 0, committed: false,
   lastTurnCommitted: false,
@@ -42,6 +44,48 @@ const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as str
 
 // $.state survives a hot reload, so a value written by an older version of this module
 // can lack fields added since. Read through these to merge stored values over defaults.
+const disowned = atom({ plugin: 'navigator', key: 'disowned' } as const, [] as string[])
+const crashes = atom({ plugin: 'navigator', key: 'crashes' } as const, {} as Record<string, number>)
+
+/**
+ * The mods API narrowed for imported modules (lib/, ops/, owns, runner). The static scan
+ * follows `$` only within this file, so every capability is a direct `$.noun.method` here.
+ */
+const ioOf = ($: EngineInterface): Io => ({
+  pluginRoot: $.plugin.root,
+  read: async path => String(await $.fs.read(path)),
+  write: async (path, text) => {
+    await $.fs.write(path, text)
+  },
+  exists: path => $.fs.exists(path),
+  list: async path => (await $.fs.list(path)).map(f => ({ name: f.name, mtimeMs: f.mtimeMs })),
+  run: async (argv, cwd, timeoutMs) => {
+    const r = await $.process.run(argv, { cwd, timeoutMs })
+    return { exitCode: r.exitCode, stdout: r.stdout }
+  },
+  cwd: () => $.session.cwd(),
+  nowMs: () => $.clock.now(),
+  version: async () => {
+    const v = await $.session.version()
+    return v.base === undefined ? { version: v.version } : { version: v.version, base: v.base }
+  },
+  env: async () => ({
+    PILOT_EXECUTOR: await $.env.get('PILOT_EXECUTOR'),
+    NAVIGATOR_CONFIG_HOME: await $.env.get('NAVIGATOR_CONFIG_HOME'),
+    XDG_CONFIG_HOME: await $.env.get('XDG_CONFIG_HOME'),
+    HOME: await $.env.get('HOME'),
+  }),
+  setOwned: value => $.env.set('NAVIGATOR_MOD_OWNS', value),
+  disowned: async () => (await read($, disowned)) ?? [],
+  noteCrash: async op => {
+    await update($, crashes, c => ({ ...(c ?? {}), [op]: ((c ?? {})[op] ?? 0) + 1 }))
+    return ((await read($, crashes)) ?? {})[op] ?? 0
+  },
+  disown: async op => {
+    await update($, disowned, d => [...new Set([...(d ?? []), op])])
+  },
+})
+
 const readPane = async ($: EngineInterface): Promise<NavPane> =>
   ({ ...EMPTY_NAV, ...((await read($, pane)) ?? {}) })
 const readHistory = async ($: EngineInterface): Promise<NavHistory> => {
@@ -56,87 +100,26 @@ const readActivity = async ($: EngineInterface): Promise<NavActivity> =>
 
 type Json = Record<string, unknown>
 
-const readJson = async ($: EngineInterface, path: string): Promise<Json | null> => {
-  try {
-    const parsed: unknown = JSON.parse(String(await $.fs.read(path)))
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Json)
-      : null
-  } catch {
-    return null
-  }
-}
-
-const parentOf = (dir: string): string | null => {
-  const at = dir.lastIndexOf('/')
-  return at <= 0 ? null : dir.slice(0, at)
-}
-
-/** Nearest ancestor of cwd holding `.agent/`, as nav_hook_lib.hio.project_root. */
-const projectRoot = async ($: EngineInterface): Promise<string | null> => {
-  let dir: string | null = await $.session.cwd()
-  while (dir !== null) {
-    if (await $.fs.exists(`${dir}/.agent`)) return dir
-    dir = parentOf(dir)
-  }
-  return null
-}
-
-/** `adhd_mode.on` after DEFAULTS < shared < local merging; undefined when unset. */
-const repoPin = async ($: EngineInterface): Promise<unknown> => {
-  const root = await projectRoot($)
-  if (root === null) return undefined
-  const pinOf = (cfg: Json | null): unknown => {
-    const block = cfg?.adhd_mode
-    return block !== null && typeof block === 'object' && 'on' in (block as Json)
-      ? (block as Json).on
-      : undefined
-  }
-  const local = pinOf(await readJson($, `${root}/${LOCAL_CONFIG}`))
-  return local !== undefined ? local : pinOf(await readJson($, `${root}/${SHARED_CONFIG}`))
-}
-
-const personalFile = async ($: EngineInterface): Promise<string> =>
-  personalPath({
-    NAVIGATOR_CONFIG_HOME: await $.env.get('NAVIGATOR_CONFIG_HOME'),
-    XDG_CONFIG_HOME: await $.env.get('XDG_CONFIG_HOME'),
-    HOME: await $.env.get('HOME'),
-  })
-
-const resolveAdhd = async ($: EngineInterface, pinnedCfg: unknown, path: string) =>
-  resolve(pinnedCfg, (await readJson($, path))?.on)
-
-const run = async (
-  $: EngineInterface, argv: readonly string[], cwd: string,
-): Promise<string> => {
-  try {
-    const r = await $.process.run(argv, { cwd, timeoutMs: 5000 })
-    return r.exitCode === 0 ? r.stdout : ''
-  } catch {
-    return ''
-  }
-}
-
 /** Collect what the pane shows: open tasks, newest marker, memories, graph size. */
 const refreshPane = async ($: EngineInterface): Promise<void> => {
-  const root = await projectRoot($)
+  const root = await projectRoot(ioOf($))
   if (root === null) {
     await update($, pane, () => EMPTY_NAV)
     return
   }
   const functions = `${$.plugin.root}/skills/nav-graph/functions`
   const graphPath = '.agent/knowledge/graph.json'
-  const tasks = await run($, ['sh', '-c',
+  const tasks = await run(ioOf($), ['sh', '-c',
     'for f in $(grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md); do '
     + 'printf "%s|%s\\n" "$f" "$(grep -m1 "^# " "$f")"; done'], root)
-  const memories = await run($, ['python3', `${functions}/memory_recall.py`, '--auto',
+  const memories = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--auto',
     '--agent-dir', '.agent', '--graph-path', graphPath, '--limit', '4', '--format', 'compact'], root)
-  const stats = await run($, ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
+  const stats = await run(ioOf($), ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
     '--graph-path', graphPath], root)
   const markers = await $.fs.list(`${root}/.agent/.context-markers`).catch(() => [])
-  const treeBytes = Number((await run($, ['sh', '-c',
+  const treeBytes = Number((await run(ioOf($), ['sh', '-c',
     `find ${DOC_DIRS} -name '*.md' -type f -exec cat {} + 2>/dev/null | wc -c`], root)).trim()) || 0
-  const graphJson = await readJson($, `${root}/${graphPath}`)
+  const graphJson = await readJson(ioOf($), `${root}/${graphPath}`)
   const index = graphJson?.concept_index
   const concepts = index !== null && typeof index === 'object' ? Object.keys(index as Json) : []
   await update($, pane, () => ({
@@ -152,13 +135,13 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
 
 /** Memories for the concepts a prompt names; leaves the pane alone when none match. */
 const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
-  const root = await projectRoot($)
+  const root = await projectRoot(ioOf($))
   const current = await readPane($)
   if (root === null) return
   const hits = matchConcepts(prompt, current.concepts)
   if (hits.length === 0) return
   const functions = `${$.plugin.root}/skills/nav-graph/functions`
-  const out = await run($, ['python3', `${functions}/memory_recall.py`, '--concepts', hits.join(','),
+  const out = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--concepts', hits.join(','),
     '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
   const memories = parseMemories(out)
   if (memories.length > 0) {
@@ -168,7 +151,7 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.env.set('NAVIGATOR_MOD_OWNS', 'prompt_adhd')
+    await announce(ioOf($))
     await $.command.register({ name: 'nav', description: 'Open the Navigator pane' })
     await refreshPane($)
     return next(e)
@@ -178,7 +161,7 @@ export const register: Register = on => {
   // handoff env is in place for it. $.state resets on /clear, /resume and /branch, and
   // session.start does not fire again, so the pane reloads here too.
   on('classic.SessionStart', async ($, e, next) => {
-    await $.env.set('NAVIGATOR_MOD_OWNS', 'prompt_adhd')
+    await announce(ioOf($))
     if (e.source === 'clear' || e.source === 'resume' || e.source === 'fork') await refreshPane($)
     return next(e)
   })
@@ -212,34 +195,20 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
-    if (await $.env.get('PILOT_EXECUTOR')) return next(e)
-    const kind = classify(e.text)
-    const pinnedCfg = await repoPin($)
-    const path = await personalFile($)
-    if (kind === null) {
-      const { on: active } = await resolveAdhd($, pinnedCfg, path)
-      const memory = await read($, pinned)
-      if (memory !== null) await update($, pinned, () => null)
-      const extra = [
-        ...(active ? [RULE_BLOCK] : []),
-        ...(memory === null ? [] : [`Navigator memory pinned by the user for this prompt: ${memory}`]),
-      ]
-      const entered = extra.length === 0
-        ? await next(e)
-        : await next({ ...e, context: [...(e.context ?? []), ...extra] })
-      if (entered.drop === undefined) await recallFor($, e.text)
-      return entered
-    }
-    if (kind === 'status') {
-      const resolved = await resolveAdhd($, pinnedCfg, path)
-      return { drop: toggleReason({ kind, pinned: pinnedCfg, resolved, path, wrote: false }) }
-    }
-    const wanted = kind === 'on'
-    const wrote = await $.fs.write(path, personalBody(wanted, await $.clock.now()))
-      .then(() => true, () => false)
-    if (!wrote) $.ui.toast(`${PLUGIN}: could not write ${path}`)
-    const resolved = await resolveAdhd($, pinnedCfg, path)
-    return { drop: toggleReason({ kind, pinned: pinnedCfg, resolved, path, wrote }) }
+    const ctx = await makeCtx(ioOf($), 'UserPromptSubmit', { prompt: e.text })
+    const merged = ctx === null ? null : await runOps(ctx, EVENT_OPS.UserPromptSubmit ?? [])
+    if (merged?.drop != null) return { drop: merged.drop }
+    const memory = await read($, pinned)
+    if (memory !== null) await update($, pinned, () => null)
+    const extra = [
+      ...(merged?.context ? [merged.context] : []),
+      ...(memory === null ? [] : [`Navigator memory pinned by the user for this prompt: ${memory}`]),
+    ]
+    const entered = extra.length === 0
+      ? await next(e)
+      : await next({ ...e, context: [...(e.context ?? []), ...extra] })
+    if (entered.drop === undefined) await recallFor($, e.text)
+    return entered
   })
 
   on('turn.complete', async ($, e, next) => {

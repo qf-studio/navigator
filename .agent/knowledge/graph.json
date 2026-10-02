@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T11:21:48.449019+00:00",
+  "last_updated": "2026-10-02T11:28:45.205267+00:00",
   "stats": {
-    "total_nodes": 200,
+    "total_nodes": 202,
     "total_edges": 843,
-    "memory_count": 74
+    "memory_count": 75
   },
   "nodes": {
     "tasks": {
@@ -1689,6 +1689,11 @@
         "name": "Conformance",
         "aliases": [],
         "domain": "general"
+      },
+      "architecture": {
+        "name": "Architecture",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2816,6 +2821,19 @@
           "harness-behavior",
           "hooks",
           "conformance"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-083": {
+        "type": "pitfall",
+        "summary": "Claude Code mods static scan: $ is followed only into functions declared in the hooks module itself, never across an import ('$ is passed to X, imported from ./y'). Multi-file mods must pass a capability object built in register.tsx (each method a direct $.noun.method call) to imported modules; validate still lists the calls 'via ioOf'. Atoms touched through $ must also live in the hooks module. Navigator v8 uses an Io port (hooks/mod/lib/types.ts).",
+        "path": "memories/pitfalls/mem-083.md",
+        "confidence": 0.95,
+        "concepts": [
+          "mods",
+          "hooks-runtime",
+          "architecture"
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
@@ -8456,7 +8474,8 @@
     ],
     "architecture": [
       "mem-027",
-      "TASK-38"
+      "TASK-38",
+      "mem-083"
     ],
     "claude-code": [
       "mem-027",
@@ -8640,12 +8659,14 @@
       "mem-078",
       "mem-079",
       "mem-080",
-      "mem-081"
+      "mem-081",
+      "mem-083"
     ],
     "hooks-runtime": [
       "mem-078",
       "mem-079",
-      "mem-081"
+      "mem-081",
+      "mem-083"
     ],
     "adhd": [
       "mem-078"

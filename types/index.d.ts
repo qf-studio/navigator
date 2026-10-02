@@ -43,6 +43,8 @@ declare module 'claude-code' {
       activity: NavActivity
       history: NavHistory
       pinned: string | null
+      disowned: string[]
+      crashes: Record<string, number>
     }
   }
 }
