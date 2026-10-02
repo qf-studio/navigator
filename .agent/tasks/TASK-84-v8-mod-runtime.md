@@ -278,3 +278,19 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - Remaining TASK-81 points (skill Step 1.5 single script call, docs honesty) → step 9.
 - To reconcile at 5d integration: the ported session_start `auto_update` context section
   (Python `--check-drift`) vs this toast — keep one.
+
+### Steps 5b + 5c — tool-call and Stop ops (2026-10-02) ✅ (parallel forks, merged a2dc3d6, 16dfa2c)
+- 5b: read_guard, jit_memory, graph_sync, profile_sync, failure_diagnosis — ~560 replayed cases
+  (read sequences, edit/lifecycle payloads with sync argv, failure payloads) byte-identical.
+- 5c: stop_completion (exit_gate inlined, pure-JS SHA-256 for the tree digest) + stop_state —
+  1,008 + 1,080 cases over 36 transcripts, config/prior-state variants, real and faked git.
+- Wiring (b131992): Read → read_guard before `next` (deny) and its warn after as context;
+  Edit/Write/NotebookEdit → PostToolUse ops after a successful call; classic.TaskCreated /
+  TaskCompleted → graph_sync; classic.PostToolUseFailure → failure_diagnosis; classic.Stop →
+  [stop_completion, stop_state], `{...r, block}`. `OpResult.ack`, `Merged.notes` added.
+  `MultiEdit` is not a tool on CC 2.1.287 (matcher drops it). 11 ops owned.
+- **Live probe**: headless mutating turn with the mod owning the Stop pair → stop_completion's
+  `{block}` on classic.Stop forced the continuation (num_turns=3, the model answered with the
+  exit signal). The mod's Stop block works like v7's decision:block.
+- Follow-ups kept out of parity: isReadOnly mutation tracking (mem-077 fix) and preferring
+  `e.last_assistant_message` — need their own fixtures; candidates for v8.1.
