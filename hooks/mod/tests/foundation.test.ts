@@ -27,6 +27,8 @@ const fakeIo = (version = '2.1.287'): FakeIo => {
     disowned: async () => io.off,
     noteCrash: async op => { io.crashes[op] = (io.crashes[op] ?? 0) + 1; return io.crashes[op] ?? 0 },
     disown: async op => { io.off = [...io.off, op] },
+    http: async () => ({ ok: false, status: 500, text: '' }),
+    sleep: async () => {},
   }
   return io
 }

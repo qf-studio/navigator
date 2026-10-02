@@ -74,8 +74,14 @@ const ioOf = ($: EngineInterface): Io => ({
     NAVIGATOR_CONFIG_HOME: await $.env.get('NAVIGATOR_CONFIG_HOME'),
     XDG_CONFIG_HOME: await $.env.get('XDG_CONFIG_HOME'),
     HOME: await $.env.get('HOME'),
+    TYPESAFE_API_KEY: await $.env.get('TYPESAFE_API_KEY'),
   }),
   setOwned: value => $.env.set('NAVIGATOR_MOD_OWNS', value),
+  http: async (url, init) => {
+    const r = await $.http.fetch(url, init)
+    return { ok: r.ok, status: r.status, text: r.text }
+  },
+  sleep: ms => $.clock.sleep(ms),
   disowned: async () => (await read($, disowned)) ?? [],
   noteCrash: async op => {
     await update($, crashes, c => ({ ...(c ?? {}), [op]: ((c ?? {})[op] ?? 0) + 1 }))

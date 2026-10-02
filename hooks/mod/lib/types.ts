@@ -21,6 +21,7 @@ export type EnvSnapshot = {
   NAVIGATOR_CONFIG_HOME?: string
   XDG_CONFIG_HOME?: string
   HOME?: string
+  TYPESAFE_API_KEY?: string
 }
 
 /**
@@ -41,6 +42,9 @@ export type Io = {
   version: () => Promise<{ version: string; base?: string }>
   env: () => Promise<EnvSnapshot>
   setOwned: (value: string) => Promise<void>
+  http: (url: string, init: { method: string; headers: Record<string, string>; body: string }) =>
+    Promise<{ ok: boolean; status: number; text: string }>
+  sleep: (ms: number) => Promise<void>
   disowned: () => Promise<string[]>
   noteCrash: (op: string) => Promise<number>
   disown: (op: string) => Promise<void>

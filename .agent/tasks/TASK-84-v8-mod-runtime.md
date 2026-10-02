@@ -214,3 +214,20 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - Guard: `ModPilotPolicyPointTest` keeps `PILOT_EXECUTOR` to register.tsx (io read),
   lib/config.ts (decision), lib/types.ts.
 - Checks: 32/32 kit tests (stripAll + clamp byte parity), tsc clean, make test green.
+
+### Step 4 — scoring + judge port (2026-10-02) ✅
+- `hooks/mod/lib/scoring.ts`: contains_phrase, loop triggers, additive complexity,
+  detect_workflow + judge overlay, ambiguity heuristic + judged blend. Tables generated
+  (`lib/gen/scoring-data.gen.ts`).
+- Regex trap handled: Python `\b \w \d \s` are Unicode-aware, JS `\b` is ASCII-only even
+  with `u`. Word class `[\p{L}\p{N}_]` and an exact `\b` emulation via lookarounds; `\p{Nd}`
+  for digits; `\-` is a syntax error in `u` mode outside classes (not escaped).
+- Parity corpus (`tests/fixtures/scoring.gen.ts`): judge_eval.json prompts, prompts mined from
+  the Python test files, hand cases (unicode, sentinels, trigger echo), × 6 mutations → 852
+  prompts; detect_workflow and score_ambiguity match byte for byte. The private
+  judge_eval_real.json is deliberately not used (gitignored data).
+- `hooks/mod/lib/judge.ts`: settings, redact, build_request, parse_response → Judgment, key from
+  `TYPESAFE_API_KEY` or `~/.config/typesafe/api_key`, POST via `$.http.fetch` raced against
+  `$.clock.sleep` (fetch has no timeout). Custom `api_key_env` unsupported in the mod (literal
+  env names only). Parity on the 60 recorded responses: request, verdicts, judged scoring.
+- 44/44 kit tests, tsc clean, gen --check clean, make test green.
