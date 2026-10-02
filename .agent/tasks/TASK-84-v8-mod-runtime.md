@@ -268,3 +268,13 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - release.yml: `--verify-mod` in validate; new `validate-mod` job (CC 2.1.287, `make mod-validate`,
   `make mod-test`); `release` needs both.
 - `scripts/bump-version.sh` regenerates mod data (tier1 fixture embeds the plugin version).
+
+### Step 8 — TASK-81 update notice in the mod (2026-10-02) ✅ (point 1 of TASK-81)
+- `hooks/mod/lib/update.ts` + `checkForUpdate` in register.tsx (session.start): running version from
+  the mod's own manifest (no `claude plugin list` in a hook); latest stable from the GitHub
+  releases API raced against a 4 s sleep; throttled by `auto_update.check_interval_hours` via
+  `$.store`; no network under Pilot; read-only toast "Navigator X installed · Y available · run:
+  claude plugin update navigator@navigator-marketplace". `auto_update` accepted as bool or block.
+- Remaining TASK-81 points (skill Step 1.5 single script call, docs honesty) → step 9.
+- To reconcile at 5d integration: the ported session_start `auto_update` context section
+  (Python `--check-drift`) vs this toast — keep one.

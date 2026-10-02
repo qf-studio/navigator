@@ -10,6 +10,8 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
+import { isPilotExecutor, loadConfig } from './lib/config'
+import { RELEASES_URL, dueForCheck, latestStable, updateNotice, updateSettings } from './lib/update'
 import type { Io } from './lib/types'
 import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
@@ -157,9 +159,37 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
   }
 }
 
+/** TASK-81: one read-only notice when a newer stable release exists; never updates. */
+const checkForUpdate = async ($: EngineInterface): Promise<void> => {
+  const io = ioOf($)
+  if (await isPilotExecutor(io)) return
+  const root = await projectRoot(io)
+  if (root === null) return
+  const { enabled, intervalHours } = updateSettings(await loadConfig(io, root))
+  if (!enabled) return
+  const now = await $.clock.now()
+  let latest = (await $.store.get('update_latest')) as string | null | undefined
+  if (dueForCheck(await $.store.get('update_checked_at'), now, intervalHours)) {
+    const response = await Promise.race([
+      $.http.fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } }),
+      $.clock.sleep(4000).then(() => null),
+    ]).catch(() => null)
+    if (response !== null && response.ok) {
+      latest = latestStable(response.text)
+      await $.store.set('update_latest', latest ?? null)
+      await $.store.set('update_checked_at', now)
+    }
+  }
+  const manifest = await readJson(io, `${$.plugin.root}/.claude-plugin/plugin.json`)
+  const installed = typeof manifest?.version === 'string' ? manifest.version : null
+  const notice = installed === null ? null : updateNotice(installed, latest ?? null)
+  if (notice !== null) $.ui.toast(notice, { timeoutMs: 15000 })
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await announce(ioOf($))
+    await checkForUpdate($).catch(() => {})
     await $.command.register({ name: 'nav', description: 'Open the Navigator pane' })
     await refreshPane($)
     return next(e)
