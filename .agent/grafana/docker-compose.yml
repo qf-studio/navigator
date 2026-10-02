@@ -15,6 +15,10 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=7d'
+    # Claude Code's exporter listens on the host (:9464); not every Docker runtime resolves
+    # host.docker.internal on a custom network without this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     networks:
       - navigator-monitoring

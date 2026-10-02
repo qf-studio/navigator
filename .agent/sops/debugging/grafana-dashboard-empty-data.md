@@ -179,6 +179,23 @@ Expected: Datasource with `uid` field
 
 ---
 
+## Second cause: the scrape target is down (2026-10-02)
+
+**Symptom**: Grafana and the `/nav` trip panel are empty; `localhost:9464/metrics` serves
+`claude_code_*` series, but Prometheus shows the target down with
+`lookup host.docker.internal on 127.0.0.11:53: no such host`.
+
+**Cause**: on a custom Docker network some runtimes do not resolve `host.docker.internal`.
+
+**Fix**: `extra_hosts: ["host.docker.internal:host-gateway"]` on the prometheus service (now in
+`.agent/grafana/docker-compose.yml`), then `docker compose -f .agent/grafana/docker-compose.yml up -d prometheus`.
+
+**Also check the stack**: Navigator's Prometheus is `navigator-prometheus` on **9092**. Pilot's
+stack (`pilot-prometheus`, 9093) scrapes Pilot only and has no Claude Code metrics.
+
+**Expect zeros at first**: `increase()` needs two scrapes with activity between them; history
+starts when this Prometheus first scrapes, so "7 days" fills over time.
+
 ## Files Modified
 
 1. **`.agent/grafana/grafana-datasource.yml`**:
