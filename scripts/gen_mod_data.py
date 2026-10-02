@@ -321,12 +321,30 @@ TARGETS = {
 }
 
 
+def _plugin_targets() -> dict:
+    """Extra targets from scripts/mod_fixtures/*.py, each defining TARGETS {path: build}.
+
+    Lets op groups ship their own fixture builders without editing this file. Builders may
+    use this module's helpers via ``import gen_mod_data as g`` (HEADER, ts_const, config...).
+    """
+    extra = {}
+    folder = ROOT / "scripts" / "mod_fixtures"
+    sys.path.insert(0, str(ROOT / "scripts"))
+    for path in sorted(folder.glob("*.py")):
+        if path.name.startswith("_"):
+            continue
+        name = f"mod_fixtures.{path.stem}"
+        module = __import__(name, fromlist=["TARGETS"])
+        extra.update(getattr(module, "TARGETS", {}))
+    return extra
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="fail when output is stale")
     args = parser.parse_args()
     stale = []
-    for path, build in TARGETS.items():
+    for path, build in {**TARGETS, **_plugin_targets()}.items():
         text = build()
         current = path.read_text(encoding="utf-8") if path.exists() else None
         if current == text:

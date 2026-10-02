@@ -245,3 +245,10 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   `as const` on huge literals blows up tsc (explicit row types for big fixtures).
 - Note for the release step: `tests/fixtures/tier1.gen.ts` embeds the plugin version, so the
   version bump must re-run `scripts/gen_mod_data.py`.
+- Headless check with the mod loaded: a "Run until done" prompt yields exactly one WORKFLOW CHECK
+  (same count as the Python-only run, `CLAUDE_CODE_DISABLE_FUNCTION_HOOKS=1`); Bash sees
+  `NAVIGATOR_MOD_OWNS=prompt_gate,prompt_tier1,prompt_adhd,prompt_brief`.
+- CLI gotcha: `--debug` takes an optional filter, so `claude -p --debug "<prompt>"` swallows the
+  prompt. Put the prompt first: `claude -p "<prompt>" --debug`.
+- `scripts/gen_mod_data.py` now also loads `scripts/mod_fixtures/*.py` (each exports TARGETS), so
+  op groups add fixture builders without editing the generator.
