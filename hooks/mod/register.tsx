@@ -66,6 +66,10 @@ const ioOf = ($: EngineInterface): Io => ({
     const r = await $.process.run(argv, { cwd, timeoutMs })
     return { exitCode: r.exitCode, stdout: r.stdout }
   },
+  runCapture: async (argv, cwd, timeoutMs) => {
+    const r = await $.process.run(argv, { cwd, timeoutMs })
+    return { exitCode: r.exitCode, stdout: r.stdout, stderr: r.stderr }
+  },
   cwd: () => $.session.cwd(),
   sessionId: async () => (await $.session.id()) || null,
   nowMs: () => $.clock.now(),
@@ -159,6 +163,25 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
   }
 }
 
+/** Run the ops registered for a (Python-named) event; null outside a Navigator project. */
+const runFor = async ($: EngineInterface, event: string, payload: Record<string, unknown>) => {
+  const ctx = await makeCtx(ioOf($), event, payload)
+  return ctx === null ? null : runEvent(ctx, EVENT_OPS[event] ?? [])
+}
+
+/** The settings-hook payload shape the Python ops read, rebuilt from a tool.call event. */
+const toolPayload = (e: Record<string, unknown>): Record<string, unknown> => {
+  const { tool, tool_use_id: id, ...input } = e
+  return { tool_name: tool, tool_input: input, tool_use_id: id }
+}
+
+/** Append one context entry to a classic result (the chain rule: never drop theirs). */
+const withContext = <R extends { additionalContext?: string[] }>(r: R, text: string | null | undefined): R =>
+  text ? { ...r, additionalContext: [...(r.additionalContext ?? []), text] } : r
+
+// MultiEdit no longer exists as a tool on CC 2.1.287; Python's matcher still lists it (harmless).
+const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
+
 /** TASK-81: one read-only notice when a newer stable release exists; never updates. */
 const checkForUpdate = async ($: EngineInterface): Promise<void> => {
   const io = ioOf($)
@@ -213,6 +236,8 @@ export const register: Register = on => {
   })
 
   on('tool.call', { tool: 'Read' }, async ($, e, next) => {
+    const pre = await runFor($, 'PreToolUse', toolPayload(e as unknown as Record<string, unknown>))
+    if (pre?.deny != null) return { deny: pre.deny }
     const ran = await next(e)
     if (e.file_path.includes('/.agent/') && ran.deny === undefined) {
       const bytes = (ran.text ?? '').length
@@ -221,7 +246,40 @@ export const register: Register = on => {
         return { ...x, docsBytes: x.docsBytes + bytes, docsReads: x.docsReads + 1 }
       })
     }
-    return ran
+    // v8: read_guard's warn reaches the model as context (v7 printed it to stderr only).
+    const warn = pre?.notes ?? null
+    return warn !== null && ran.deny === undefined ? { ...ran, context: [...(ran.context ?? []), warn] } : ran
+  })
+
+  on('tool.call', { tool: MUTATING }, async ($, e, next) => {
+    const ran = await next(e)
+    if (ran.deny !== undefined || ran.isError === true) return ran
+    const post = await runFor($, 'PostToolUse', toolPayload(e as unknown as Record<string, unknown>))
+    return post?.context ? { ...ran, context: [...(ran.context ?? []), post.context] } : ran
+  })
+
+  on('classic.TaskCreated', async ($, e, next) => {
+    const r = await next(e)
+    await runFor($, 'TaskCreated', e as unknown as Record<string, unknown>)
+    return r
+  })
+
+  on('classic.TaskCompleted', async ($, e, next) => {
+    const r = await next(e)
+    await runFor($, 'TaskCompleted', e as unknown as Record<string, unknown>)
+    return r
+  })
+
+  on('classic.PostToolUseFailure', async ($, e, next) => {
+    const r = await next(e)
+    const merged = await runFor($, 'PostToolUseFailure', e as unknown as Record<string, unknown>)
+    return withContext(r, merged?.context)
+  })
+
+  on('classic.Stop', async ($, e, next) => {
+    const r = await next(e)
+    const merged = await runFor($, 'Stop', e as unknown as Record<string, unknown>)
+    return merged?.block != null ? { ...r, block: merged.block } : r
   })
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {

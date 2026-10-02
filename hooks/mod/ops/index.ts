@@ -1,10 +1,24 @@
 // Ops per Claude Code event, in registry order (hooks/nav_hook_lib/registry.py EVENT_OPS).
+// The keys are the Python event names; ops branch on ctx.event.
 import type { Op } from '../lib/types'
+import { failureDiagnosis } from './failure_diagnosis'
+import { graphSync } from './graph_sync'
+import { jitMemory } from './jit_memory'
+import { profileSync } from './profile_sync'
 import { promptAdhd } from './prompt_adhd'
 import { promptBrief } from './prompt_brief'
 import { promptGate } from './prompt_gate'
 import { promptTier1 } from './prompt_tier1'
+import { readGuard } from './read_guard'
+import { stopCompletion } from './stop_completion'
+import { stopState } from './stop_state'
 
 export const EVENT_OPS: Record<string, readonly Op[]> = {
   UserPromptSubmit: [promptGate, promptTier1, promptAdhd, promptBrief],
+  PreToolUse: [readGuard],
+  PostToolUse: [jitMemory, graphSync, profileSync],
+  Stop: [stopCompletion, stopState],
+  PostToolUseFailure: [failureDiagnosis],
+  TaskCreated: [graphSync],
+  TaskCompleted: [graphSync],
 }

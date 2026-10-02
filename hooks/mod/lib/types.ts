@@ -12,6 +12,8 @@ export type OpResult = {
   stderr?: string
   system_message?: string
   continue_?: boolean
+  /** v6 `{}` acknowledgment (TASK-61 parity); no output of its own. */
+  ack?: true
 }
 
 export type Json = Record<string, unknown>
@@ -92,4 +94,6 @@ export type Merged = {
   deny: string | null
   block: string | null
   toast: string | null
+  /** Non-blocking stderr (e.g. read_guard's warn); delivered as context by the mod. */
+  notes: string | null
 }

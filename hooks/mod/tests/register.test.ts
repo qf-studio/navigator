@@ -213,7 +213,7 @@ test('(d4) subagent turns do not drive the band', async ($, on) => {
 test('(e) session.start claims ADHD ownership through the environment', async ($, on) => {
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state' })
 })
 
 const NAV_CMD = {
@@ -339,5 +339,16 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
   const { envSets } = world(on, {})
   await $.classic.SessionStart({ source: 'compact' } as never)
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state' })
+})
+
+test('(o) read_guard through tool.call: warn as context at 3, deny at 5', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 10)
+  const readDoc = (i: number) =>
+    $.tool.call({ tool: 'Read', file_path: `${AGENT}/tasks/T-${i}.md`, tool_use_id: `tu-${i}` } as never)
+  const results = []
+  for (let i = 1; i <= 5; i += 1) results.push(await readDoc(i) as { deny?: string; context?: readonly string[] })
+  expect(results[0]?.context ?? []).toEqual([])
+  expect((results[2]?.context ?? []).join('\n')).toContain('[nav-read-guard] 3 .agent/ files read this turn')
+  expect(results[4]?.deny ?? '').toContain('blocked at 5 .agent/ reads')
 })

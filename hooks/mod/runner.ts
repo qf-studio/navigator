@@ -31,6 +31,7 @@ export const suppressBlocking = (r: OpResult): OpResult => {
 export const merge = (event: string, results: readonly OpResult[]): Merged => {
   const contexts: string[] = []
   const messages: string[] = []
+  const notes: string[] = []
   let reason: string | null = null
   let deny: string | null = null
   let exitText: string | null = null
@@ -38,9 +39,9 @@ export const merge = (event: string, results: readonly OpResult[]): Merged => {
     if (r.additional_context) contexts.push(r.additional_context)
     if (reason === null && r.decision === 'block') reason = r.reason ?? ''
     if (deny === null && r.permission_decision === 'deny') deny = r.permission_reason ?? ''
-    if (exitText === null && typeof r.exit_code === 'number' && r.exit_code !== 0) {
-      exitText = r.stderr ?? ''
-    }
+    const blocking = typeof r.exit_code === 'number' && r.exit_code !== 0
+    if (exitText === null && blocking) exitText = r.stderr ?? ''
+    if (!blocking && r.stderr) notes.push(r.stderr)
     if (r.system_message) messages.push(r.system_message)
   }
   const context = contexts.length === 0 ? null : clamp(contexts.join('\n'), event)
@@ -52,6 +53,7 @@ export const merge = (event: string, results: readonly OpResult[]): Merged => {
     deny: tool ? (deny ?? exitText) : null,
     block: !prompt && !tool ? reason : null,
     toast: messages.length === 0 ? null : messages.join('\n'),
+    notes: notes.length === 0 ? null : notes.join('\n'),
   }
 }
 
