@@ -66,3 +66,37 @@ export const usageLine = (rates: readonly NavRate[], usd: number | null): string
 
 export const cut = (text: string, width: number): string =>
   text.length > width ? `${text.slice(0, Math.max(0, width - 1))}…` : text
+
+/** Turns until context reaches `limit`%, projected from the recent per-turn slope. */
+export const turnsTo = (series: readonly number[], limit: number): number | null => {
+  const tail = series.slice(-6)
+  const last = tail[tail.length - 1]
+  const first = tail[0]
+  if (tail.length < 2 || last === undefined || first === undefined) return null
+  const slope = (last - first) / (tail.length - 1)
+  if (slope <= 0 || last >= limit) return null
+  return Math.ceil((limit - last) / slope)
+}
+
+/** `five_hour` → `5h`, `seven_day_opus` → `7d opus`. */
+export const rateKind = (kind: string): string =>
+  kind.replace(/^five_hour/, '5h').replace(/^seven_day/, '7d').replace(/_/g, ' ').trim()
+
+/** `HH:MM` of an ISO time, or null. */
+export const clockOf = (iso: string | null): string | null => {
+  if (iso === null) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/** Graph concepts the prompt mentions (whole-word, case-insensitive), at most `max`. */
+export const matchConcepts = (prompt: string, concepts: readonly string[], max = 4): string[] => {
+  const text = ` ${prompt.toLowerCase().replace(/[^a-z0-9-]+/g, ' ')} `
+  return concepts
+    .filter(c => c.length >= 4 && text.includes(` ${c.toLowerCase().replace(/[^a-z0-9-]+/g, ' ')} `))
+    .slice(0, max)
+}
+
+/** Estimated tokens for a byte count (~4 bytes per token). */
+export const tokensOf = (bytes: number): number => Math.round(bytes / 4)

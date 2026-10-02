@@ -63,6 +63,21 @@ via `experimental.themes` in the manifest and installed at `~/.claude/themes/pil
 select with `/theme` (stored as `custom:pilot`). Gotcha: a local named `h` inside a
 `ui.render` hook shadows the JSX factory (`h is not a function`).
 
+### Helpful pane + live savings (2026-10-02)
+
+The pane answers "what now?": a **do next** panel (the reply's `Next:` line), context with a
+turns-to-70% forecast from the per-turn slope, a compact hint with a reason (`hold, mid-task`
+/ `good moment: just committed`, detected from a successful `git commit` Bash call / `now:
+context is high`), memories re-matched to the concepts each prompt names (`memory_recall.py
+--concepts`, falls back to open-task recall), and rate windows as `5h 23% · resets 14:10`.
+
+**Saved this session** measures what the mod can observe, labelled as estimates at ~4
+bytes/token: docs bytes actually Read from `.agent/` vs the size of the doc tree (README,
+tasks, system, sops, philosophy) that loading everything would cost, and tokens processed in
+subagent turns (`turn.complete` with `agentId`, summed `usage`), which stayed outside the main
+context. A sparkline tracks the avoided-docs estimate per turn. Not claimed: skill prose or
+the Python session-start injection, which the mod cannot see. 18 kit tests.
+
 ## Verified
 
 | Check | Result |

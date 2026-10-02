@@ -8,12 +8,13 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { NavHistory, NavPane, NavReads, NavStatus, NavUsage } from '../types'
+import type { NavActivity, NavHistory, NavPane, NavStatus, NavUsage } from '../types'
 import {
   RULE_BLOCK, classify, personalBody, personalPath, resolve, toggleReason,
 } from './adhd'
 import {
-  bar, cut, latestMarker, parseGraphStats, parseMemories, parseTasks, usageLine,
+  clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
+  tokensOf, turnsTo,
 } from './nav'
 import { bandLine, isQuiet, statusOf } from './status'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui'
@@ -22,13 +23,20 @@ const PLUGIN = 'nav-status'
 const PANE = 'nav'
 const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
-const NO_READS: NavReads = { total: 0, docs: 0, turn: 0 }
-const NO_HISTORY: NavHistory = { ctx: [], reads: [] }
-const EMPTY_NAV: NavPane = { tasks: [], marker: null, memories: [], graph: null }
+const NO_ACTIVITY: NavActivity = {
+  docsBytes: 0, docsReads: 0, agentRuns: 0, agentTokens: 0, committed: false,
+  lastTurnCommitted: false,
+}
+const NO_HISTORY: NavHistory = { ctx: [], saved: [] }
+const EMPTY_NAV: NavPane = {
+  tasks: [], marker: null, memories: [], memoriesFor: null, graph: null, concepts: [],
+  docsTreeBytes: 0,
+}
+const DOC_DIRS = '.agent/DEVELOPMENT-README.md .agent/tasks .agent/system .agent/sops .agent/philosophy'
 
 const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
 const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
-const reads = atom({ plugin: 'nav-status', key: 'reads' } as const, NO_READS)
+const activity = atom({ plugin: 'nav-status', key: 'activity' } as const, NO_ACTIVITY)
 const usage = atom({ plugin: 'nav-status', key: 'usage' } as const, null as NavUsage | null)
 const history = atom({ plugin: 'nav-status', key: 'history' } as const, NO_HISTORY)
 const pinned = atom({ plugin: 'nav-status', key: 'pinned' } as const, null as string | null)
@@ -113,12 +121,36 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   const stats = await run($, ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
     '--graph-path', graphPath], root)
   const markers = await $.fs.list(`${root}/.agent/.context-markers`).catch(() => [])
+  const treeBytes = Number((await run($, ['sh', '-c',
+    `find ${DOC_DIRS} -name '*.md' -type f -exec cat {} + 2>/dev/null | wc -c`], root)).trim()) || 0
+  const graphJson = await readJson($, `${root}/${graphPath}`)
+  const index = graphJson?.concept_index
+  const concepts = index !== null && typeof index === 'object' ? Object.keys(index as Json) : []
   await update($, pane, () => ({
     tasks: parseTasks(tasks),
     marker: latestMarker(markers),
     memories: parseMemories(memories),
+    memoriesFor: null,
     graph: parseGraphStats(stats),
+    concepts,
+    docsTreeBytes: treeBytes,
   }))
+}
+
+/** Memories for the concepts a prompt names; leaves the pane alone when none match. */
+const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
+  const root = await projectRoot($)
+  const current = await read($, pane)
+  if (root === null || current === null) return
+  const hits = matchConcepts(prompt, current.concepts)
+  if (hits.length === 0) return
+  const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
+  const out = await run($, ['python3', `${functions}/memory_recall.py`, '--concepts', hits.join(','),
+    '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
+  const memories = parseMemories(out)
+  if (memories.length > 0) {
+    await update($, pane, p => ({ ...(p ?? EMPTY_NAV), memories, memoriesFor: hits.join(', ') }))
+  }
 }
 
 export const register: Register = on => {
@@ -144,11 +176,20 @@ export const register: Register = on => {
   })
 
   on('tool.call', { tool: 'Read' }, async ($, e, next) => {
-    const isDoc = e.file_path.includes('/.agent/')
-    await update($, reads, r => ({
-      total: r.total + 1, docs: r.docs + (isDoc ? 1 : 0), turn: r.turn + 1,
-    }))
-    return next(e)
+    const ran = await next(e)
+    if (e.file_path.includes('/.agent/') && ran.deny === undefined) {
+      const bytes = (ran.text ?? '').length
+      await update($, activity, a => ({ ...a, docsBytes: a.docsBytes + bytes, docsReads: a.docsReads + 1 }))
+    }
+    return ran
+  })
+
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const ran = await next(e)
+    if (/\bgit\s+commit\b/.test(e.command) && ran.deny === undefined && ran.isError !== true) {
+      await update($, activity, a => ({ ...a, committed: true }))
+    }
+    return ran
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -164,8 +205,11 @@ export const register: Register = on => {
         ...(active ? [RULE_BLOCK] : []),
         ...(memory === null ? [] : [`Navigator memory pinned by the user for this prompt: ${memory}`]),
       ]
-      if (extra.length === 0) return next(e)
-      return next({ ...e, context: [...(e.context ?? []), ...extra] })
+      const entered = extra.length === 0
+        ? await next(e)
+        : await next({ ...e, context: [...(e.context ?? []), ...extra] })
+      if (entered.drop === undefined) await recallFor($, e.text)
+      return entered
     }
     if (kind === 'status') {
       const resolved = await resolveAdhd($, pinnedCfg, path)
@@ -180,7 +224,14 @@ export const register: Register = on => {
   })
 
   on('turn.complete', async ($, e, next) => {
-    if (e.agentId !== undefined) return next(e)
+    if (e.agentId !== undefined) {
+      const used = e.usage
+      const tokens = used === undefined ? 0
+        : used.input_tokens + used.cache_read_input_tokens + used.cache_creation_input_tokens
+          + used.output_tokens
+      await update($, activity, a => ({ ...a, agentRuns: a.agentRuns + 1, agentTokens: a.agentTokens + tokens }))
+      return next(e)
+    }
     const u = await $.session.usage()
     const fresh = statusOf(e.answer, u.context.percent === undefined ? null : u.context.percent)
     await update($, status, prev => ({
@@ -189,14 +240,17 @@ export const register: Register = on => {
       ctxPercent: fresh.ctxPercent,
     }))
     await update($, usage, () => ({
-      rates: u.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed })),
+      rates: u.rateLimits.map(r => ({
+        kind: r.kind, percentUsed: r.percentUsed, resetsAt: r.resetsAt ?? null,
+      })),
       usd: u.cost?.usd ?? null,
     }))
-    const turnReads = (await read($, reads)).turn
-    await update($, reads, r => ({ ...r, turn: 0 }))
+    const a = await read($, activity)
+    const tree = (await read($, pane))?.docsTreeBytes ?? 0
+    await update($, activity, x => ({ ...x, committed: false, lastTurnCommitted: x.committed }))
     await update($, history, h => ({
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
-      reads: [...h.reads, turnReads].slice(-64),
+      saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
     }))
     return next(e)
   })
@@ -217,51 +271,81 @@ export const register: Register = on => {
     const s = await read($, status)
     const p = (await read($, pane)) ?? EMPTY_NAV
     const u = await read($, usage)
-    const r = await read($, reads)
+    const a = await read($, activity)
     const hist = await read($, history)
     const chosen = await read($, pinned)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
     const current = p.tasks[p.tasks.length - 1] ?? null
-    const window = u?.rates[0]
-    const fanOut = r.total - r.docs >= 5
+    const left = turnsTo(hist.ctx, 70)
+    const compactHint = percent !== null && percent >= 70 ? 'compact now: context is high'
+      : a.lastTurnCommitted ? 'good moment to compact: just committed'
+        : 'compact: hold, mid-task'
+    const avoided = tokensOf(Math.max(0, p.docsTreeBytes - a.docsBytes))
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
-    const title = (text: string) => (
-      <Box marginBottom={1}><Text color={PALETTE.accent}>{text}</Text></Box>
+    const title = (text: string, note?: string) => (
+      <Box marginBottom={1}>
+        <Text>
+          <Text color={PALETTE.accent}>{text}</Text>
+          <Text color={PALETTE.dim}>{note ? `  ${note}` : ''}</Text>
+        </Text>
+      </Box>
     )
 
     return (
       <Box flexDirection="column">
+        {s?.next ? (
+          <Box {...panel} flexDirection="column">
+            {title('do next')}
+            <Text color={PALETTE.label} bold wrap="wrap">{s.next}</Text>
+          </Box>
+        ) : null}
+
         <Box flexDirection="row">
-          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
+          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
             {title('context')}
             <Text wrap="truncate-end">
-              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
+              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 12)}</Text>
             </Text>
-            <Text color={PALETTE.dim}>{percent !== null && percent >= 70 ? 'compact due' : 'compact safe'}</Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
-          </Box>
-          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
-            {title('session')}
-            <Text wrap="truncate-end">
-              <Text color={PALETTE.success} bold>{u?.usd == null ? '--' : `$${u.usd.toFixed(2)}`}</Text>
-              <Text color={PALETTE.dim}>{window ? `  ${window.kind} ${Math.round(window.percentUsed)}%` : ''}</Text>
-            </Text>
-            <Text color={PALETTE.label} wrap="truncate-end">{s?.phase ? `phase ${s.phase}` : 'phase —'}</Text>
             <Text color={PALETTE.dim} wrap="truncate-end">
-              {p.graph ? `graph ${compact(p.graph.nodes)} nodes` : 'graph —'}
+              {left === null ? 'growth flat' : `~${left} turns to 70%`}
             </Text>
+            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 18)}</Text>
           </Box>
-          <Box {...panel} flexDirection="column" flexGrow={1} width="33%">
-            {title('reads')}
-            <Text wrap="truncate-end">
-              <Text color={fanOut ? PALETTE.warning : PALETTE.accent} bold>{r.total}</Text>
-              <Text color={PALETTE.dim}>  {r.docs} docs</Text>
+          <Box {...panel} flexDirection="column" flexGrow={1} width="50%">
+            {title('session')}
+            <Text color={PALETTE.success} bold>{u?.usd == null ? '--' : `$${u.usd.toFixed(2)}`}</Text>
+            {(u?.rates ?? []).slice(0, 2).map(r => (
+              <Text color={PALETTE.dim} wrap="truncate-end">
+                {rateKind(r.kind)} {Math.round(r.percentUsed)}%
+                {clockOf(r.resetsAt) === null ? '' : ` · resets ${clockOf(r.resetsAt)}`}
+              </Text>
+            ))}
+          </Box>
+        </Box>
+
+        <Box {...panel} flexDirection="column">
+          {title('saved this session', 'estimates, ~4 bytes per token')}
+          <Text wrap="truncate-end">
+            <Text color={PALETTE.success} bold>~{compact(avoided)} tokens</Text>
+            <Text color={PALETTE.label}> kept out of context</Text>
+          </Text>
+          <Text wrap="truncate-end">
+            <Text color={PALETTE.dim}>docs    </Text>
+            <Text color={PALETTE.label}>
+              loaded {compact(a.docsBytes)}B of {compact(p.docsTreeBytes)}B in .agent/
             </Text>
-            <Text color={PALETTE.dim}>{fanOut ? 'use an Agent' : 'fan-out ok'}</Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.reads, 14)}</Text>
-          </Box>
+            <Text color={PALETTE.dim}>{a.docsReads > 0 ? `  (${a.docsReads} reads)` : ''}</Text>
+          </Text>
+          <Text wrap="truncate-end">
+            <Text color={PALETTE.dim}>agents  </Text>
+            <Text color={PALETTE.label}>
+              {a.agentRuns === 0 ? 'none yet'
+                : `${a.agentRuns} turns · ${compact(a.agentTokens)} tokens processed outside`}
+            </Text>
+          </Text>
+          <Text color={PALETTE.accent}>{sparkline(hist.saved, 24)}</Text>
         </Box>
 
         <Box {...panel} flexDirection="column">
@@ -270,17 +354,15 @@ export const register: Register = on => {
             <Text color={PALETTE.accent} bold>{current?.id ?? 'no task in progress'}</Text>
             <Text color={PALETTE.label}>{current?.title ? `  ${current.title}` : ''}</Text>
           </Text>
-          {s?.next ? (
-            <Text wrap="truncate-end"><Text color={PALETTE.dim}>→ </Text><Text color={PALETTE.label}>{s.next}</Text></Text>
-          ) : null}
           <Text color={PALETTE.dim} wrap="truncate-end">
             {p.marker === null ? 'no marker yet' : `marker ${p.marker}`}
           </Text>
+          <Text color={percent !== null && percent >= 70 ? PALETTE.warning : PALETTE.dim}>{compactHint}</Text>
         </Box>
 
         <Box {...panel} flexDirection="column">
-          {title('memories')}
-          {p.memories.length === 0 && <Text color={PALETTE.dim}>none for the open tasks</Text>}
+          {title('memories', p.memoriesFor === null ? 'for open tasks' : `for: ${p.memoriesFor}`)}
+          {p.memories.length === 0 && <Text color={PALETTE.dim}>none matched</Text>}
           {p.memories.map((m, i) => (
             <Box flexDirection="row" columnGap={1}>
               <Button

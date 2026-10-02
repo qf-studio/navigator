@@ -15,20 +15,23 @@ type Write = { path: string; text: string }
 type EnvSet = { name: string; value?: string }
 
 // The world beneath the plugin: an in-memory FS, a fixed cwd, a fixed usage.
-const world = (on: On, files: Files, percent?: number) => {
+const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   const writes: Write[] = []
   const envSets: EnvSet[] = []
   const opened: string[] = []
   mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
   mock.clock(on, { now: 1_700_000_000_000 })
   on('session.cwd', () => ({ value: CWD }))
-  on('session.usage', () => ({
-    value: {
-      startedAt: 0,
-      context: { window: 200000, ...(percent === undefined ? {} : { percent }) },
-      rateLimits: [],
-    },
-  }))
+  on('session.usage', () => {
+    const percent = typeof percentIn === 'function' ? percentIn() : percentIn
+    return {
+      value: {
+        startedAt: 0,
+        context: { window: 200000, ...(percent === undefined ? {} : { percent }) },
+        rateLimits: [],
+      },
+    }
+  })
   on('fs.exists', (_$, e) => ({
     value: e.path in files || Object.keys(files).some(p => p.startsWith(`${e.path}/`)),
   }))
@@ -45,6 +48,7 @@ const world = (on: On, files: Files, percent?: number) => {
     return { value: undefined }
   })
   on('prompt.submit', (_$, e) => ({ text: e.text, context: e.context }))
+  on('tool.call', (_$, e) => ({ result: {}, text: e.tool === 'Read' ? 'x'.repeat(8000) : 'ok' }))
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'engine', ref: 0 }))
@@ -67,10 +71,15 @@ const world = (on: On, files: Files, percent?: number) => {
     value: {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
-        ? '.agent/tasks/TASK-15-x.md|# TASK-15: Marketing plan\n.agent/tasks/TASK-80-judge.md|# TASK-80: Typed judge, phase 2\n'
+        ? String(e.argv[2]).startsWith('find')
+          ? '400000\n'
+          : '.agent/tasks/TASK-15-x.md|# TASK-15: Marketing plan\n'
+            + '.agent/tasks/TASK-80-judge.md|# TASK-80: Typed judge, phase 2\n'
         : String(e.argv[1]).endsWith('graph_manager.py')
           ? 'Total Nodes: 195\nTotal Edges: 843\nMemories: 71\n'
-          : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
+          : e.argv.includes('--concepts')
+            ? '- PATTERN: "hooks dispatch through one entry point" (88%)\n'
+            : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
     },
   }))
   return { writes, envSets, opened }
@@ -218,6 +227,7 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
 
 test('(f) /nav opens the pane with task, context bar and memories', async ($, on) => {
   const { opened } = world(on, {
+    [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
     [`${AGENT}/.context-markers/z-newest-by-mtime.md`]: 'xx',
     [`${AGENT}/.context-markers/a-older.md`]: '',
   }, 42)
@@ -228,14 +238,14 @@ test('(f) /nav opens the pane with task, context bar and memories', async ($, on
     const ui = await navPane($, surface)
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(texts).toContain('TASK-80')
-    expect(texts).toContain('phase IMPL')
     expect(texts).toContain('42%')
     expect(texts).toContain('z-newest-by-mtime')
     expect(texts).toContain('TASK-15')
     expect(texts).toContain('Typed judge, phase 2')
-    expect(texts).toContain('graph 195 nodes')
+    expect(texts).toContain('~100.0K tokens')
     expect(texts).toContain('stop gate over-fires on heredoc Bash')
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
+    expect(texts).toContain('compact: hold, mid-task')
     await ui.unmount()
   }
 })
@@ -261,4 +271,59 @@ test('(h) phase is sticky across turns and a "Next:" line feeds the band', async
   expect(text).toContain('phase IMPL')
   expect(text).toContain('next: run the mod tests.')
   await ui.unmount()
+})
+
+const texts = async ($: Engine) => {
+  const ui = await navPane($, 'terminal')
+  const all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  await ui.unmount()
+  return all
+}
+
+test('(i) doc reads and subagent turns feed the savings panel', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
+  await $.command.run(NAV_CMD)
+  await $.tool.call({ tool: 'Read', file_path: `${AGENT}/tasks/TASK-80.md` } as never)
+  await $.turn.complete({
+    answer: 'done', durationMs: 1, isAborted: false, turnId: 'a1', reason: 'answer', agentId: 'sub-1',
+    usage: {
+      model: 'm', input_tokens: 1000, output_tokens: 500,
+      cache_read_input_tokens: 30000, cache_creation_input_tokens: 0,
+    },
+  } as never)
+  await complete($, 'Next: commit it\n')
+  const all = await texts($)
+  expect(all).toContain('loaded 8.0KB of 400.0KB')
+  expect(all).toContain('(1 reads)')
+  expect(all).toContain('1 turns · 31.5K tokens processed outside')
+  expect(all).toContain('~98.0K tokens')
+  expect(all).toContain('commit it')
+})
+
+test('(j) a committed turn turns the compact hint into a nudge', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
+  await $.command.run(NAV_CMD)
+  await $.tool.call({ tool: 'Bash', command: 'git commit -m x' } as never)
+  await complete($, 'Committed.\n')
+  expect(await texts($)).toContain('good moment to compact: just committed')
+})
+
+test('(k) memories follow the concepts the prompt names', async ($, on) => {
+  world(on, {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
+  }, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'why do the hooks fire twice')
+  const all = await texts($)
+  expect(all).toContain('for: hooks')
+  expect(all).toContain('hooks dispatch through one entry point')
+})
+
+test('(l) context forecast projects turns to 70%', async ($, on) => {
+  let percent = 10
+  world(on, {}, () => percent)
+  await $.command.run(NAV_CMD)
+  for (const p of [10, 20, 30]) { percent = p; await complete($, 'step\n') }
+  expect(await texts($)).toContain('~4 turns to 70%')
 })
