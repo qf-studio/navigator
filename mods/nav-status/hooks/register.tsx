@@ -8,11 +8,13 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { NavPane, NavReads, NavStatus } from '../types'
+import type { NavPane, NavReads, NavStatus, NavUsage } from '../types'
 import {
   RULE_BLOCK, classify, personalBody, personalPath, resolve, toggleReason,
 } from './adhd'
-import { EMPTY_NAV, bar, cut, latestMarker, parseMemories, parseTaskList } from './nav'
+import {
+  bar, cut, latestMarker, parseGraphStats, parseMemories, parseTasks, usageLine,
+} from './nav'
 import { bandLine, isQuiet, statusOf } from './status'
 
 const PLUGIN = 'nav-status'
@@ -20,10 +22,12 @@ const PANE = 'nav'
 const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
 const NO_READS: NavReads = { total: 0, docs: 0 }
+const EMPTY_NAV: NavPane = { tasks: [], marker: null, memories: [], graph: null }
 
 const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
 const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
 const reads = atom({ plugin: 'nav-status', key: 'reads' } as const, NO_READS)
+const usage = atom({ plugin: 'nav-status', key: 'usage' } as const, null as NavUsage | null)
 const pinned = atom({ plugin: 'nav-status', key: 'pinned' } as const, null as string | null)
 
 type Json = Record<string, unknown>
@@ -89,23 +93,27 @@ const run = async (
   }
 }
 
-/** Collect what the pane shows: in-progress task, newest marker, relevant memories. */
+/** Collect what the pane shows: open tasks, newest marker, memories, graph size. */
 const refreshPane = async ($: EngineInterface): Promise<void> => {
   const root = await projectRoot($)
   if (root === null) {
     await update($, pane, () => EMPTY_NAV)
     return
   }
-  const recall = `${$.plugin.root}/../../skills/nav-graph/functions/memory_recall.py`
+  const functions = `${$.plugin.root}/../../skills/nav-graph/functions`
+  const graphPath = '.agent/knowledge/graph.json'
   const tasks = await run($, ['sh', '-c',
     'grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md'], root)
-  const memories = await run($, ['python3', recall, '--auto', '--agent-dir', '.agent',
-    '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
+  const memories = await run($, ['python3', `${functions}/memory_recall.py`, '--auto',
+    '--agent-dir', '.agent', '--graph-path', graphPath, '--limit', '4', '--format', 'compact'], root)
+  const stats = await run($, ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
+    '--graph-path', graphPath], root)
   const markers = await $.fs.list(`${root}/.agent/.context-markers`).catch(() => [])
   await update($, pane, () => ({
-    task: parseTaskList(tasks),
-    marker: latestMarker(markers.map(m => m.name)),
+    tasks: parseTasks(tasks),
+    marker: latestMarker(markers),
     memories: parseMemories(memories),
+    graph: parseGraphStats(stats),
   }))
 }
 
@@ -125,7 +133,9 @@ export const register: Register = on => {
 
   on('command.run', { command: 'nav' }, async $ => {
     await refreshPane($)
-    await $.ui.open({ id: PANE, title: 'Navigator', focus: true, closeOnEscape: true })
+    await $.ui.open({
+      id: PANE, title: 'Navigator', focus: true, closeOnEscape: true, columns: 64,
+    })
     return {}
   })
 
@@ -165,9 +175,17 @@ export const register: Register = on => {
 
   on('turn.complete', async ($, e, next) => {
     if (e.agentId !== undefined) return next(e)
-    const percent = (await $.session.usage()).context.percent
-    const fresh = statusOf(e.answer, percent === undefined ? null : percent)
-    await update($, status, () => fresh)
+    const u = await $.session.usage()
+    const fresh = statusOf(e.answer, u.context.percent === undefined ? null : u.context.percent)
+    await update($, status, prev => ({
+      phase: fresh.phase ?? prev?.phase ?? null,
+      next: fresh.next ?? prev?.next ?? null,
+      ctxPercent: fresh.ctxPercent,
+    }))
+    await update($, usage, () => ({
+      rates: u.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed })),
+      usd: u.cost?.usd ?? null,
+    }))
     return next(e)
   })
 
@@ -186,16 +204,21 @@ export const register: Register = on => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const s = await read($, status)
     const p = (await read($, pane)) ?? EMPTY_NAV
+    const u = await read($, usage)
     const r = await read($, reads)
     const chosen = await read($, pinned)
     const width = Math.max(24, e.props.bodyColumns)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const phase = s?.phase ? `phase ${s.phase}` : 'phase —'
-    const task = p.task ?? 'no task in progress'
+    const task = p.tasks[p.tasks.length - 1] ?? 'no task in progress'
     const compactHint = percent !== null && percent >= 70 ? 'compact: due' : 'compact: safe'
-    const marker = p.marker === null ? '' : ` · last marker ${cut(p.marker, 32)}`
+    const marker = p.marker === null ? 'no marker yet' : `marker ${cut(p.marker, width - 10)}`
+    const rates = u === null ? '' : usageLine(u.rates, u.usd)
     const fanOut = r.total - r.docs >= 5 ? '  → use an Agent' : ''
+    const graph = p.graph === null
+      ? 'graph: not initialized'
+      : `graph: ${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
     const pinHint = chosen === null
       ? 'press ▸ to pin a memory into your next prompt'
       : 'pinned: rides your next prompt once'
@@ -206,11 +229,14 @@ export const register: Register = on => {
           <Text bold>{cut(task, width - phase.length - 3)}</Text>
           <Text dimColor>{phase}</Text>
         </Box>
-        <Text>context {bar(percent, Math.max(10, width - 14))} {pct}</Text>
-        <Text dimColor>{compactHint}{marker}</Text>
+        {s?.next ? <Text wrap="truncate-end">next: {s.next}</Text> : null}
         <Text> </Text>
-        <Text>Reads this session  {r.total}  ({r.docs} in .agent/){fanOut}</Text>
-        <Text>Memories matched    {p.memories.length}</Text>
+        <Text>context {bar(percent, Math.max(10, width - 14))} {pct}</Text>
+        <Text dimColor>{compactHint} · {marker}</Text>
+        {rates ? <Text dimColor>{rates}</Text> : null}
+        <Text> </Text>
+        <Text>reads {r.total} ({r.docs} in .agent/){fanOut}</Text>
+        <Text>{graph}</Text>
         <Text> </Text>
         <Text dimColor>── relevant memories ──</Text>
         {p.memories.length === 0 && <Text dimColor>none for the open tasks</Text>}
@@ -222,14 +248,18 @@ export const register: Register = on => {
               plain
               onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
             />
-            <Text wrap="truncate-end">
-              {m.kind} {cut(m.text, width - m.kind.length - 10)}
-              {m.percent === null ? '' : ` (${m.percent}%)`}
-            </Text>
+            <Box flexDirection="column">
+              <Text dimColor>{m.kind}{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+              <Text wrap="wrap">{m.text}</Text>
+            </Box>
           </Box>
         ))}
-        <Text> </Text>
         <Text dimColor>{pinHint}</Text>
+        <Text> </Text>
+        <Text dimColor>── open tasks ──</Text>
+        {p.tasks.length === 0 && <Text dimColor>none marked in progress</Text>}
+        {p.tasks.slice(-5).map(t => <Text>{t}</Text>)}
+        <Text> </Text>
         <Box flexDirection="row" columnGap={3}>
           <Button
             key="marker"
@@ -244,13 +274,6 @@ export const register: Register = on => {
             hotkey="c"
             plain
             onPress={() => $.session.compact()}
-          />
-          <Button
-            key="graph"
-            label="graph"
-            hotkey="g"
-            plain
-            onPress={() => $.prompt.submit({ text: 'graph health', asUser: true })}
           />
           <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => refreshPane($)} />
         </Box>

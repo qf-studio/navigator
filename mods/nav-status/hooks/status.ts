@@ -4,7 +4,7 @@
 import type { NavPhase, NavStatus } from '../types'
 
 const PHASE_RE = /\bPhase:\s*(INIT|RESEARCH|IMPL|VERIFY|COMPLETE)\b/
-const NEXT_ACTION_RE = /^Next Action:\s*(.+)$/m
+const NEXT_ACTION_RE = /^(?:\*\*)?Next(?: action)?:(?:\*\*)?\s*(.+)$/im
 const LEAD_MARKUP_RE = /^(?:[#>*\-]+\s*|\d+\.\s*)+/
 const BOLD_RE = /\*\*/g
 
@@ -21,7 +21,7 @@ export const firstLine = (answer: string): string | null => {
   return bare.length > 0 ? bare : null
 }
 
-/** `Next Action:` from a NAVIGATOR_STATUS block, else the reply's first line. */
+/** `Next Action:` (NAVIGATOR_STATUS) or a `Next:` line, else the reply's first line. */
 export const parseNextAction = (answer: string): string | null => {
   const m = NEXT_ACTION_RE.exec(answer)
   return m?.[1] ? m[1].trim() : firstLine(answer)

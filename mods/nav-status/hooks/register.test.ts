@@ -59,7 +59,8 @@ const world = (on: On, files: Files, percent?: number) => {
     value: Object.keys(files)
       .filter(f => f.startsWith(`${e.path}/`))
       .map(f => ({
-        name: f.slice(e.path.length + 1), kind: 'file' as const, size: 1, mtimeMs: 0, isLink: false,
+        name: f.slice(e.path.length + 1), kind: 'file' as const, size: 1,
+        mtimeMs: (files[f] ?? '').length, isLink: false,
       })),
   }))
   on('process.run', (_$, e) => ({
@@ -67,7 +68,9 @@ const world = (on: On, files: Files, percent?: number) => {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
         ? '.agent/tasks/TASK-15-x.md\n.agent/tasks/TASK-80-judge.md\n'
-        : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
+        : String(e.argv[1]).endsWith('graph_manager.py')
+          ? 'Total Nodes: 195\nTotal Edges: 843\nMemories: 71\n'
+          : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
     },
   }))
   return { writes, envSets, opened }
@@ -158,12 +161,12 @@ test('(d) the band shows phase, context percent and next action', async ($, on) 
   }
 })
 
-test('(d2) the band falls back to the first line of the reply', async ($, on) => {
+test('(d2) the band reads a bold Next action: line', async ($, on) => {
   world(on, {})
   await complete($, '**Next action:** run the tests.\n\n- detail one\n')
   const ui = await band($, 'terminal')
   const text = (await ui.find({ type: 'Text' }))?.text ?? ''
-  expect(text).toContain('next: Next action: run the tests.')
+  expect(text).toContain('next: run the tests.')
   expect(text).not.toContain('ctx')
   await ui.unmount()
 })
@@ -215,8 +218,8 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
 
 test('(f) /nav opens the pane with task, context bar and memories', async ($, on) => {
   const { opened } = world(on, {
-    [`${AGENT}/.context-markers/a-old.md`]: '',
-    [`${AGENT}/.context-markers/b-new.md`]: '',
+    [`${AGENT}/.context-markers/z-newest-by-mtime.md`]: 'xx',
+    [`${AGENT}/.context-markers/a-older.md`]: '',
   }, 42)
   await complete($, 'Phase: IMPL\n')
   await $.command.run(NAV_CMD)
@@ -227,9 +230,11 @@ test('(f) /nav opens the pane with task, context bar and memories', async ($, on
     expect(texts).toContain('TASK-80')
     expect(texts).toContain('phase IMPL')
     expect(texts).toContain('42%')
-    expect(texts).toContain('last marker b-new')
-    expect(texts).toContain('PITFALL stop gate over-fires')
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(6)
+    expect(texts).toContain('marker z-newest-by-mtime')
+    expect(texts).toContain('TASK-15')
+    expect(texts).toContain('graph: 195 nodes')
+    expect(texts).toContain('stop gate over-fires on heredoc Bash')
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(5)
     await ui.unmount()
   }
 })
@@ -243,5 +248,16 @@ test('(g) a pinned memory rides the next prompt once', async ($, on) => {
   expect(first.context?.some(c => c.includes('stop gate over-fires'))).toBe(true)
   const second = await submit($, 'and again')
   expect((second.context ?? []).some(c => c.includes('stop gate over-fires'))).toBe(false)
+  await ui.unmount()
+})
+
+test('(h) phase is sticky across turns and a "Next:" line feeds the band', async ($, on) => {
+  world(on, {}, 10)
+  await complete($, 'Phase: IMPL\n')
+  await complete($, 'Removed the marker.\n\nNext: run the mod tests.\n')
+  const ui = await band($, 'terminal')
+  const text = (await ui.find({ type: 'Text' }))?.text ?? ''
+  expect(text).toContain('phase IMPL')
+  expect(text).toContain('next: run the mod tests.')
   await ui.unmount()
 })

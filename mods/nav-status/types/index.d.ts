@@ -7,13 +7,17 @@ export type NavStatus = {
 }
 
 export type NavMemory = { kind: string; text: string; percent: number | null }
+export type NavGraph = { nodes: number; edges: number; memories: number }
+export type NavRate = { kind: string; percentUsed: number }
 
 export type NavPane = {
-  task: string | null
+  tasks: string[]
   marker: string | null
   memories: NavMemory[]
+  graph: NavGraph | null
 }
 
+export type NavUsage = { rates: NavRate[]; usd: number | null }
 export type NavReads = { total: number; docs: number }
 
 declare module 'claude-code' {
@@ -21,6 +25,7 @@ declare module 'claude-code' {
     'nav-status': {
       status: NavStatus | null
       pane: NavPane | null
+      usage: NavUsage | null
       reads: NavReads
       pinned: string | null
     }
