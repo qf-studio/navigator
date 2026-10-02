@@ -68,7 +68,7 @@ class RuntimeTestBase(unittest.TestCase):
         # env-derived roots must never point at the real project .agent/.
         self._saved_env = {
             key: os.environ.pop(key, None)
-            for key in ("PILOT_EXECUTOR", "CLAUDE_PROJECT_DIR")
+            for key in ("PILOT_EXECUTOR", "CLAUDE_PROJECT_DIR", "NAVIGATOR_MOD_OWNS")
         }
         self._saved_cwd = os.getcwd()
         os.chdir(self.root)
@@ -126,6 +126,38 @@ class RuntimeTestBase(unittest.TestCase):
 
     def op_errors(self):
         return self.read_state_file()["meta"]["op_errors"]
+
+
+class ModOwnershipTest(RuntimeTestBase):
+    """v8 handoff (TASK-84): ops a loaded mod owns are skipped in one place."""
+
+    def test_owned_op_is_skipped_others_run(self):
+        calls = []
+        registry = {"SessionStart": [
+            self.make_op("owned_op", calls=calls, result={"additional_context": "A"}),
+            self.make_op("python_op", calls=calls, result={"additional_context": "B"}),
+        ]}
+        os.environ["NAVIGATOR_MOD_OWNS"] = "owned_op"
+        result = runtime.dispatch("SessionStart", self.payload(), registry=registry)
+        self.assertEqual(calls, ["python_op"])
+        self.assertIn("B", result.stdout or "")
+        self.assertNotIn("A", result.stdout or "")
+
+    def test_all_owned_fast_exits_without_state_write(self):
+        calls = []
+        registry = {"Stop": [self.make_op("a", calls=calls), self.make_op("b", calls=calls)]}
+        os.environ["NAVIGATOR_MOD_OWNS"] = "a,b"
+        result = runtime.dispatch("Stop", self.payload(), registry=registry)
+        self.assertEqual(calls, [])
+        self.assertIsNone(result.stdout)
+        self.assertEqual(result.exit_code, 0)
+        self.assertFalse((self.agent_dir / ".nav-runtime-state.json").exists())
+
+    def test_unset_env_runs_everything(self):
+        calls = []
+        registry = {"Stop": [self.make_op("a", calls=calls), self.make_op("b", calls=calls)]}
+        runtime.dispatch("Stop", self.payload(), registry=registry)
+        self.assertEqual(calls, ["a", "b"])
 
 
 class PhaseOrderingTest(RuntimeTestBase):

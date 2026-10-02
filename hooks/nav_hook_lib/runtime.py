@@ -463,13 +463,18 @@ def _dispatch(event: str, payload: dict, registry, now) -> DispatchResult:
     if not agent_dir.is_dir():
         return DispatchResult(None, 0, None)  # not a Navigator project
 
+    table = registry if registry is not None else _default_registry()
+    specs = table.get(event) or []
+    if specs and all(config.mod_owns(str(getattr(s, "name", ""))) for s in specs):
+        # v8 handoff (TASK-84): the loaded Navigator mod runs every op of this event.
+        # Exit before config load, state lock and health so a Python spawn costs nothing.
+        return DispatchResult(None, 0, None)
+
     cfg = config.load(root)  # ONCE per dispatch
     if not config.get(cfg, "dispatcher.enabled", True):
         return DispatchResult(None, 0, None)  # global kill switch
     pilot_executor = config.is_pilot_executor()  # ONCE per dispatch (plan §5)
 
-    table = registry if registry is not None else _default_registry()
-    specs = table.get(event) or []
     timeout = EVENT_TIMEOUTS.get(event, DEFAULT_TIMEOUT_SECONDS)
     deadline = start + timeout - DEADLINE_MARGIN_SECONDS
     session_id = payload.get("session_id")
@@ -494,6 +499,8 @@ def _dispatch(event: str, payload: dict, registry, now) -> DispatchResult:
             is_gate = getattr(spec, "phase", None) == "gates"
             op_name = str(getattr(spec, "name", ""))
             if not _config_allows(cfg, spec):
+                continue
+            if config.mod_owns(op_name):  # the one v8 handoff point (TASK-84)
                 continue
             if not _matcher_allows(spec, event, payload):
                 continue

@@ -279,7 +279,7 @@ MOD_OWNS_ENV = "NAVIGATOR_MOD_OWNS"
 
 
 def mod_owns(feature: str) -> bool:
-    """True when a loaded Claude Code mod has claimed ``feature`` for this session.
+    """True when the loaded Navigator mod has claimed ``feature`` (an op name) for this session.
 
     THE ONLY place the NAVIGATOR_MOD_OWNS env var is read anywhere under
     hooks/ (guard test in test_config.py). A mod sets it from ``session.start``

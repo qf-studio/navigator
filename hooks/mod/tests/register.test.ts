@@ -51,6 +51,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   on('tool.call', (_$, e) => ({ result: {}, text: e.tool === 'Read' ? 'x'.repeat(8000) : 'ok' }))
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('classic.SessionStart', () => ({}))
   on('ui.render', { component: 'AbovePrompt' }, () => ({ type: 'engine', ref: 0 }))
   on('ui.render', { component: 'Pane' }, () => ({ type: 'engine', ref: 0 }))
   on('ui.open', (_$, e) => {
@@ -205,7 +206,7 @@ test('(d4) subagent turns do not drive the band', async ($, on) => {
 test('(e) session.start claims ADHD ownership through the environment', async ($, on) => {
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'adhd' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_adhd' })
 })
 
 const NAV_CMD = {
@@ -326,4 +327,10 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
   await $.command.run(NAV_CMD)
   for (const p of [10, 20, 30]) { percent = p; await complete($, 'step\n') }
   expect(await texts($)).toContain('~4 turns to 70%')
+})
+
+test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
+  const { envSets } = world(on, {})
+  await $.classic.SessionStart({ source: 'compact' } as never)
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_adhd' })
 })

@@ -1,8 +1,8 @@
 // Navigator mod (v8 runtime, TASK-84): status band, /nav pane, ADHD-mode injection.
 //
 // Spike for the v8 runtime question (see memory project-claude-code-mods-assessment).
-// While loaded it owns ADHD mode end to end and tells the Python runtime so through
-// NAVIGATOR_MOD_OWNS; unloaded, hooks/ops/prompt_adhd.py keeps doing the same job.
+// Owned ops are announced through NAVIGATOR_MOD_OWNS (op names); runtime._dispatch skips
+// them. Unloaded, the Python ops keep doing the same job.
 
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
@@ -168,15 +168,18 @@ const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.env.set('NAVIGATOR_MOD_OWNS', 'adhd')
+    await $.env.set('NAVIGATOR_MOD_OWNS', 'prompt_adhd')
     await $.command.register({ name: 'nav', description: 'Open the Navigator pane' })
     await refreshPane($)
     return next(e)
   })
 
-  // $.state resets on /clear, /resume and /branch; session.start does not fire again.
-  on('classic.SessionStart', { source: ['clear', 'resume', 'fork'] }, async ($, e, next) => {
-    await refreshPane($)
+  // Runs before the Python SessionStart child (modules precede settings hooks), so the
+  // handoff env is in place for it. $.state resets on /clear, /resume and /branch, and
+  // session.start does not fire again, so the pane reloads here too.
+  on('classic.SessionStart', async ($, e, next) => {
+    await $.env.set('NAVIGATOR_MOD_OWNS', 'prompt_adhd')
+    if (e.source === 'clear' || e.source === 'resume' || e.source === 'fork') await refreshPane($)
     return next(e)
   })
 

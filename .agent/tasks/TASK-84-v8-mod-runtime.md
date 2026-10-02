@@ -185,3 +185,12 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
 - CI job `mod-tests` (Node 22, `@anthropic-ai/claude-code@2.1.287`, `make mod-validate`,
   `make mod-test`); Makefile `mod-validate`, `mod-test`, `mod-typecheck`, `test-all`.
 - Checks: `make test` green, 18/18 kit tests, tsc clean.
+
+### Step 2 — Python handoff generalized (2026-10-02) ✅
+- Ownership tokens are op names (`prompt_adhd`). `runtime._dispatch` is the one skip point
+  (next to `_config_allows`) and fast-exits before config load, state lock and health when
+  every op of the event is owned (no state file written). `prompt_adhd.py` no longer reads it.
+- Mod announces ownership in `session.start` and at the top of every `classic.SessionStart`
+  (before `next`, so the Python SessionStart child already sees it).
+- Tests: `ModOwnershipTest` (skip, fast-exit no state write, unset runs all); dispatcher-level
+  `HandoffTest` (owned → no ADHD block, unowned → block); kit test (n). make test green, 19/19.

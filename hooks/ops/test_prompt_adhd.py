@@ -100,25 +100,31 @@ class ToggleTest(_Base):
 
 
 class HandoffTest(_Base):
-    """A loaded nav-status mod claims ADHD via NAVIGATOR_MOD_OWNS; the op steps aside."""
+    """v8 (TASK-84): ownership is checked once in runtime._dispatch, not in the op.
 
-    def test_mod_owning_adhd_silences_injection_and_toggles(self):
-        adhd.set_personal(True)
-        os.environ[nav_config.MOD_OWNS_ENV] = "adhd"
-        self.assertIsNone(prompt_adhd.run(self.ctx("fix the login bug")))
-        self.assertIsNone(prompt_adhd.run(self.ctx("adhd mode off")))
-        self.assertIs(adhd.personal_on(), True, "the op must not write while the mod owns it")
+    The op itself no longer reads NAVIGATOR_MOD_OWNS; the full dispatcher path proves the
+    handoff: with prompt_adhd owned, the subprocess emits no ADHD block.
+    """
 
-    def test_ownership_is_feature_scoped(self):
+    def test_op_ignores_ownership_env(self):
         adhd.set_personal(True)
-        os.environ[nav_config.MOD_OWNS_ENV] = "band"
+        os.environ[nav_config.MOD_OWNS_ENV] = "prompt_adhd"
         out = prompt_adhd.run(self.ctx("fix the login bug"))
         self.assertEqual(out, {"additional_context": adhd.RULE_BLOCK})
 
-    def test_comma_list_is_honoured(self):
+    def test_dispatcher_skips_owned_prompt_adhd(self):
         adhd.set_personal(True)
-        os.environ[nav_config.MOD_OWNS_ENV] = "band, adhd"
-        self.assertIsNone(prompt_adhd.run(self.ctx("fix the login bug")))
+        (self.root / ".agent").mkdir(exist_ok=True)
+        payload = json.dumps({"prompt": "fix the login bug", "cwd": str(self.root),
+                              "session_id": "s"})
+        env = dict(os.environ, NAVIGATOR_MOD_OWNS="prompt_adhd")
+        owned = subprocess.run([sys.executable, DISPATCH, "UserPromptSubmit"], input=payload,
+                               capture_output=True, text=True, env=env, cwd=self.root)
+        env.pop("NAVIGATOR_MOD_OWNS")
+        python = subprocess.run([sys.executable, DISPATCH, "UserPromptSubmit"], input=payload,
+                                capture_output=True, text=True, env=env, cwd=self.root)
+        self.assertNotIn("ADHD MODE: on (", owned.stdout)
+        self.assertIn("ADHD MODE: on (", python.stdout)
 
 
 class InjectionTest(_Base):
