@@ -34,6 +34,18 @@ export type NavHistory = { ctx: number[]; saved: number[] }
 export type NavDestination = { title: string; taskId: string | null; source: 'brief' | 'task' }
 export type NavOffRoute = { topic: string; prompt: string; count: number }
 export type NavWaypointClock = { label: string; turns: number }
+export type NavTripSpan = {
+  usd: number
+  tokens: number
+  /** cacheRead share of input-side tokens; null when there were none. */
+  cacheHit: number | null
+  commits: number
+  added: number
+  removed: number
+  activeSec: number
+}
+/** The /nav trip panel: Claude Code's OTel metrics from Prometheus, today and over 7 days. */
+export type NavTrip = { today: NavTripSpan; week: NavTripSpan; perMinute: number[]; source: string }
 
 declare module 'claude-code' {
   interface PluginState {
@@ -43,13 +55,13 @@ declare module 'claude-code' {
       usage: NavUsage | null
       activity: NavActivity
       history: NavHistory
-      pinned: string | null
       disowned: string[]
       destination: NavDestination | null
       offRoute: NavOffRoute | null
       waypointClock: NavWaypointClock | null
       showTasks: boolean
       crashes: Record<string, number>
+      trip: NavTrip | null
     }
   }
 }

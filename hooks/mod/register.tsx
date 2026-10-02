@@ -8,12 +8,13 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type {
-  NavActivity, NavDestination, NavHistory, NavOffRoute, NavPane, NavStatus, NavUsage, NavWaypointClock,
+  NavActivity, NavDestination, NavHistory, NavOffRoute, NavPane, NavStatus, NavTrip, NavUsage,
+  NavWaypointClock,
 } from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
 import { surfaceHealth } from './lib/life-health'
-import { isPilotExecutor, loadConfig } from './lib/config'
+import { getPath, isPilotExecutor, loadConfig } from './lib/config'
 import { RELEASES_URL, dueForCheck, latestStable, updateNotice, updateSettings } from './lib/update'
 import type { Io } from './lib/types'
 import { projectRoot, run } from './lib/project'
@@ -29,6 +30,10 @@ import {
 } from './ui/route'
 import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
+import {
+  PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
+  secondsSinceMidnight, tripQueries, tripRows,
+} from './ui/trip'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
 const PLUGIN = 'navigator'
@@ -52,6 +57,7 @@ const destination = atom({ plugin: 'navigator', key: 'destination' } as const, n
 const offRoute = atom({ plugin: 'navigator', key: 'offRoute' } as const, null as NavOffRoute | null)
 const waypointClock = atom({ plugin: 'navigator', key: 'waypointClock' } as const, null as NavWaypointClock | null)
 const showTasks = atom({ plugin: 'navigator', key: 'showTasks' } as const, false)
+const trip = atom({ plugin: 'navigator', key: 'trip' } as const, null as NavTrip | null)
 
 // $.state survives a hot reload, so a value written by an older version of this module
 // can lack fields added since. Read through these to merge stored values over defaults.
@@ -166,6 +172,54 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   }))
 }
 
+// The Prometheus of `.agent/grafana/docker-compose.yml` (host port 9092).
+const PROMETHEUS_URL = 'http://localhost:9092'
+const TRIP_TIMEOUT_MS = 1000
+
+/**
+ * The trip panel's numbers from Prometheus; null (panel hidden) when the stack is down, has no
+ * Claude Code metrics, `dashboard.enabled` is false, or under Pilot. Runs on /nav and refresh.
+ */
+const refreshTrip = async ($: EngineInterface): Promise<void> => {
+  const io = ioOf($)
+  const root = await projectRoot(io)
+  const cfg = root === null ? null : await loadConfig(io, root)
+  if (cfg === null || getPath(cfg, 'dashboard.enabled', true) !== true || await isPilotExecutor(io)) {
+    await update($, trip, () => null)
+    return
+  }
+  const base = String(getPath(cfg, 'dashboard.prometheus_url', PROMETHEUS_URL)).replace(/\/+$/, '')
+  const get = async (path: string, query: string, extra = ''): Promise<string | null> => {
+    const r = await Promise.race([
+      $.http.fetch(`${base}/api/v1/${path}?query=${encodeURIComponent(query)}${extra}`),
+      $.clock.sleep(TRIP_TIMEOUT_MS).then(() => null),
+    ]).catch(() => null)
+    return r?.ok ? r.text : null
+  }
+  const now = await $.clock.now()
+  const end = Math.floor(now / 1000)
+  const queries = Object.entries(tripQueries(secondsSinceMidnight(now)))
+  // One probe first, so a stopped stack costs one refused connection, not eleven.
+  const probe = await get('query', tripQueries(0)['week.tokens']!, `&time=${end}`)
+  const probed = probe === null ? null : parseVector(probe)
+  if (probed === null || Object.keys(probed).length === 0) {
+    await update($, trip, () => null)
+    return
+  }
+  const [range, ...vectors] = await Promise.all([
+    get('query_range', PER_MINUTE,
+      `&start=${end - PER_MINUTE_SPAN_SEC}&end=${end}&step=${PER_MINUTE_STEP_SEC}`),
+    ...queries.map(([, q]) => get('query', q, `&time=${end}`)),
+  ])
+  const results = Object.fromEntries(queries.map(([key], i) => {
+    const text = vectors[i]
+    return [key, text == null ? null : parseVector(text)]
+  }))
+  const built = buildTrip(results, range == null ? null : parseMatrix(range))
+  const source = `prometheus ${/:\d+$/.exec(base)?.[0] ?? base}`
+  await update($, trip, () => (built === null ? null : { ...built, source }))
+}
+
 /** Run the ops registered for a (Python-named) event; null outside a Navigator project. */
 const runFor = async ($: EngineInterface, event: string, payload: Record<string, unknown>) => {
   const io = ioOf($)
@@ -193,6 +247,8 @@ const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
 
 const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the destination
 const LOW_FUEL_TURNS = 5
+const TRIP_LABEL = 12 // trip panel columns: label, today, 7 days
+const TRIP_COL = 14
 const ROUTE_LINES = 16 // a longer route folds its early passed steps
 // Passed steps gray, the current one in the accent, the steps ahead light.
 const STEP_COLOR = { done: PALETTE.dim, current: PALETTE.accent, todo: PALETTE.label } as const
@@ -317,7 +373,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'nav' }, async $ => {
-    await refreshPane($)
+    await Promise.all([refreshPane($), refreshTrip($).catch(() => {})])
     await $.ui.open({
       id: PANE, title: 'Navigator', focus: true, closeOnEscape: true, columns: 64,
     })
@@ -480,6 +536,7 @@ export const register: Register = on => {
     const detour = await read($, offRoute)
     const clock = await read($, waypointClock)
     const tasksOpen = await read($, showTasks)
+    const t = await read($, trip)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
@@ -579,6 +636,28 @@ export const register: Register = on => {
           )}
         </Box>
 
+        {t === null ? null : (
+          <Box {...panel} flexDirection="column">
+            {title(`trip · ${t.source}`)}
+            <Text color={PALETTE.dim}>{''.padEnd(TRIP_LABEL)}{'today'.padEnd(TRIP_COL)}7 days</Text>
+            {tripRows(t).map(([label, today, week, note]) => (
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.dim}>{label.padEnd(TRIP_LABEL)}</Text>
+                <Text color={PALETTE.label}>{today.padEnd(TRIP_COL)}{week.padEnd(TRIP_COL)}</Text>
+                <Text color={PALETTE.dim}>{note}</Text>
+              </Text>
+            ))}
+            {t.perMinute.length > 0 ? <Text> </Text> : null}
+            {t.perMinute.length > 0 ? (
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.dim}>{'tokens/min'.padEnd(TRIP_LABEL)}</Text>
+                <Text color={PALETTE.accent}>{sparkline(t.perMinute, 16)}</Text>
+                <Text color={PALETTE.dim}>   last 2h</Text>
+              </Text>
+            ) : null}
+          </Box>
+        )}
+
         {tasksOpen ? (
           <Box {...panel} flexDirection="column">
             {title('open tasks')}
@@ -601,7 +680,7 @@ export const register: Register = on => {
           <Text color={PALETTE.dim}>·</Text>
           <Button key="tasks" label="tasks" hotkey="t" plain onPress={() => update($, showTasks, v => !v)} />
           <Text color={PALETTE.dim}>·</Text>
-          <Button key="refresh" label="refresh" hotkey="f" plain onPress={() => refreshPane($)} />
+          <Button key="refresh" label="refresh" hotkey="f" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
         </Box>
       </Box>
     )

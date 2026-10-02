@@ -418,3 +418,63 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
     .toEqual(['#8b949e', '#7eb8da', '#c9d1d9']) // passed gray, current accent, ahead light
   await ui.unmount()
 })
+
+// Prometheus of .agent/grafana/docker-compose.yml, answering the trip panel's queries.
+const prometheus = (on: On, fetches: string[], up = true) => {
+  const vector = (rows: [Record<string, string>, number][]) => JSON.stringify({
+    status: 'success',
+    data: { resultType: 'vector', result: rows.map(([metric, v]) => ({ metric, value: [1, String(v)] })) },
+  })
+  on('http.fetch', (_$, e) => {
+    fetches.push(e.url)
+    if (!up) return { deny: 'connect ECONNREFUSED 127.0.0.1:9092' }
+    const q = decodeURIComponent(/query=([^&]*)/.exec(e.url)?.[1] ?? '')
+    const week = q.includes('[7d]')
+    const text = e.url.includes('/query_range')
+      ? JSON.stringify({ status: 'success', data: { resultType: 'matrix', result: [{ metric: {}, values: [[1, '10'], [2, '40']] }] } })
+      : q.includes('cost') ? vector([[{}, week ? 31.8 : 4.12]])
+      : q.includes('token_usage') ? vector([[{ type: 'input' }, 100_000], [{ type: 'cacheRead' }, 900_000], [{ type: 'output' }, 50_000]])
+      : q.includes('commit') ? vector([[{}, week ? 41 : 6]])
+      : q.includes('lines') ? vector([[{ type: 'added' }, 820], [{ type: 'removed' }, 214]])
+      : vector([[{}, 7800]])
+    return { value: { status: 200, ok: true, headers: {}, text } }
+  })
+}
+
+test('(t) the trip panel shows Prometheus numbers for today and 7 days', async ($, on) => {
+  world(on, {}, 20)
+  const fetches: string[] = []
+  prometheus(on, fetches)
+  await $.command.run(NAV_CMD)
+  const all = await texts($)
+  expect(all).toContain('trip · prometheus :9092')
+  expect(all).toContain('$4.12')
+  expect(all).toContain('$31.80')
+  expect(all).toContain('1.1M')
+  expect(all).toContain('cache 90%')
+  expect(all).toContain('+820 −214')
+  expect(all).toContain('2h 10m')
+  expect(all).toContain('tokens/min')
+  expect(fetches).toHaveLength(12) // probe + range + 10 instant queries
+  expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
+})
+
+test('(t2) a stopped stack hides the panel after one refused probe', async ($, on) => {
+  world(on, {}, 20)
+  const fetches: string[] = []
+  prometheus(on, fetches, false)
+  await $.command.run(NAV_CMD)
+  const all = await texts($)
+  expect(all).not.toContain('trip')
+  expect(all).toContain('fuel (context)')
+  expect(fetches).toHaveLength(1)
+})
+
+test('(t3) dashboard.enabled false never fetches', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: JSON.stringify({ dashboard: { enabled: false } }) }, 20)
+  const fetches: string[] = []
+  prometheus(on, fetches)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).not.toContain('trip')
+  expect(fetches).toHaveLength(0)
+})

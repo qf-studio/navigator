@@ -360,7 +360,17 @@ injection by the ops is unchanged. 94 kit tests.
 Follow-up: the whole route is listed, not a fold — passed steps gray (`dim`), current in the
 accent and bold, steps ahead light (`label`); routes over 16 lines keep the last passed step and
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
-Pane order: fuel (context) + saved on top, then destination (or off route), route, tasks.
+Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
+
+### Trip panel (2026-10-02) ✅
+Claude Code's OTel metrics from the `.agent/grafana/` Prometheus (`http://localhost:9092`):
+cost, tokens + cache hit, commits, lines ±, active time — today (range back to local midnight)
+and 7 days (`increase(...[7d])`), plus a tokens/min sparkline (`query_range`, 2 h, 7.5 min step).
+Shown only when Prometheus answers with data: one `week.tokens` probe first, so a stopped Docker
+stack costs one refused connection and the panel does not exist. Fetched on `/nav` and `f`, 1 s
+timeout per request, never under Pilot. Config: `dashboard.enabled` (default on: localhost only,
+nothing leaves the machine), `dashboard.prometheus_url`. Pure model `hooks/mod/ui/trip.ts`
+(5 tests), pane tests (t)/(t2)/(t3). Removed the stale `pinned` state key. 102 kit tests.
 
 ### Band format (e0b416a)
 `on route: Ship v8 · ● verify 3/5 · next: run headless matrix` · `low fuel: … · compact after this

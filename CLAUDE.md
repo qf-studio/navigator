@@ -67,7 +67,8 @@ behavior in both runtimes (one policy point each: `nav_hook_lib.config.is_pilot_
 
 What the mod adds beyond v7: **`/nav`**, a pane with the active task, a context forecast,
 live token savings (docs loaded vs the `.agent/` tree, subagent work kept out of context),
-the route to the goal (the task's steps, done ones folded), open tasks, and marker/compact buttons; a status **band**
+the route to the goal (the task's steps), a trip panel from the local Prometheus of
+`.agent/grafana/` when it has data (`dashboard.enabled`), open tasks, and marker/compact buttons; a status **band**
 above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte
 by generated fixtures (`scripts/gen_mod_data.py`, `make mod-test`).
