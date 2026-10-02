@@ -1,9 +1,8 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavMemory, NavRate, NavTask } from '../../../types'
+import type { NavGraph, NavRate, NavTask } from '../../../types'
 
 const TASK_ID_RE = /(TASK-\d+)/
-const MEMORY_RE = /^-\s*([A-Z]+):\s*"(.*)"\s*(?:\((\d+)%\))?/
 const STAT_RE = /^(Total Nodes|Total Edges|Memories):\s*(\d+)/
 
 /** `path|# TASK-80: Title` lines → in-progress tasks with titles, in file order. */
@@ -14,14 +13,6 @@ export const parseTasks = (stdout: string): NavTask[] =>
     if (!m?.[1]) return []
     const title = heading.replace(/^#+\s*/, '').replace(new RegExp(`^${m[1]}:?\\s*`), '').trim()
     return [{ id: m[1], title, path: path.trim() }]
-  })
-
-/** Lines of `memory_recall.py --format compact`: `- KIND: "text" (NN%) …`. */
-export const parseMemories = (stdout: string): NavMemory[] =>
-  stdout.split('\n').flatMap(line => {
-    const m = MEMORY_RE.exec(line.trim())
-    if (!m?.[1] || m[2] === undefined) return []
-    return [{ kind: m[1], text: m[2], percent: m[3] === undefined ? null : Number(m[3]) }]
   })
 
 /** `graph_manager.py --action stats` text → counts; null when nothing parsed. */
@@ -88,14 +79,6 @@ export const clockOf = (iso: string | null): string | null => {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return null
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-/** Graph concepts the prompt mentions (whole-word, case-insensitive), at most `max`. */
-export const matchConcepts = (prompt: string, concepts: readonly string[], max = 4): string[] => {
-  const text = ` ${prompt.toLowerCase().replace(/[^a-z0-9-]+/g, ' ')} `
-  return concepts
-    .filter(c => c.length >= 4 && text.includes(` ${c.toLowerCase().replace(/[^a-z0-9-]+/g, ' ')} `))
-    .slice(0, max)
 }
 
 /** Estimated tokens for a byte count (~4 bytes per token). */

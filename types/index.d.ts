@@ -6,7 +6,6 @@ export type NavStatus = {
   ctxPercent: number | null
 }
 
-export type NavMemory = { kind: string; text: string; percent: number | null }
 export type NavGraph = { nodes: number; edges: number; memories: number }
 export type NavRate = { kind: string; percentUsed: number; resetsAt: string | null }
 export type NavTask = { id: string; title: string; path?: string }
@@ -14,13 +13,10 @@ export type NavTask = { id: string; title: string; path?: string }
 export type NavPane = {
   tasks: NavTask[]
   marker: string | null
-  memories: NavMemory[]
-  memoriesFor: string | null
   graph: NavGraph | null
-  concepts: string[]
   docsTreeBytes: number
-  /** `- [ ]` / `- [x]` items of the active task doc (the route when present). */
-  checklist?: { label: string; done: boolean }[]
+  /** Steps of the active task doc: its checklist, else its numbered plan (the route when present). */
+  steps?: { id?: string; label: string; done: boolean }[]
 }
 
 export type NavUsage = { rates: NavRate[]; usd: number | null }

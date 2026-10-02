@@ -21,14 +21,13 @@ import { EVENT_OPS } from './ops'
 import { announce } from './owns'
 import { runEvent } from './runner'
 import {
-  clockOf, latestMarker, matchConcepts, parseGraphStats, parseMemories, parseTasks, rateKind,
-  tokensOf, turnsTo,
+  clockOf, latestMarker, parseGraphStats, parseTasks, rateKind, tokensOf, turnsTo,
 } from './ui/nav'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
-  nextTaskNumber, parkedTaskDoc, parseChecklist, routeLine, slugOf,
+  nextTaskNumber, parkedTaskDoc, parseSteps, routeView, slugOf, waypointText,
 } from './ui/route'
-import type { Waypoint } from './ui/route'
+import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
 import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
 
@@ -40,8 +39,7 @@ const NO_ACTIVITY: NavActivity = {
 }
 const NO_HISTORY: NavHistory = { ctx: [], saved: [] }
 const EMPTY_NAV: NavPane = {
-  tasks: [], marker: null, memories: [], memoriesFor: null, graph: null, concepts: [],
-  docsTreeBytes: 0,
+  tasks: [], marker: null, graph: null, docsTreeBytes: 0,
 }
 const DOC_DIRS = '.agent/DEVELOPMENT-README.md .agent/tasks .agent/system .agent/sops .agent/philosophy'
 
@@ -54,7 +52,6 @@ const destination = atom({ plugin: 'navigator', key: 'destination' } as const, n
 const offRoute = atom({ plugin: 'navigator', key: 'offRoute' } as const, null as NavOffRoute | null)
 const waypointClock = atom({ plugin: 'navigator', key: 'waypointClock' } as const, null as NavWaypointClock | null)
 const showTasks = atom({ plugin: 'navigator', key: 'showTasks' } as const, false)
-const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
 
 // $.state survives a hot reload, so a value written by an older version of this module
 // can lack fields added since. Read through these to merge stored values over defaults.
@@ -133,9 +130,7 @@ const readHistory = async ($: EngineInterface): Promise<NavHistory> => {
 const readActivity = async ($: EngineInterface): Promise<NavActivity> =>
   ({ ...NO_ACTIVITY, ...((await read($, activity)) ?? {}) })
 
-type Json = Record<string, unknown>
-
-/** Collect what the pane shows: open tasks, newest marker, memories, graph size. */
+/** Collect what the pane shows: open tasks, the active task's steps, newest marker, graph size. */
 const refreshPane = async ($: EngineInterface): Promise<void> => {
   const root = await projectRoot(ioOf($))
   if (root === null) {
@@ -147,52 +142,28 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   const tasks = await run(ioOf($), ['sh', '-c',
     'for f in $(grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md); do '
     + 'printf "%s|%s\\n" "$f" "$(grep -m1 "^# " "$f")"; done'], root)
-  const memories = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--auto',
-    '--agent-dir', '.agent', '--graph-path', graphPath, '--limit', '4', '--format', 'compact'], root)
   const stats = await run(ioOf($), ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
     '--graph-path', graphPath], root)
   const markers = await $.fs.list(`${root}/.agent/.context-markers`).catch(() => [])
   const treeBytes = Number((await run(ioOf($), ['sh', '-c',
     `find ${DOC_DIRS} -name '*.md' -type f -exec cat {} + 2>/dev/null | wc -c`], root)).trim()) || 0
-  const graphJson = await readJson(ioOf($), `${root}/${graphPath}`)
-  const index = graphJson?.concept_index
-  const concepts = index !== null && typeof index === 'object' ? Object.keys(index as Json) : []
   const taskList = parseTasks(tasks)
   const active = taskList[taskList.length - 1]
-  let checklist: { label: string; done: boolean }[] = []
+  let steps: Step[] = []
   if (active?.path) {
     try {
-      checklist = parseChecklist(String(await $.fs.read(`${root}/${active.path}`)))
+      steps = parseSteps(String(await $.fs.read(`${root}/${active.path}`)))
     } catch {
-      checklist = []
+      steps = []
     }
   }
   await update($, pane, () => ({
     tasks: taskList,
-    checklist,
+    steps,
     marker: latestMarker(markers),
-    memories: parseMemories(memories),
-    memoriesFor: null,
     graph: parseGraphStats(stats),
-    concepts,
     docsTreeBytes: treeBytes,
   }))
-}
-
-/** Memories for the concepts a prompt names; leaves the pane alone when none match. */
-const recallFor = async ($: EngineInterface, prompt: string): Promise<void> => {
-  const root = await projectRoot(ioOf($))
-  const current = await readPane($)
-  if (root === null) return
-  const hits = matchConcepts(prompt, current.concepts)
-  if (hits.length === 0) return
-  const functions = `${$.plugin.root}/skills/nav-graph/functions`
-  const out = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--concepts', hits.join(','),
-    '--graph-path', '.agent/knowledge/graph.json', '--limit', '4', '--format', 'compact'], root)
-  const memories = parseMemories(out)
-  if (memories.length > 0) {
-    await update($, pane, p => ({ ...EMPTY_NAV, ...(p ?? {}), memories, memoriesFor: hits.join(', ') }))
-  }
 }
 
 /** Run the ops registered for a (Python-named) event; null outside a Navigator project. */
@@ -222,6 +193,7 @@ const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
 
 const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the destination
 const LOW_FUEL_TURNS = 5
+const ROUTE_AHEAD = 4 // steps listed past the done fold
 
 /** Where the session is headed: a goal Claude stated in a brief, else the active task. */
 const navState = async ($: EngineInterface) => {
@@ -231,7 +203,7 @@ const navState = async ($: EngineInterface) => {
   const task = p.tasks[p.tasks.length - 1] ?? null
   const dest: NavDestination | null = chosen
     ?? (task ? { title: task.title || task.id, taskId: task.id, source: 'task' } : null)
-  const route: Waypoint[] = buildRoute(p.checklist ?? [], s?.phase ?? null)
+  const route: Waypoint[] = buildRoute(p.steps ?? [], s?.phase ?? null)
   return { p, s, dest, route, here: currentWaypoint(route) }
 }
 
@@ -409,17 +381,10 @@ export const register: Register = on => {
     const ctx = await makeCtx(ioOf($), 'UserPromptSubmit', { prompt: e.text })
     const merged = ctx === null ? null : await runEvent(ctx, EVENT_OPS.UserPromptSubmit ?? [])
     if (merged?.drop != null) return { drop: merged.drop }
-    const memory = await read($, pinned)
-    if (memory !== null) await update($, pinned, () => null)
-    const extra = [
-      ...(merged?.context ? [merged.context] : []),
-      ...(memory === null ? [] : [`Navigator memory pinned by the user for this prompt: ${memory}`]),
-    ]
-    const entered = extra.length === 0
-      ? await next(e)
-      : await next({ ...e, context: [...(e.context ?? []), ...extra] })
+    const entered = merged?.context
+      ? await next({ ...e, context: [...(e.context ?? []), merged.context] })
+      : await next(e)
     if (entered.drop === undefined) {
-      await recallFor($, e.text)
       const { dest, route } = await navState($)
       if (isOffRoute(e.text, destinationWords(dest, route))) {
         await update($, offRoute, prev => ({
@@ -510,11 +475,9 @@ export const register: Register = on => {
     const u = await read($, usage)
     const a = await readActivity($)
     const hist = await readHistory($)
-    const chosen = await read($, pinned)
     const detour = await read($, offRoute)
     const clock = await read($, waypointClock)
     const tasksOpen = await read($, showTasks)
-    const width = Math.max(30, e.props.bodyColumns - 4)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
     const ctxColor = percentColor(percent)
@@ -523,6 +486,7 @@ export const register: Register = on => {
     const avoided = tokensOf(Math.max(0, p.docsTreeBytes - a.docsBytes))
     const isOff = (detour?.count ?? 0) >= OFF_ROUTE_AFTER
     const done = arrived(route)
+    const view = routeView(route, ROUTE_AHEAD)
     const window = u?.rates[0]
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
     const title = (text: string, color: string = PALETTE.accent) => (
@@ -561,8 +525,17 @@ export const register: Register = on => {
         )}
 
         <Box {...panel} flexDirection="column">
-          {title('route')}
-          <Text color={done ? PALETTE.success : PALETTE.label} wrap="truncate-end">{routeLine(route, width)}</Text>
+          {title(here === null ? 'route' : `route · ${route.indexOf(here) + 1}/${route.length}`)}
+          {view.done > 0 ? (
+            <Text color={done ? PALETTE.success : PALETTE.dim} wrap="truncate-end">
+              ✓ {view.done} done{view.last === null || done ? '' : ` · last: ${view.last.label}`}
+            </Text>
+          ) : null}
+          {view.ahead.map(w => (
+            <Text color={w.state === 'current' ? PALETTE.label : PALETTE.dim} bold={w.state === 'current'}
+              wrap="truncate-end">{waypointText(w)}</Text>
+          ))}
+          {view.more > 0 ? <Text color={PALETTE.dim}>+ {view.more} more</Text> : null}
           <Text> </Text>
           {done ? (
             <Text color={PALETTE.success}>arrived · next: pick a destination</Text>
@@ -605,27 +578,6 @@ export const register: Register = on => {
             </Text>
             <Text color={PALETTE.accent}>{sparkline(hist.saved, 14)}</Text>
           </Box>
-        </Box>
-
-        <Box {...panel} flexDirection="column">
-          {title(p.memoriesFor === null ? 'on this route' : `on this route · ${p.memoriesFor}`)}
-          {p.memories.length === 0 && <Text color={PALETTE.dim}>nothing recorded yet</Text>}
-          {p.memories.map((m, i) => (
-            <Box flexDirection="row" columnGap={1}>
-              <Button
-                key={`mem-${i}`}
-                label={chosen === m.text ? '●' : '▸'}
-                plain
-                onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
-              />
-              <Box flexGrow={1} flexShrink={1}>
-                <Text wrap="wrap" color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>
-                  <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
-                  {'  '}{m.text}
-                </Text>
-              </Box>
-            </Box>
-          ))}
         </Box>
 
         {tasksOpen ? (

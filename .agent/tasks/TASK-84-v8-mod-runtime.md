@@ -346,6 +346,18 @@ switch. Band is one quiet dim line: `→ destination · waypoint`, `⚠ off rout
 UI-only change: ops, parity and the Python fallback untouched. 92 kit tests (pure route model +
 pane/band integration). Files: `hooks/mod/ui/route.ts`, register.tsx pane/band.
 
+### Route steps replace "on this route" memories (2026-10-02, dogfood feedback) ✅
+Memories in the pane read as a list of decisions, not a way to the goal, and TASK-84 itself showed
+the generic phases because it has no `- [ ]` checklist. The route panel now lists the steps one
+per line (`✓ 12 done · last: …`, `● 9   Docs …`, `○ 10  Dogfood …`, `+ n more`, title
+`route · 13/14`). Steps come from `parseSteps`: checklist first, else the numbered table rows or
+list items of the first plan section (`## Work breakdown` / `implementation` / `plan` / `steps` /
+`phases`), done by ✅, ~~strike~~, or a `### Step n — … ✅` progress heading (a parenthetical after
+the number, `Step 10 (automated part)`, is partial). Labels drop markup, parentheticals and
+`; details`, capped at 60 for the band. Removed: the memories panel, ▸ pinning, the per-prompt
+concept recall (one `memory_recall.py` spawn per refresh and per prompt); prompt-time memory
+injection by the ops is unchanged. 94 kit tests.
+
 ### Band format (e0b416a)
 `on route: Ship v8 · ● verify 3/5 · next: run headless matrix` · `low fuel: … · compact after this
 waypoint` · `off route: <topic> · /nav to park or go back` · empty otherwise. The next-action

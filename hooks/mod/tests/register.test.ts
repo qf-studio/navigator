@@ -232,7 +232,7 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
     },
   })
 
-test('(f) /nav shows destination, route, fuel (context), saved and memories', async ($, on) => {
+test('(f) /nav shows destination, route steps, fuel (context) and saved', async ($, on) => {
   const { opened } = world(on, {
     [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
   }, 42)
@@ -244,32 +244,23 @@ test('(f) /nav shows destination, route, fuel (context), saved and memories', as
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(texts).toContain('Typed judge, phase 2')
     expect(texts).toContain('TASK-80')
-    expect(texts).toContain('✓ research ── ● impl ── ○ verify ── ○ complete')
+    expect(texts).toContain('route · 2/4')
+    expect(texts).toContain('✓ 1 done · last: research')
+    expect(texts).toContain('● impl')
+    expect(texts).toContain('○ complete')
     expect(texts).not.toContain('you are here')
     expect(texts).toContain('wire the band')
     expect(texts).toContain('fuel (context)')
     expect(texts).toContain('42%')
     expect(texts).toContain('~100.0K tokens')
-    expect(texts).toContain('stop gate over-fires on heredoc Bash')
+    expect(texts).not.toContain('stop gate over-fires on heredoc Bash') // memories left the pane
     expect(texts).not.toContain('TASK-15') // tasks list hidden until t
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(6)
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(4)
     await ui.press({ key: 'tasks' })
     expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('TASK-15')
     await ui.press({ key: 'tasks' })
     await ui.unmount()
   }
-})
-
-test('(g) a pinned memory rides the next prompt once', async ($, on) => {
-  world(on, { [`${AGENT}/.nav-config.json`]: '{}' })
-  await $.command.run(NAV_CMD)
-  const ui = await navPane($, 'terminal')
-  await ui.press({ key: 'mem-0' })
-  const first = await submit($, 'fix the gate')
-  expect(first.context?.some(c => c.includes('stop gate over-fires'))).toBe(true)
-  const second = await submit($, 'and again')
-  expect((second.context ?? []).some(c => c.includes('stop gate over-fires'))).toBe(false)
-  await ui.unmount()
 })
 
 test('(h) phase is sticky across turns and a "Next:" line feeds the route', async ($, on) => {
@@ -315,18 +306,6 @@ test('(j) a committed turn turns the fuel hint into a nudge', async ($, on) => {
   await $.tool.call({ tool: 'Bash', command: 'git commit -m x' } as never)
   await complete($, 'Committed.\n')
   expect(await texts($)).toContain('good moment to compact')
-})
-
-test('(k) memories follow the concepts the prompt names', async ($, on) => {
-  world(on, {
-    [`${AGENT}/.nav-config.json`]: '{}',
-    [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
-  }, 20)
-  await $.command.run(NAV_CMD)
-  await submit($, 'why do the hooks fire twice')
-  const all = await texts($)
-  expect(all).toContain('on this route · hooks')
-  expect(all).toContain('hooks dispatch through one entry point')
 })
 
 test('(l) context forecast projects turns to 70%', async ($, on) => {
@@ -407,5 +386,27 @@ test('(s) a task checklist becomes the route', async ($, on) => {
     [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n',
   }, 20)
   await $.command.run(NAV_CMD)
-  expect(await texts($)).toContain('✓ collect evidence ── ● add surface ── ○ ship')
+  const all = await texts($)
+  expect(all).toContain('route · 2/3')
+  expect(all).toContain('✓ 1 done · last: collect evidence')
+  expect(all).toContain('● add surface')
+  expect(all).toContain('○ ship')
+})
+
+test('(s2) a numbered plan with ✅ progress headings becomes the route', async ($, on) => {
+  world(on, {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: [
+      '# TASK-80', '## Work breakdown', '| # | Step |', '|---|---|',
+      '| 1 | Baseline | ', '| 2 | Port the scorer; keep parity | ', '| 3 | Ship |',
+      '## Progress log', '### Step 1 — baseline ✅',
+    ].join('\n'),
+  }, 20)
+  await $.command.run(NAV_CMD)
+  const all = await texts($)
+  expect(all).toContain('route · 2/3')
+  expect(all).toContain('✓ 1 done · last: Baseline')
+  expect(all).toContain('● 2   Port the scorer')
+  expect(all).not.toContain('keep parity')
+  expect(all).toContain('○ 3   Ship')
 })

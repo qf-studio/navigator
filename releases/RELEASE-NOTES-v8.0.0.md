@@ -34,13 +34,15 @@ session. Nothing to configure.
 Navigator keeps the path short and tells you where you are:
 
 - **destination**: the goal Claude states in a brief, else the active task;
-- **route**: the task's checklist (or research → impl → verify → complete), the current waypoint
-  dotted, the next action and how long you've been on it;
+- **route**: the steps to the destination, listed one per line: the task's checklist, else the
+  numbered steps of its plan section (`## Work breakdown`, `## Implementation plan`, …) with
+  `### Step n — … ✅` progress headings marking them done, else research → impl → verify →
+  complete. Done steps fold into one line; the current step is dotted; the next action and how
+  long you've been on it follow;
 - **off route**: two prompts in a row that share nothing with the destination open a warning
   with **park** (writes a parked task stub), **back**, or **switch**;
 - **fuel (context)**: fill, turns left, and when to compact; **saved**: tokens kept out of
-  context (docs loaded vs the `.agent/` tree, subagent work); memories **on this route**,
-  matched to each prompt (▸ pins one into the next prompt); tasks behind `t`.
+  context (docs loaded vs the `.agent/` tree, subagent work); tasks behind `t`.
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.

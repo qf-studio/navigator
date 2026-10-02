@@ -1,11 +1,19 @@
 // Navigation model for the /nav pane and band: destination, route, off-route detection.
 // Pure: the hooks module reads files and state, these functions decide what to show.
 
-export type Waypoint = { label: string; state: 'done' | 'current' | 'todo' }
+export type Waypoint = { id?: string; label: string; state: 'done' | 'current' | 'todo' }
+export type Step = { id?: string; label: string; done: boolean }
 export type Destination = { title: string; taskId: string | null; source: 'brief' | 'task' }
 
 const PHASES = ['research', 'impl', 'verify', 'complete'] as const
 const CHECK_RE = /^\s*[-*]\s+\[([ xX])\]\s+(.+?)\s*$/
+const PLAN_RE = /^(#{2,3})\s+.*\b(work breakdown|implementation|plan|steps|phases)\b/i
+const HEADING_RE = /^(#{1,6})\s/
+const ROW_RE = /^\|\s*(\d+[a-z]?)\s*\|\s*([^|]+?)\s*\|/i
+const ITEM_RE = /^\s*(\d+)[.)]\s+(.+?)\s*$/
+// `### Step 0 — …✅`, `### Steps 5b + 5c — …✅`; `### Step 10 (automated part) — …✅` is partial.
+const STEP_DONE_RE = /^#{2,4}\s+Steps?\s+([\da-z+,&\s]+?)\s*(\([^)]*\))?\s*[—–-]\s.*✅/i
+const LABEL_MAX = 60
 const GOAL_RE = /^\s*(?:\|\s*)?(?:\*\*)?goal(?:\*\*)?\s*(?:\||:)\s*(?:\*\*)?(.+?)(?:\s*\|)?\s*$/im
 const STOP = new Set([
   'this', 'that', 'these', 'those', 'with', 'from', 'into', 'about', 'after', 'before', 'please',
@@ -22,13 +30,57 @@ export const parseChecklist = (markdown: string): { label: string; done: boolean
     return m?.[2] ? [{ label: m[2].replace(/\*\*/g, ''), done: m[1] !== ' ' }] : []
   })
 
-/** The route: the task's checklist when it has one, else Navigator's own phases. */
-export const buildRoute = (
-  checklist: readonly { label: string; done: boolean }[], phase: string | null,
-): Waypoint[] => {
-  if (checklist.length > 0) {
-    const current = checklist.findIndex(c => !c.done)
-    return checklist.map((c, i) => ({
+/** A plan cell as a waypoint label: no markup, parentheticals or `; details`, capped. */
+const stepLabel = (raw: string): string => {
+  const text = raw.replace(/`|\*\*|~~|✅/g, '').replace(/\s*\([^)]*\)/g, '')
+    .split(';')[0]!.replace(/\s+/g, ' ').trim()
+  return text.length > LABEL_MAX ? `${text.slice(0, LABEL_MAX - 1).trimEnd()}…` : text
+}
+
+/** Lines of the first plan section (`## Work breakdown`, `## Implementation plan`, …). */
+const planSection = (lines: readonly string[]): string[] => {
+  const start = lines.findIndex(l => PLAN_RE.test(l))
+  if (start < 0) return []
+  const level = PLAN_RE.exec(lines[start]!)![1]!.length
+  const rest = lines.slice(start + 1)
+  const end = rest.findIndex(l => (HEADING_RE.exec(l)?.[1]?.length ?? 99) <= level)
+  return end < 0 ? rest : rest.slice(0, end)
+}
+
+/** Step ids a `### Step … ✅` progress heading marks done. */
+const doneIds = (lines: readonly string[]): Set<string> =>
+  new Set(lines.flatMap(line => {
+    const m = STEP_DONE_RE.exec(line)
+    return m?.[1] && !m[2] ? (m[1].match(/\d+[a-z]?/gi) ?? []).map(id => id.toLowerCase()) : []
+  }))
+
+/**
+ * The steps to the destination, from the active task doc: its `- [ ]` checklist when it has one,
+ * else the numbered table rows or list items of its plan section, done when the row says ✅ or
+ * ~~struck~~, or a `### Step n — … ✅` progress heading names it.
+ */
+export const parseSteps = (markdown: string): Step[] => {
+  const checklist = parseChecklist(markdown)
+  if (checklist.length > 0) return checklist
+  const lines = markdown.split('\n')
+  const section = planSection(lines)
+  const matches = (re: RegExp) => section.map(l => re.exec(l)).filter(m => m !== null)
+  const table = matches(ROW_RE)
+  const rows = table.length > 0 ? table : matches(ITEM_RE)
+  const finished = doneIds(lines)
+  return rows.map(([line, id, cell]) => ({
+    id: id!,
+    label: stepLabel(cell!),
+    done: line.includes('✅') || /^~~.*~~$/.test(cell!.trim()) || finished.has(id!.toLowerCase()),
+  }))
+}
+
+/** The route: the task's steps when it has some, else Navigator's own phases. */
+export const buildRoute = (steps: readonly Step[], phase: string | null): Waypoint[] => {
+  if (steps.length > 0) {
+    const current = steps.findIndex(c => !c.done)
+    return steps.map((c, i) => ({
+      ...(c.id === undefined ? {} : { id: c.id }),
       label: c.label,
       state: c.done ? 'done' : i === current ? 'current' : 'todo',
     }))
@@ -46,17 +98,24 @@ export const currentWaypoint = (route: readonly Waypoint[]): Waypoint | null =>
 export const arrived = (route: readonly Waypoint[]): boolean =>
   route.length > 0 && route.every(w => w.state === 'done')
 
-const short = (label: string, max: number): string =>
-  label.length > max ? `${label.slice(0, Math.max(1, max - 1))}…` : label
+export type RouteView = { done: number; last: Waypoint | null; ahead: Waypoint[]; more: number }
 
-/** `✓ research ── ● verify ── ○ docs`, labels shortened until the line fits `width`. */
-export const routeLine = (route: readonly Waypoint[], width: number): string => {
-  const mark = (w: Waypoint) => (w.state === 'done' ? '✓' : w.state === 'current' ? '●' : '○')
-  for (const max of [24, 16, 12, 9, 6, 3]) {
-    const line = route.map(w => `${mark(w)} ${short(w.label, max)}`).join(' ── ')
-    if (line.length <= width) return line
+/** What the pane lists: done steps folded to a count, then at most `max` steps ahead. */
+export const routeView = (route: readonly Waypoint[], max: number): RouteView => {
+  const done = route.filter(w => w.state === 'done')
+  const rest = route.filter(w => w.state !== 'done')
+  return {
+    done: done.length,
+    last: done[done.length - 1] ?? null,
+    ahead: rest.slice(0, max),
+    more: Math.max(0, rest.length - max),
   }
-  return route.map(mark).join(' ')
+}
+
+/** `● 5b  tool.call group`, `○ verify`. */
+export const waypointText = (w: Waypoint): string => {
+  const mark = w.state === 'done' ? '✓' : w.state === 'current' ? '●' : '○'
+  return w.id === undefined ? `${mark} ${w.label}` : `${mark} ${w.id.padEnd(3)} ${w.label}`
 }
 
 /** "Goal: …" from a brief Claude wrote (plain, bold, or a `| Goal | … |` table row). */
