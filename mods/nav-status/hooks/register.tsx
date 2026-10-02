@@ -23,9 +23,6 @@ const SHARED_CONFIG = '.agent/.nav-config.json'
 const LOCAL_CONFIG = '.agent/.nav-config.local.json'
 const NO_READS: NavReads = { total: 0, docs: 0 }
 const EMPTY_NAV: NavPane = { tasks: [], marker: null, memories: [], graph: null }
-const KIND_COLOR: Record<string, string> = {
-  PITFALL: 'red', DECISION: 'blue', PATTERN: 'green', LEARNING: 'cyan',
-}
 
 const status = atom({ plugin: 'nav-status', key: 'status' } as const, null as NavStatus | null)
 const pane = atom({ plugin: 'nav-status', key: 'pane' } as const, null as NavPane | null)
@@ -213,40 +210,43 @@ export const register: Register = on => {
     const width = Math.max(24, e.props.bodyColumns)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
-    const ctxColor = percent === null ? 'gray' : percent < 50 ? 'green' : percent < 70 ? 'yellow' : 'red'
+    const filled = bar(percent, Math.max(10, width - 16))
+    const at = filled.indexOf('░')
+    const [full, empty] = at < 0 ? [filled, ''] : [filled.slice(0, at), filled.slice(at)]
     const phase = s?.phase ? `phase ${s.phase}` : 'phase —'
     const current = p.tasks[p.tasks.length - 1] ?? null
-    const marker = p.marker === null ? 'no marker yet' : `marker ${cut(p.marker, width - 14)}`
+    const marker = p.marker === null ? 'no marker yet' : cut(p.marker, width - 10)
     const rates = u === null ? '' : usageLine(u.rates, u.usd)
     const fanOut = r.total - r.docs >= 5
     const graph = p.graph === null
       ? 'graph not initialized'
-      : `${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
-    const pinHint = chosen === null
-      ? 'press ▸ to pin a memory into your next prompt'
-      : 'pinned: rides your next prompt once'
+      : `graph ${p.graph.nodes} nodes · ${p.graph.edges} edges · ${p.graph.memories} memories`
+    const row = (label: string, value: string) => (
+      <Box flexDirection="row">
+        <Box width={10}><Text dimColor>{label}</Text></Box>
+        <Text wrap="truncate-end">{value}</Text>
+      </Box>
+    )
 
     return (
       <Box flexDirection="column">
-        <Box borderStyle="round" borderColor={ctxColor} paddingX={1} flexDirection="column">
-          <Box flexDirection="row" columnGap={2}>
-            <Text bold color="cyan">{current ?? 'no task in progress'}</Text>
-            <Text dimColor>{phase}</Text>
-          </Box>
-          {s?.next ? <Text wrap="truncate-end">→ {s.next}</Text> : null}
-          <Text>
-            <Text color={ctxColor}>{bar(percent, Math.max(10, width - 16))}</Text> {pct}
-          </Text>
-          <Text dimColor>{percent !== null && percent >= 70 ? 'compact due' : 'compact safe'} · {marker}</Text>
-          {rates ? <Text dimColor>{rates}</Text> : null}
-        </Box>
         <Box flexDirection="row" columnGap={2}>
-          <Text>reads <Text bold>{r.total}</Text><Text dimColor> ({r.docs} docs)</Text></Text>
-          {fanOut ? <Text color="yellow">→ use an Agent</Text> : null}
+          <Text bold>{current ?? 'no task in progress'}</Text>
+          <Text dimColor>{phase}</Text>
         </Box>
-        <Text dimColor>graph {graph}</Text>
+        {s?.next ? <Text wrap="truncate-end">{s.next}</Text> : null}
         <Text> </Text>
-        <Text bold color="magenta">relevant memories</Text>
+        <Box flexDirection="row">
+          <Box width={10}><Text dimColor>context</Text></Box>
+          <Text>{full}<Text dimColor>{empty}</Text> {pct}</Text>
+        </Box>
+        {row('compact', percent !== null && percent >= 70 ? 'due' : 'safe')}
+        {row('marker', marker)}
+        {rates ? row('usage', rates) : null}
+        {row('reads', `${r.total} (${r.docs} docs)${fanOut ? '  use an Agent' : ''}`)}
+        {row('graph', graph.replace(/^graph /, ''))}
+        <Text> </Text>
+        <Text bold>Memories</Text>
         {p.memories.length === 0 && <Text dimColor>none for the open tasks</Text>}
         {p.memories.map((m, i) => (
           <Box flexDirection="row" columnGap={1}>
@@ -256,23 +256,23 @@ export const register: Register = on => {
               plain
               onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))}
             />
-            <Box flexDirection="column">
-              <Text color={KIND_COLOR[m.kind] ?? 'white'} bold>
-                {m.kind}<Text dimColor>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
-              </Text>
-              <Text wrap="wrap" dimColor={chosen !== null && chosen !== m.text}>{m.text}</Text>
-            </Box>
+            <Text wrap="wrap" dimColor={chosen !== null && chosen !== m.text}>
+              <Text bold>{m.kind.toLowerCase()}</Text>
+              {m.percent === null ? '' : ` ${m.percent}%`}  {m.text}
+            </Text>
           </Box>
         ))}
-        <Text dimColor italic>{pinHint}</Text>
+        <Text dimColor>
+          {chosen === null ? '▸ pins a memory into your next prompt' : 'pinned for your next prompt'}
+        </Text>
         <Text> </Text>
-        <Text bold color="magenta">open tasks</Text>
+        <Text bold>Open tasks</Text>
         {p.tasks.length === 0 && <Text dimColor>none marked in progress</Text>}
-        {p.tasks.slice(-5).map(t => (
-          <Text color={t === current ? 'cyan' : undefined} dimColor={t !== current}>
-            {t === current ? '● ' : '○ '}{t}
-          </Text>
-        ))}
+        <Box flexDirection="row" columnGap={2}>
+          {p.tasks.slice(-5).map(t => (
+            <Text bold={t === current} dimColor={t !== current}>{t}</Text>
+          ))}
+        </Box>
         <Text> </Text>
         <Box flexDirection="row" columnGap={3}>
           <Button
