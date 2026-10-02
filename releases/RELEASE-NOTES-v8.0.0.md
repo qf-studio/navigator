@@ -37,7 +37,8 @@ Navigator keeps the path short and tells you where you are:
 - **route**: the steps to the destination, listed one per line: the task's checklist, else the
   numbered steps of its plan section (`## Work breakdown`, `## Implementation plan`, …) with
   `### Step n — … ✅` progress headings marking them done, else research → impl → verify →
-  complete. Done steps fold into one line; the current step is dotted; the next action and how
+  complete. The whole route is listed (passed steps gray, the current one dotted in the accent,
+  the steps ahead light; past 16 lines the early passed steps fold); the next action and how
   long you've been on it follow;
 - **off route**: two prompts in a row that share nothing with the destination open a warning
   with **park** (writes a parked task stub), **back**, or **switch**;

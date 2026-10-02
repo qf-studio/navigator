@@ -357,6 +357,9 @@ the number, `Step 10 (automated part)`, is partial). Labels drop markup, parenth
 `; details`, capped at 60 for the band. Removed: the memories panel, ▸ pinning, the per-prompt
 concept recall (one `memory_recall.py` spawn per refresh and per prompt); prompt-time memory
 injection by the ops is unchanged. 94 kit tests.
+Follow-up: the whole route is listed, not a fold — passed steps gray (`dim`), current in the
+accent and bold, steps ahead light (`label`); routes over 16 lines keep the last passed step and
+fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 
 ### Band format (e0b416a)
 `on route: Ship v8 · ● verify 3/5 · next: run headless matrix` · `low fuel: … · compact after this

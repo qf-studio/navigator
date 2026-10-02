@@ -98,18 +98,17 @@ export const currentWaypoint = (route: readonly Waypoint[]): Waypoint | null =>
 export const arrived = (route: readonly Waypoint[]): boolean =>
   route.length > 0 && route.every(w => w.state === 'done')
 
-export type RouteView = { done: number; last: Waypoint | null; ahead: Waypoint[]; more: number }
+export type RouteView = { earlier: number; shown: Waypoint[]; more: number }
 
-/** What the pane lists: done steps folded to a count, then at most `max` steps ahead. */
+/**
+ * What the pane lists: the whole route when it fits `max` lines; a longer one keeps the last
+ * passed step for context, folds the steps before it into `earlier`, and cuts the tail.
+ */
 export const routeView = (route: readonly Waypoint[], max: number): RouteView => {
-  const done = route.filter(w => w.state === 'done')
-  const rest = route.filter(w => w.state !== 'done')
-  return {
-    done: done.length,
-    last: done[done.length - 1] ?? null,
-    ahead: rest.slice(0, max),
-    more: Math.max(0, rest.length - max),
-  }
+  if (route.length <= max) return { earlier: 0, shown: [...route], more: 0 }
+  const open = route.findIndex(w => w.state !== 'done')
+  const start = Math.min(Math.max(0, (open < 0 ? route.length : open) - 1), route.length - max)
+  return { earlier: start, shown: route.slice(start, start + max), more: route.length - start - max }
 }
 
 /** `● 5b  tool.call group`, `○ verify`. */

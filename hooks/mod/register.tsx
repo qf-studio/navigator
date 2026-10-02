@@ -193,7 +193,9 @@ const MUTATING = ['Edit', 'Write', 'NotebookEdit'] as const
 
 const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the destination
 const LOW_FUEL_TURNS = 5
-const ROUTE_AHEAD = 4 // steps listed past the done fold
+const ROUTE_LINES = 16 // a longer route folds its early passed steps
+// Passed steps gray, the current one in the accent, the steps ahead light.
+const STEP_COLOR = { done: PALETTE.dim, current: PALETTE.accent, todo: PALETTE.label } as const
 
 /** Where the session is headed: a goal Claude stated in a brief, else the active task. */
 const navState = async ($: EngineInterface) => {
@@ -486,7 +488,7 @@ export const register: Register = on => {
     const avoided = tokensOf(Math.max(0, p.docsTreeBytes - a.docsBytes))
     const isOff = (detour?.count ?? 0) >= OFF_ROUTE_AFTER
     const done = arrived(route)
-    const view = routeView(route, ROUTE_AHEAD)
+    const view = routeView(route, ROUTE_LINES)
     const window = u?.rates[0]
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
     const title = (text: string, color: string = PALETTE.accent) => (
@@ -526,14 +528,11 @@ export const register: Register = on => {
 
         <Box {...panel} flexDirection="column">
           {title(here === null ? 'route' : `route · ${route.indexOf(here) + 1}/${route.length}`)}
-          {view.done > 0 ? (
-            <Text color={done ? PALETTE.success : PALETTE.dim} wrap="truncate-end">
-              ✓ {view.done} done{view.last === null || done ? '' : ` · last: ${view.last.label}`}
+          {view.earlier > 0 ? <Text color={PALETTE.dim}>✓ {view.earlier} earlier</Text> : null}
+          {view.shown.map(w => (
+            <Text color={STEP_COLOR[w.state]} bold={w.state === 'current'} wrap="truncate-end">
+              {waypointText(w)}
             </Text>
-          ) : null}
-          {view.ahead.map(w => (
-            <Text color={w.state === 'current' ? PALETTE.label : PALETTE.dim} bold={w.state === 'current'}
-              wrap="truncate-end">{waypointText(w)}</Text>
           ))}
           {view.more > 0 ? <Text color={PALETTE.dim}>+ {view.more} more</Text> : null}
           <Text> </Text>

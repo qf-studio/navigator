@@ -245,7 +245,7 @@ test('(f) /nav shows destination, route steps, fuel (context) and saved', async 
     expect(texts).toContain('Typed judge, phase 2')
     expect(texts).toContain('TASK-80')
     expect(texts).toContain('route · 2/4')
-    expect(texts).toContain('✓ 1 done · last: research')
+    expect(texts).toContain('✓ research')
     expect(texts).toContain('● impl')
     expect(texts).toContain('○ complete')
     expect(texts).not.toContain('you are here')
@@ -388,7 +388,7 @@ test('(s) a task checklist becomes the route', async ($, on) => {
   await $.command.run(NAV_CMD)
   const all = await texts($)
   expect(all).toContain('route · 2/3')
-  expect(all).toContain('✓ 1 done · last: collect evidence')
+  expect(all).toContain('✓ collect evidence')
   expect(all).toContain('● add surface')
   expect(all).toContain('○ ship')
 })
@@ -405,8 +405,14 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   await $.command.run(NAV_CMD)
   const all = await texts($)
   expect(all).toContain('route · 2/3')
-  expect(all).toContain('✓ 1 done · last: Baseline')
+  expect(all).toContain('✓ 1   Baseline')
   expect(all).toContain('● 2   Port the scorer')
   expect(all).not.toContain('keep parity')
   expect(all).toContain('○ 3   Ship')
+  const ui = await navPane($, 'terminal')
+  const colorOf = async (text: string) =>
+    (await ui.findAll({ type: 'Text' })).find(t => t.text.startsWith(text))?.props?.color
+  expect([await colorOf('✓ 1'), await colorOf('● 2'), await colorOf('○ 3')])
+    .toEqual(['#8b949e', '#7eb8da', '#c9d1d9']) // passed gray, current accent, ahead light
+  await ui.unmount()
 })
