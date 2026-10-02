@@ -199,6 +199,9 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
+- **TASK-84** 🚧 — v8 runtime: every op ported to the mod with byte parity (Python stays as
+  fallback), `/nav` pane + band + Pilot theme shipped in the plugin, update notice (TASK-81),
+  v6 shims deleted. Branch `v8`; one v8.0.0 release (`tasks/TASK-84-v8-mod-runtime.md`).
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
   three releases. Plan: real release check + one-line notice in session_start, single
@@ -269,7 +272,19 @@ For shipped scope, query the knowledge graph or browse `CHANGELOG.md` / `release
 
 ---
 
-## Lifecycle Hooks (v7.0.0 dispatcher + ops)
+## Lifecycle Hooks (v8: mod first, v7 dispatcher as fallback)
+
+**v8 (TASK-84)**: every op also exists as TypeScript in the Navigator **mod**
+(`hooks/hooks.json` → `hooks/mod/register.tsx`, Claude Code ≥ 2.1.287). The mod runs the ops
+in-process, announces what it owns in `NAVIGATOR_MOD_OWNS`, and the Python dispatcher below
+skips owned ops (one check in `runtime._dispatch`, fast exit when an event is fully owned).
+Both share `.agent/.nav-runtime-state.json`. Layout: `hooks/mod/{register.tsx, runner.ts,
+owns.ts, ops/, lib/, ui/, tests/}`; `$` never crosses an import (an `Io` port built in
+register.tsx does). Parity: `scripts/gen_mod_data.py` runs the Python ops over generated
+corpora and writes `hooks/mod/tests/fixtures/*.gen.ts`; `make mod-test` asserts byte equality;
+`release_validator.py --verify-mod` gates releases. UI: `/nav` pane, status band, Pilot theme.
+
+The v7 description below still applies to the Python fallback.
 
 Navigator registers ONE hook command per Claude Code event via the plugin manifest (`.claude-plugin/plugin.json`): `python3 hooks/nav_dispatch.py <event>`. The dispatcher loads shared runtime services from `hooks/nav_hook_lib/` (config layering, schema-2 state, sentinels/redaction, budget clamps) and routes each event to the ops registered in `hooks/nav_hook_lib/registry.py`, executing them in phase order (gate → injector → recorder). The nine v6 per-hook scripts were ported byte-parity to `hooks/ops/` in TASK-61 and deleted; `tests/golden/` locks the recorded v6 stdout/exit behavior.
 

@@ -1,5 +1,10 @@
 # hooks/ops — Navigator v7 op modules
 
+> **v8 (TASK-84)**: each op here has a TypeScript twin in `hooks/mod/ops/<name>.ts`, run by the
+> Navigator mod on Claude Code ≥ 2.1.287. When the mod owns an op (`NAVIGATOR_MOD_OWNS`), the
+> dispatcher skips the Python version; it remains the fallback. Changing an op's behavior means
+> changing both, then `python3 scripts/gen_mod_data.py` and `make test-all` (byte parity).
+
 One file per op. The dispatcher (`hooks/nav_dispatch.py` → `nav_hook_lib.runtime.dispatch`)
 routes each hook event through the ordered `OpSpec` list in `nav_hook_lib/registry.py` and
 merges every op's result into exactly ONE JSON output document per event.
