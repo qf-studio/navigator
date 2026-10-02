@@ -49,6 +49,20 @@ prompt once, hotkeys `m` marker / `c` compact / `g` graph health / `r` refresh. 
 in `$.state` atoms and reloads on `classic.SessionStart` (clear/resume/fork), since `/clear`
 resets `$.state` and `session.start` does not fire again. 13 kit tests on both surfaces.
 
+### Pilot design system + custom theme (2026-10-02, commit c07b861)
+
+The pane follows the Pilot dashboard layout (`~/.claude/skills/pilot-design`): three metric
+cards (context gauge + per-turn sparkline, session cost / rate window / phase / graph size,
+reads + per-turn sparkline), then framed `task`, `memories`, `open tasks` panels drawn with
+`╭─ title ──╮` box characters and the muted palette (`hooks/ui.ts`: accent #7eb8da, success
+#7ec699, error #d48a8a, warning #d4a054, border #3d4450, label #c9d1d9, dim #8b949e).
+Claude Code's own chrome (pane fill, user-message bubbles) is theme-driven and not a mod's
+to paint; under `dark-ansi` the terminal palette rendered it beige. Fix: a custom theme
+`themes/pilot.json` (base `dark` + Pilot overrides incl. `userMessageBackground`), shipped
+via `experimental.themes` in the manifest and installed at `~/.claude/themes/pilot.json`;
+select with `/theme` (stored as `custom:pilot`). Gotcha: a local named `h` inside a
+`ui.render` hook shadows the JSX factory (`h is not a function`).
+
 ## Verified
 
 | Check | Result |
