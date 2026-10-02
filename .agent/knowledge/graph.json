@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T08:00:39.615883+00:00",
+  "last_updated": "2026-10-02T10:26:14.584163+00:00",
   "stats": {
-    "total_nodes": 195,
+    "total_nodes": 197,
     "total_edges": 843,
-    "memory_count": 71
+    "memory_count": 72
   },
   "nodes": {
     "tasks": {
@@ -1679,6 +1679,11 @@
         "name": "Handoff",
         "aliases": [],
         "domain": "general"
+      },
+      "state": {
+        "name": "State",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2768,6 +2773,18 @@
         "concepts": [
           "mods",
           "hooks-runtime"
+        ],
+        "created": "2026-10-02",
+        "last_validated": "2026-10-02"
+      },
+      "mem-080": {
+        "type": "pitfall",
+        "summary": "Mods: $.state survives hot reload, so a changed value shape (new field) reaches the new module as the OLD object; a ui.render that dereferences the new field throws, the engine skips the hook and the pane renders empty. Read state through helpers that merge stored values over defaults. The test kit cannot seed stale state: $ has no state noun and state.get is not interceptable by a prepend inline plugin.",
+        "path": "memories/pitfalls/mem-080.md",
+        "confidence": 0.9,
+        "concepts": [
+          "mods",
+          "state"
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
@@ -8587,7 +8604,8 @@
     ],
     "mods": [
       "mem-078",
-      "mem-079"
+      "mem-079",
+      "mem-080"
     ],
     "hooks-runtime": [
       "mem-078",
@@ -8598,6 +8616,9 @@
     ],
     "handoff": [
       "mem-078"
+    ],
+    "state": [
+      "mem-080"
     ]
   }
 }
