@@ -36,7 +36,7 @@ import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
   isLoopback, secondsSinceMidnight, tripQueries,
 } from './ui/trip'
-import { PALETTE, compact, gauge, percentColor, sparkColor, sparkline } from './ui/palette'
+import { PALETTE, areaColors, brailleArea, compact, gauge, isFlat, percentColor } from './ui/palette'
 
 const PLUGIN = 'navigator'
 const PANE = 'nav'
@@ -278,6 +278,9 @@ const LOW_FUEL_TURNS = 5
 const TASK_LABEL = 10 // task card: label column before the text
 const MEMORY_LINES = 3
 const PANE_COLUMNS = 72
+const AREA_ROWS = 2 // braille trend under a card's numbers (grom's stat texture)
+/** Inner text width of a top-row card at a percentage of the pane (frame + padding = 4). */
+const cardInner = (percent: number): number => Math.max(8, Math.floor((PANE_COLUMNS * percent) / 100) - 4)
 
 /** Where the session is headed: a goal Claude stated in a brief, else the active task. */
 const navState = async ($: EngineInterface) => {
@@ -612,6 +615,16 @@ export const register: Register = on => {
     const cacheHit = t?.today.cacheHit ?? t?.week.cacheHit ?? null
     const tally = judgeOpen ? judgeTally(await judgeSection($)) : []
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
+    // A trend is a braille area in a subdued gradient of the card's color; flat ones go dim.
+    const trend = (values: readonly number[], width: number, color: string, tail = '') =>
+      brailleArea(values, width, AREA_ROWS).map((row, i, rows) => (
+        <Text wrap="truncate-end">
+          <Text color={isFlat(values) ? PALETTE.dim : areaColors(color, AREA_ROWS)[i]}>{row}</Text>
+          {i === rows.length - 1 && tail ? <Text color={PALETTE.dim}>{tail}</Text> : null}
+        </Text>
+      ))
+    const ctxInner = cardInner(details ? 31 : 40)
+    const sessionInner = cardInner(details ? 43 : 60)
     const title = (text: string, color: string = PALETTE.accent) => (
       <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
     )
@@ -628,7 +641,7 @@ export const register: Register = on => {
             <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
               {lowFuel ? 'compact due' : a.lastTurnCommitted ? 'good moment to compact' : 'compact safe'}
             </Text>
-            <Text color={sparkColor(hist.ctx)}>{sparkline(hist.ctx, 14)}</Text>
+            {trend(hist.ctx, ctxInner, ctxColor)}
           </Box>
           <Box {...panel} flexDirection="column" width={details ? '43%' : '60%'}>
             {title(details && t !== null ? `session · ${t.source}` : 'session')}
@@ -648,10 +661,7 @@ export const register: Register = on => {
                   <Text color={PALETTE.dim}>  {compact(t.today.tokens)}{cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}</Text>
                 </Text>
                 <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
-                <Text wrap="truncate-end">
-                  <Text color={sparkColor(t.perMinute)}>{sparkline(t.perMinute, 12)}</Text>
-                  <Text color={PALETTE.dim}>  tokens/min</Text>
-                </Text>
+                {trend(t.perMinute, sessionInner - 12, PALETTE.accent, '  tokens/min')}
               </Box>
             )}
           </Box>

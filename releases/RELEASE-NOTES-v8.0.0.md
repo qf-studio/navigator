@@ -34,9 +34,11 @@ session. Nothing to configure.
 What you see by default is a surprise or a press; the readouts wait behind `d`:
 
 - **context**: fill and a bar, one verdict (`compact safe` / `good moment to compact` /
-  `compact due`), and the fill over the last turns as a sparkline;
+  `compact due`), and the fill over the last turns as a braille area in a subdued gradient
+  (grom's stat texture, `github.com/qf-studio/grom`); a flat trend draws dim;
 - **session**: with the Prometheus of `.agent/grafana/` (port 9092) answering, today's cost,
-  tokens and cache hit rate, the 7-day cost and commit count, and tokens/min over two hours;
+  tokens and cache hit rate, the 7-day cost and commit count, and tokens/min over two hours
+  as the same braille area;
   without it, Claude Code's own cost and rate-limit window, the phase, and the graph size.
   Read on `/nav`, on `r`, and after every completed turn, never under Pilot; one probe first,
   so a stopped stack costs one refused connection per turn. The task list, marker and memories

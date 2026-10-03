@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, recordPace } from '../ui/nav'
-import { PALETTE, sparkColor } from '../ui/palette'
+import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
 
 describe('pane model', () => {
   test('eta: legs only until a leg is done, then legs × turns per leg × ms per turn', () => {
@@ -38,5 +38,33 @@ describe('pane model', () => {
   test('fan-out verdict follows the turn in progress, else the last one', () => {
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 0, turnDocs: 0, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('use an Agent')
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 1, turnDocs: 1, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('fan-out ok')
+  })
+})
+
+describe('braille area (grom port)', () => {
+  test('shape: rows × width cells, blank when empty, right-aligned when short', () => {
+    expect(brailleArea([], 4, 2)).toEqual(['    ', '    '])
+    const rows = brailleArea([1, 2, 3, 4, 5, 6, 7, 8], 4, 2)
+    expect(rows).toHaveLength(2)
+    expect(rows.every(r => [...r].length === 4)).toBe(true)
+    expect(rows[1]!.trim().length).toBeGreaterThan(0) // the bottom row always has dots
+    expect(rows[1]!.endsWith('⣿')).toBe(true) // the max on the right fills its cell
+    expect(rows[0]!.startsWith(' ')).toBe(true) // the min on the left stays low
+    expect(brailleArea([5, 5], 4, 1)[0]!.slice(0, 3)).toBe('   ') // two values → right edge only
+  })
+  test('gaps and flat series', () => {
+    expect(brailleArea([NaN, NaN], 1, 1)).toEqual([' '])
+    expect(brailleArea([3, 3, 3, 3], 2, 1)[0]!.trim().length).toBe(2) // flat positive → half height
+  })
+  test('gradient and dim', () => {
+    expect(dimHex('#7eb8da', 0)).toBe('#000000')
+    expect(dimHex('#7eb8da', 1)).toBe('#7eb8da')
+    expect(lerpHex('#000000', '#ffffff', 0.5)).toBe('#7f7f7f')
+    expect(gradient(['#7eb8da'], 1)).toEqual(['#7eb8da'])
+    expect(gradient(['#000000', '#ffffff'], 3)).toEqual(['#000000', '#7f7f7f', '#ffffff'])
+    const c = areaColors('#7eb8da', 2)
+    expect(c).toHaveLength(2)
+    expect(c[0]).toBe(dimHex('#7eb8da', 0.75)) // top brightest
+    expect(c[1]).toBe(dimHex('#7eb8da', 0.35))
   })
 })

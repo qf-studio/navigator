@@ -362,6 +362,17 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### grom-style trends (2026-10-03) ✅
+The user's `grom` (`~/Projects/startups/grot`, Go) renders Prometheus as btop-style terminal
+dashboards; the pane now uses its stat texture. `ui/palette.ts` ports `BrailleArea` (2×4 dots
+per cell, min/max scaled, resampled to the width, right-aligned when short, NaN = gap, flat
+positive = half height), `Gradient`/`LerpHex`/`Dim`, and the Meter's `▓` edge cell. A card's
+trend is `brailleArea(values, innerWidth, 2)` with `areaColors(color, 2)` = gradient from
+`dim(color, .35)` to `dim(color, .75)`, brightest on top; flat series stay `PALETTE.dim`. Context
+uses the fill color, session the accent with `tokens/min` after the bottom row. Tests in
+`tests/nav.test.ts` (shape, alignment, gaps, gradient). 119 kit tests. Not ported: BrailleLine,
+Multi/Stacked, SegmentMeter bar gauges — the next card to want them is a per-model token split.
+
 ### The pane follows the session (2026-10-03, dogfood: "do I hit r all the time?") ✅
 `turn.complete` (main agent) now refreshes the Prometheus trip every turn (~12 local curls, 1 s
 timeout each, one refused probe when the stack is down) and the pane's task list / marker /
