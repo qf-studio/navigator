@@ -362,6 +362,17 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### Next as a press (2026-10-03, dogfood: "boring") ✅
+The pane showed what the user already knew. Now the default screen is a surprise or a press:
+**next** card = destination line, the current leg as a Button (`n` / Enter submits
+`Do the next leg of TASK-84: <label>` as the user's prompt), `→ then` the following leg with an
+ETA (`eta ~25m · 5 legs` = legs left × mean turns per finished leg × mean turn duration;
+`NavPace` records `e.durationMs` per turn and the turn count of each leg left, from the
+waypoint clock), marker. **reads** and **tasks** moved behind `d` (details); context and session
+share the top row 40/60 until then. Hotkeys `m c r d`, `n` while a leg exists, `j` while a judge
+card exists, `p b s` while off route. 112 kit tests (`tests/nav.test.ts` covers eta, effect,
+tally, fan-out).
+
 ### Cards layout (2026-10-02, dogfood: "overloaded, non-informative") ✅
 The route list, saved card, destination card and trip table are gone; the pane is the TASK-83
 card layout again, filled with what the session needs: **context** (fill, one compact verdict,
