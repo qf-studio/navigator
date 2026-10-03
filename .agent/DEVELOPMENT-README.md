@@ -202,7 +202,7 @@ Other threads:
 - **TASK-84** 🚧 — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
   `/nav` cards (context · session, Prometheus-fed when the local stack answers · reads · judge
   verdict after a judged prompt · task with its current and next leg from the checklist or
-  numbered plan · off-route park/back/switch · memories with pinning · open tasks), one-line
+  numbered plan · off-route park/back/switch · memories with pinning · in progress), one-line
   band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
   Branch `v8`, verified headless; next: dogfood → release v8.0.0 (`tasks/TASK-84-v8-mod-runtime.md`,
   section "Resume here").

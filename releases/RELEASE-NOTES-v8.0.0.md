@@ -57,7 +57,7 @@ Three cards on top, then the task, then what surrounds it:
   destination open a warning with **park** (writes a parked task stub), **back**, or **switch**;
 - **memories**: up to three recalled for the open tasks, one line each; `▸` pins one into the
   next prompt;
-- **open tasks**: up to five, the destination marked.
+- **in progress**: up to five tasks marked in progress, the destination marked.
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.

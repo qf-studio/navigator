@@ -255,7 +255,7 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     expect(texts).toContain('→ then    verify')
     expect(texts).not.toContain('research') // passed legs stay out of the pane
     expect(texts).not.toContain('wire the band') // the reply's next line is not the route
-    for (const card of ['context', 'session', 'reads', 'task', 'memories', 'open tasks']) expect(texts).toContain(card)
+    for (const card of ['context', 'session', 'reads', 'task', 'memories', 'in progress']) expect(texts).toContain(card)
     expect(texts.indexOf('context')).toBeLessThan(texts.indexOf('task'))
     expect(texts).toContain('42%')
     expect(texts).toContain('compact safe')

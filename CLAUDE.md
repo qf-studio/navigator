@@ -69,9 +69,8 @@ What the mod adds beyond v7: **`/nav`**, a pane of cards: context (fill, compact
 trend), session (today's cost, tokens, cache and a tokens/min sparkline from the local
 Prometheus of `.agent/grafana/` when it answers, `dashboard.enabled`; else Claude Code's own
 numbers), reads (fan-out verdict), the typed judge's verdict on the last prompt and what
-Navigator did with it, the task with its current and next leg, memories with pinning, open
-tasks, and marker/compact buttons; a status **band**
-above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
+Navigator did with it, the task with its current and next leg, memories with pinning, tasks
+in progress, and marker/compact buttons; a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte
 by generated fixtures (`scripts/gen_mod_data.py`, `make mod-test`).
 

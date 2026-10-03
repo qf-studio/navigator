@@ -725,7 +725,7 @@ export const register: Register = on => {
         </Box>
 
         <Box {...panel} flexDirection="column">
-          {title('open tasks')}
+          {title('in progress')}
           {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
           {[...p.tasks].reverse().slice(0, 5).map(task => (
             <Text wrap="truncate-end">

@@ -371,7 +371,7 @@ share, `use an Agent` at 3 code reads in a turn), **judge** (one-line card after
 prompt: `task · substantial · unclear → brief shown ↑ complexity, task: jev over rule`; `j`
 toggles the per-axis session tally read from the shared state file), **task** (destination,
 `● 9/14` current leg + turns on it, `→ then` next leg, marker), **off route** as before,
-**memories** (3, ▸ pins one into the next prompt — back from the spike), **open tasks** (5).
+**memories** (3, ▸ pins one into the next prompt — back from the spike), **in progress** (5).
 Judge data: `ctx.judgeAxes` is set by prompt_gate and prompt_brief next to `recordAxes` (in
 memory, not state — parity untouched); `judgeView` words the `Judgment` and reads the effect
 off the injected context. Hotkeys `m c r`, `j` while a judge card exists, `p b s` while off
