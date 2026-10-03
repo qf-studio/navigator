@@ -362,6 +362,14 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### The pane follows the session (2026-10-03, dogfood: "do I hit r all the time?") ✅
+`turn.complete` (main agent) now refreshes the Prometheus trip every turn (~12 local curls, 1 s
+timeout each, one refused probe when the stack is down) and the pane's task list / marker /
+memories when the turn wrote under `.agent/` (`activity.docsTouched`, set by the mutating
+tool.call handler, cleared per turn). `classic.SessionStart` with `source: compact` also
+reloads the pane. The exporter's `OTEL_METRIC_EXPORT_INTERVAL` (10 s in this user's shell)
+bounds how fresh a turn's own tokens can be. Tests (t5), (t6). 116 kit tests.
+
 ### Trip queries without increase() (2026-10-03) ✅
 Dogfood showed `$0.00` today with a live session. Two reasons `increase()` lies here: each
 session's counters start at their first push, so the first turn's usage is never an observed

@@ -486,6 +486,33 @@ test('(t) the session card shows Prometheus numbers when the local stack answers
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
 })
 
+test('(t5) the session card follows the turns: Prometheus is read again after each one', async ($, on) => {
+  world(on, {}, 20)
+  const fetches: string[] = []
+  prometheus(on, fetches)
+  await $.command.run(NAV_CMD)
+  expect(fetches).toHaveLength(12)
+  await complete($, 'one turn\n')
+  expect(fetches).toHaveLength(24)
+  await $.turn.complete({
+    answer: 'sub', durationMs: 1, isAborted: false, turnId: 's1', reason: 'answer', agentId: 'sub-1',
+  } as never)
+  expect(fetches).toHaveLength(24) // subagent turns do not
+})
+
+test('(t6) a turn that wrote under .agent/ reloads the task list and marker', async ($, on) => {
+  const files: Files = {}
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).not.toContain('marker')
+  files[`${AGENT}/.context-markers/fresh-2026-10-03.md`] = '# marker'
+  await complete($, 'no write\n')
+  expect(await texts($)).not.toContain('fresh-2026-10-03') // nothing under .agent/ was written
+  await $.tool.call({ tool: 'Write', file_path: `${AGENT}/tasks/TASK-80.md`, content: 'x' } as never)
+  await complete($, 'wrote a doc\n')
+  expect(await texts($)).toContain('marker    fresh-2026-10-03')
+})
+
 test('(t4) a non-loopback prometheus_url is never read', async ($, on) => {
   world(on, {
     [`${AGENT}/.nav-config.json`]: JSON.stringify({ dashboard: { prometheus_url: 'http://prom.example.com:9090' } }),

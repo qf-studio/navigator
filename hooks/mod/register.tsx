@@ -42,7 +42,7 @@ const PLUGIN = 'navigator'
 const PANE = 'nav'
 const NO_ACTIVITY: NavActivity = {
   docsBytes: 0, docsReads: 0, agentRuns: 0, agentTokens: 0, committed: false,
-  lastTurnCommitted: false,
+  lastTurnCommitted: false, docsTouched: false,
 }
 const NO_HISTORY: NavHistory = { ctx: [], saved: [] }
 const EMPTY_NAV: NavPane = {
@@ -362,7 +362,7 @@ export const register: Register = on => {
     // Announce before next(): modules run before settings hooks, so the Python
     // SessionStart child already sees what the mod owns.
     await announce(ioOf($))
-    if (e.source === 'clear' || e.source === 'resume' || e.source === 'fork') await refreshPane($)
+    if (['clear', 'resume', 'fork', 'compact'].includes(e.source)) await refreshPane($)
     const r = await next(e)
     const merged = await runFor($, 'SessionStart', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
@@ -429,6 +429,11 @@ export const register: Register = on => {
   on('tool.call', { tool: MUTATING }, async ($, e, next) => {
     const ran = await next(e)
     if (ran.deny !== undefined || ran.isError === true) return ran
+    const target = String((e as { file_path?: string; notebook_path?: string }).file_path
+      ?? (e as { notebook_path?: string }).notebook_path ?? '')
+    if (target.includes('/.agent/')) {
+      await update($, activity, a => ({ ...NO_ACTIVITY, ...a, docsTouched: true }))
+    }
     const post = await runFor($, 'PostToolUse', toolPayload(e as unknown as Record<string, unknown>))
     return post?.context ? { ...ran, context: [...(ran.context ?? []), post.context] } : ran
   })
@@ -526,9 +531,16 @@ export const register: Register = on => {
     const h = await readHistory($)
     await update($, activity, x => {
       const y = { ...NO_ACTIVITY, ...x }
-      return { ...y, committed: false, lastTurnCommitted: y.committed }
+      return { ...y, committed: false, lastTurnCommitted: y.committed, docsTouched: false }
     })
     await update($, reads, r => endTurnReads({ ...NO_READS, ...r }))
+    // The pane follows the session without `r`: Prometheus every turn (local, ~12 curls, one
+    // refused probe when the stack is down); the task list, marker and memories when a turn
+    // wrote under .agent/ (three subprocess spawns, so not every turn).
+    await Promise.all([
+      refreshTrip($).catch(() => {}),
+      a.docsTouched ? refreshPane($) : Promise.resolve(),
+    ])
     await update($, history, () => ({
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
       saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),

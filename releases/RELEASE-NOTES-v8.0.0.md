@@ -38,8 +38,9 @@ What you see by default is a surprise or a press; the readouts wait behind `d`:
 - **session**: with the Prometheus of `.agent/grafana/` (port 9092) answering, today's cost,
   tokens and cache hit rate, the 7-day cost and commit count, and tokens/min over two hours;
   without it, Claude Code's own cost and rate-limit window, the phase, and the graph size.
-  Read on `/nav` and `r` only, never under Pilot; one probe first, so a stopped stack costs one
-  refused connection. `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points
+  Read on `/nav`, on `r`, and after every completed turn, never under Pilot; one probe first,
+  so a stopped stack costs one refused connection per turn. The task list, marker and memories
+  reload after a turn that wrote under `.agent/`, and after `/clear`, `/resume` or `/compact`. `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points
   it at another Prometheus on this machine (loopback URLs only; read with `curl`, so it works
   with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set and nothing leaves the host);
 - **reads** (behind `d`): Read calls this session and how many were docs; `use an Agent`

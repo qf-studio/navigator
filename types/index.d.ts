@@ -31,6 +31,8 @@ export type NavActivity = {
   agentTokens: number
   committed: boolean
   lastTurnCommitted: boolean
+  /** A Write/Edit under `.agent/` this turn: the task list, marker and memories may have moved. */
+  docsTouched: boolean
 }
 
 export type NavHistory = { ctx: number[]; saved: number[] }
