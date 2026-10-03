@@ -19,7 +19,7 @@ Get Navigator running in your project in 5 minutes.
 
 ```bash
 # Via Claude Code marketplace
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 /plugin install navigator
 ```
 
@@ -382,8 +382,8 @@ Metrics to track:
 
 - **Documentation**: [Full Docs](./README.md)
 - **Configuration**: [Configuration Guide](./CONFIGURATION.md)
-- **Issues**: [GitHub Issues](https://github.com/alekspetrov/navigator/issues)
-- **Community**: [GitHub Discussions](https://github.com/alekspetrov/navigator/discussions)
+- **Issues**: [GitHub Issues](https://github.com/qf-studio/navigator/issues)
+- **Community**: [GitHub Discussions](https://github.com/qf-studio/navigator/discussions)
 
 ---
 

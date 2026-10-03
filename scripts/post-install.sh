@@ -150,6 +150,6 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${GREEN}✅ Post-install complete${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "${BLUE}📚 Documentation:${NC} https://github.com/alekspetrov/navigator-plugin"
-echo -e "${BLUE}💬 Issues:${NC} https://github.com/alekspetrov/navigator-plugin/issues"
+echo -e "${BLUE}📚 Documentation:${NC} https://github.com/qf-studio/navigator"
+echo -e "${BLUE}💬 Issues:${NC} https://github.com/qf-studio/navigator/issues"
 echo ""

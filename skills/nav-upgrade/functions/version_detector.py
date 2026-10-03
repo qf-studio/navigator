@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from urllib import request
 
-REPO = 'alekspetrov/navigator'
+REPO = 'qf-studio/navigator'
 
 
 def get_current_version() -> Optional[str]:
@@ -327,7 +327,7 @@ def detect_version() -> Dict:
 def get_recommendation(current: Optional[str], latest: Optional[str], update_available: bool) -> str:
     """Generate recommendation based on version status."""
     if not current:
-        return "Navigator not detected. Install: /plugin marketplace add alekspetrov/navigator && /plugin install navigator"
+        return "Navigator not detected. Install: /plugin marketplace add qf-studio/navigator && /plugin install navigator"
 
     if not latest:
         return "Could not check for updates. Try again later or check GitHub releases manually."

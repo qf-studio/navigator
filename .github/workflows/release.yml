@@ -174,7 +174,7 @@ jobs:
           echo "✅ Release ${{ steps.version.outputs.tag }} published"
           echo ""
           echo "📦 Marketplace will auto-update from:"
-          echo "   https://github.com/alekspetrov/navigator/releases/tag/${{ steps.version.outputs.tag }}"
+          echo "   https://github.com/qf-studio/navigator/releases/tag/${{ steps.version.outputs.tag }}"
           echo ""
           echo "Users can update with:"
           echo "   /plugin update navigator"

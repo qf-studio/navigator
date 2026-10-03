@@ -6,7 +6,7 @@ canonical step-by-step lives in the [`nav-release` skill](../skills/nav-release/
 
 > **For users**, installation is two commands:
 > ```bash
-> /plugin marketplace add alekspetrov/navigator
+> /plugin marketplace add qf-studio/navigator
 > /plugin install navigator
 > ```
 
@@ -15,10 +15,10 @@ canonical step-by-step lives in the [`nav-release` skill](../skills/nav-release/
 ## The marketplace model
 
 A Claude Code **marketplace is just a Git repository** — no special hosting. Navigator is its own single-plugin
-marketplace at `github.com/alekspetrov/navigator`:
+marketplace at `github.com/qf-studio/navigator`:
 
 ```
-github.com/alekspetrov/navigator
+github.com/qf-studio/navigator
 ├── .claude-plugin/
 │   ├── plugin.json         # the plugin manifest
 │   └── marketplace.json    # the marketplace manifest (lists this plugin)
@@ -28,7 +28,7 @@ github.com/alekspetrov/navigator
 └── releases/               # per-version RELEASE-NOTES-vX.Y.Z.md
 ```
 
-When a user runs `/plugin marketplace add alekspetrov/navigator`, Claude Code reads `marketplace.json`; `/plugin
+When a user runs `/plugin marketplace add qf-studio/navigator`, Claude Code reads `marketplace.json`; `/plugin
 install navigator` then resolves the `navigator` entry and copies the plugin into the user's plugin cache.
 
 ---
@@ -44,8 +44,8 @@ auto-invoke on natural language). The manifest fields that matter:
   "version": "6.16.0",                              // bumped every release (see Versioning)
   "description": "...",
   "author": { "name": "Aleks Petrov", "email": "aleks@quantflow.studio" },
-  "homepage": "https://github.com/alekspetrov/navigator",
-  "repository": "https://github.com/alekspetrov/navigator",  // a string, not an object
+  "homepage": "https://github.com/qf-studio/navigator",
+  "repository": "https://github.com/qf-studio/navigator",  // a string, not an object
   "license": "MIT",
   "keywords": ["context-management", "knowledge-graph", "theory-of-mind", "..."],
   "skills": ["./skills/nav-start", "./skills/nav-graph", "..."],   // one entry per skill dir

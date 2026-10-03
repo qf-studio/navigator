@@ -174,7 +174,7 @@ The Navigator workflow (navigator → tasks → SOPs) won't change. Update frame
 
 ## Repository
 
-Part of [Navigator Plugin](https://github.com/alekspetrov/nav-plugin)
+Part of [Navigator Plugin](https://github.com/qf-studio/navigator)
 
 **More examples**:
 - `examples/python-api/` - FastAPI backend example (coming soon)

@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from urllib import request
 
-REPO = 'alekspetrov/navigator'
+REPO = 'qf-studio/navigator'
 
 
 # --- Version Detection (from nav-upgrade/version_detector.py) ---
@@ -283,7 +283,7 @@ def reinstall_plugin() -> Dict:
         time.sleep(2)
 
         add_result = subprocess.run(
-            ['claude', 'plugin', 'marketplace', 'add', 'alekspetrov/navigator'],
+            ['claude', 'plugin', 'marketplace', 'add', 'qf-studio/navigator'],
             capture_output=True,
             text=True,
             timeout=30

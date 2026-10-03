@@ -5,7 +5,7 @@ import { compareVersions } from '../owns'
 import { getPath } from './config'
 import type { Json } from './types'
 
-export const RELEASES_URL = 'https://api.github.com/repos/alekspetrov/navigator/releases?per_page=10'
+export const RELEASES_URL = 'https://api.github.com/repos/qf-studio/navigator/releases?per_page=10'
 export const UPDATE_COMMAND = 'claude plugin update navigator@navigator-marketplace'
 const SEMVER = /^\d+\.\d+\.\d+$/
 

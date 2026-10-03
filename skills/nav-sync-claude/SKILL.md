@@ -119,7 +119,7 @@ python3 "$PLUGIN_DIR/skills/nav-sync-claude/functions/claude_updater.py" generat
 ```
 
 **Template Source Priority**:
-1. **GitHub** (version-matched): Fetches from `https://raw.githubusercontent.com/alekspetrov/navigator/v{version}/templates/CLAUDE.md`
+1. **GitHub** (version-matched): Fetches from `https://raw.githubusercontent.com/qf-studio/navigator/v{version}/templates/CLAUDE.md`
    - Matches installed plugin version (e.g., v4.3.0)
    - Always up-to-date with release
    - Works with pre-releases

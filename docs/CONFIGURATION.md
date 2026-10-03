@@ -619,8 +619,8 @@ Full PM/chat integration, documentation freshness checks.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/alekspetrov/navigator/issues)
-- **Discussions**: [Community](https://github.com/alekspetrov/navigator/discussions)
+- **Issues**: [GitHub Issues](https://github.com/qf-studio/navigator/issues)
+- **Discussions**: [Community](https://github.com/qf-studio/navigator/discussions)
 - **Examples**: See [examples/](../examples/) for complete configs
 
 ---

@@ -16,7 +16,7 @@
   If you discover a security vulnerability in Navigator, please report it via:
 
   - **GitHub Security Advisories**:
-  https://github.com/alekspetrov/navigator/security/advisories/new (preferred)
+  https://github.com/qf-studio/navigator/security/advisories/new (preferred)
   - **Email**: hello@alekspetrov.com (if you prefer private disclosure)
 
   ### What to Include

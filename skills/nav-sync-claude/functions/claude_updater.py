@@ -194,7 +194,7 @@ def fetch_template_from_github(version: Optional[str] = None) -> Optional[str]:
     if not version.startswith('v'):
         version = f'v{version}'
 
-    github_url = f"https://raw.githubusercontent.com/alekspetrov/navigator/{version}/templates/CLAUDE.md"
+    github_url = f"https://raw.githubusercontent.com/qf-studio/navigator/{version}/templates/CLAUDE.md"
 
     try:
         req = request.Request(github_url)

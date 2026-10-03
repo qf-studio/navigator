@@ -52,7 +52,7 @@ Sessions last 20+ exchanges. Features actually ship.
 ## Install
 
 ```bash
-claude plugin add https://github.com/alekspetrov/navigator
+claude plugin add https://github.com/qf-studio/navigator
 ```
 
 Then in any project:
@@ -83,7 +83,7 @@ Then in any project:
 
 MIT License. Built for developers who ship.
 
-[GitHub →](https://github.com/alekspetrov/navigator)
+[GitHub →](https://github.com/qf-studio/navigator)
 
 ---
 

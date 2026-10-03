@@ -78,7 +78,7 @@ From production usage (2-week experiment):
 
 ```bash
 # Via Claude Code marketplace
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 /plugin install navigator
 ```
 
@@ -274,9 +274,9 @@ Navigator principles work with any context-limited AI (Cursor, GitHub Copilot, e
 
 ## Support
 
-- **Documentation**: [Full Docs](https://github.com/alekspetrov/navigator/blob/main/docs/README.md)
-- **Issues**: [GitHub Issues](https://github.com/alekspetrov/navigator/issues)
-- **Discussions**: [Community](https://github.com/alekspetrov/navigator/discussions)
+- **Documentation**: [Full Docs](https://github.com/qf-studio/navigator/blob/main/docs/README.md)
+- **Issues**: [GitHub Issues](https://github.com/qf-studio/navigator/issues)
+- **Discussions**: [Community](https://github.com/qf-studio/navigator/discussions)
 - **Twitter**: [@alekspetrov](https://twitter.com/alekspetrov)
 
 ---

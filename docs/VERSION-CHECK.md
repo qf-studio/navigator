@@ -32,7 +32,7 @@ current_version=$(grep '"version"' .claude-plugin/plugin.json | cut -d'"' -f4)
 Queries GitHub API:
 
 ```bash
-latest_version=$(curl -s https://api.github.com/repos/alekspetrov/navigator/releases/latest)
+latest_version=$(curl -s https://api.github.com/repos/qf-studio/navigator/releases/latest)
 # Example: "3.4.0"
 ```
 
@@ -69,7 +69,7 @@ version_lt "3.4.0" "3.4.0"  # Returns 1 (false)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 What's new in v3.4.0:
-   See: https://github.com/alekspetrov/navigator/releases/tag/v3.4.0
+   See: https://github.com/qf-studio/navigator/releases/tag/v3.4.0
 
 To update Navigator:
    Say: "Update Navigator"
@@ -84,7 +84,7 @@ To update Navigator:
    Current: v3.4.0
 
 ⚠️  Cannot check for updates (network issue or GitHub API limit)
-   You can manually check: https://github.com/alekspetrov/navigator/releases
+   You can manually check: https://github.com/qf-studio/navigator/releases
 ```
 
 ---
@@ -215,7 +215,7 @@ cat .claude-plugin/plugin.json | python3 -m json.tool
 **Fix**:
 - Check internet connection
 - Wait and retry (API rate limit resets hourly)
-- Manually check: https://github.com/alekspetrov/navigator/releases
+- Manually check: https://github.com/qf-studio/navigator/releases
 
 ### Version comparison wrong
 
@@ -232,7 +232,7 @@ cat .claude-plugin/plugin.json | python3 -m json.tool
 ## Privacy & Security
 
 **What is sent**:
-- HTTP request to `https://api.github.com/repos/alekspetrov/navigator/releases/latest`
+- HTTP request to `https://api.github.com/repos/qf-studio/navigator/releases/latest`
 - No personal data
 - No tracking
 - No telemetry

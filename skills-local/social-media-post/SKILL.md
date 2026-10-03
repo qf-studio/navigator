@@ -303,12 +303,12 @@ Navigator v3.3.1:
 ✅ One-command updates
 
 Install:
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 
 Update:
 "Update Navigator"
 
-https://github.com/alekspetrov/navigator
+https://github.com/qf-studio/navigator
 
 What's your biggest design handoff pain point?
 ```
@@ -344,9 +344,9 @@ No more manual /plugin update, CLAUDE.md editing, or verification.
 ✅ 2 min vs 12 min manual
 ✅ 95% success rate
 
-Install: /plugin marketplace add alekspetrov/navigator
+Install: /plugin marketplace add qf-studio/navigator
 
-https://github.com/alekspetrov/navigator
+https://github.com/qf-studio/navigator
 ```
 
 **Character Count**: 241/280
@@ -472,9 +472,9 @@ Navigator v3.3.1:
 
 "Update Navigator" → Done in 2 min
 
-Install: /plugin marketplace add alekspetrov/navigator
+Install: /plugin marketplace add qf-studio/navigator
 
-https://github.com/alekspetrov/navigator
+https://github.com/qf-studio/navigator
 
 What workflow would you automate next?
 
@@ -556,9 +556,9 @@ All with natural language.
 97% token efficiency.
 18 skills for complete automation.
 
-Try it: /plugin marketplace add alekspetrov/navigator
+Try it: /plugin marketplace add qf-studio/navigator
 
-https://github.com/alekspetrov/navigator
+https://github.com/qf-studio/navigator
 
 (242/280 chars)
 

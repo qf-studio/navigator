@@ -53,7 +53,7 @@ Auto-invoke when user says:
 grep '"version"' .claude-plugin/plugin.json
 
 # Get all releases (including pre-releases)
-curl -s https://api.github.com/repos/alekspetrov/navigator/releases
+curl -s https://api.github.com/repos/qf-studio/navigator/releases
 
 # Parse:
 # - Latest stable (prerelease: false)
@@ -169,11 +169,11 @@ No action needed. Run nav-upgrade again when you're ready to try experimental fe
 /plugin uninstall navigator
 
 # Add marketplace (if not already added)
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 
 # Install specific pre-release version
 # Note: /plugin update only fetches stable, must install specific version
-git clone https://github.com/alekspetrov/navigator.git /tmp/navigator-v4.3.0
+git clone https://github.com/qf-studio/navigator.git /tmp/navigator-v4.3.0
 cd /tmp/navigator-v4.3.0
 git checkout v4.3.0
 
@@ -205,14 +205,14 @@ Troubleshooting:
 1. Restart Claude Code
 2. Try: /plugin uninstall navigator && /plugin install navigator
 3. Check internet connection
-4. Report issue: https://github.com/alekspetrov/navigator/issues
+4. Report issue: https://github.com/qf-studio/navigator/issues
 ```
 
 **Automatic retry** (once):
 If update fails, try uninstall/reinstall automatically:
 ```bash
 /plugin uninstall navigator
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 /plugin install navigator
 ```
 
@@ -478,7 +478,7 @@ Then:
 
 ## Documentation
 
-- Release Notes: https://github.com/alekspetrov/navigator/releases/tag/v3.3.0
+- Release Notes: https://github.com/qf-studio/navigator/releases/tag/v3.3.0
 - Skill Docs: skills/visual-regression/SKILL.md
 - Examples: skills/visual-regression/examples/
 - SOP: .agent/sops/testing/visual-regression-setup.md (created in your project)
@@ -503,7 +503,7 @@ python3 functions/version_detector.py
   "current_version": "3.2.0",
   "latest_version": "3.3.0",
   "update_available": true,
-  "release_url": "https://github.com/alekspetrov/navigator/releases/tag/v3.3.0",
+  "release_url": "https://github.com/qf-studio/navigator/releases/tag/v3.3.0",
   "changes": {
     "new_skills": ["visual-regression"],
     "updated_skills": ["product-design"],

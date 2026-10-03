@@ -73,7 +73,7 @@ nav-plugin/
     {
       "name": "navigator",
       "version": "1.3.0",  // Keep in sync with metadata.version
-      "repository": "https://github.com/alekspetrov/nav-plugin"
+      "repository": "https://github.com/qf-studio/navigator"
     }
   ]
 }
@@ -180,7 +180,7 @@ cat CLAUDE.md
 ## Plugin Distribution
 
 ### GitHub Repository
-- **URL**: https://github.com/alekspetrov/nav-plugin
+- **URL**: https://github.com/qf-studio/navigator
 - **License**: MIT
 - **Public**: Yes
 
@@ -188,7 +188,7 @@ cat CLAUDE.md
 
 ```bash
 # Add marketplace
-/plugin marketplace add alekspetrov/nav-plugin
+/plugin marketplace add qf-studio/navigator
 
 # Install plugin
 /plugin install navigator
@@ -202,7 +202,7 @@ cat CLAUDE.md
 **Problem**: GitHub CDN caches for hours
 
 **Solutions**:
-- Specific commit: `alekspetrov/nav-plugin#789bd4e`
+- Specific commit: `qf-studio/navigator#789bd4e`
 - Local file: `file:///path/to/nav-plugin`
 - Wait 1-2 hours for CDN refresh
 

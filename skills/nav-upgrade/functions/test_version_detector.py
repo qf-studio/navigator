@@ -86,7 +86,7 @@ def _release(tag, prerelease=False, draft=False, body=""):
         "tag_name": tag,
         "prerelease": prerelease,
         "draft": draft,
-        "html_url": f"https://github.com/alekspetrov/navigator/releases/{tag}",
+        "html_url": f"https://github.com/qf-studio/navigator/releases/{tag}",
         "published_at": "2026-07-01T00:00:00Z",
         "body": body,
     }

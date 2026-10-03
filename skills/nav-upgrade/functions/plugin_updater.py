@@ -88,7 +88,7 @@ def reinstall_plugin() -> Dict:
 
         # Add from marketplace
         add_result = subprocess.run(
-            ['claude', 'plugin', 'marketplace', 'add', 'alekspetrov/navigator'],
+            ['claude', 'plugin', 'marketplace', 'add', 'qf-studio/navigator'],
             capture_output=True,
             text=True,
             timeout=30
@@ -194,11 +194,11 @@ Troubleshooting:
 1. Restart Claude Code
 2. Try manual update:
    /plugin uninstall navigator
-   /plugin marketplace add alekspetrov/navigator
+   /plugin marketplace add qf-studio/navigator
    /plugin install navigator
 
 3. Check internet connection
-4. Report issue: https://github.com/alekspetrov/navigator/issues
+4. Report issue: https://github.com/qf-studio/navigator/issues
 """
 
 

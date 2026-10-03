@@ -37,7 +37,7 @@ get_current_version() {
 # Get latest version from GitHub
 get_latest_version() {
     # Try GitHub API first
-    local latest_version=$(curl -s https://api.github.com/repos/alekspetrov/navigator/releases/latest | \
+    local latest_version=$(curl -s https://api.github.com/repos/qf-studio/navigator/releases/latest | \
         grep '"tag_name":' | \
         sed -E 's/.*"v([^"]+)".*/\1/')
 
@@ -47,7 +47,7 @@ get_latest_version() {
     fi
 
     # Fallback: check plugin.json in main branch
-    local fallback_version=$(curl -s https://raw.githubusercontent.com/alekspetrov/navigator/main/.claude-plugin/plugin.json | \
+    local fallback_version=$(curl -s https://raw.githubusercontent.com/qf-studio/navigator/main/.claude-plugin/plugin.json | \
         grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | \
         cut -d'"' -f4)
 
@@ -98,7 +98,7 @@ main() {
 
     if [ $? -ne 0 ] || [ -z "$latest_version" ]; then
         echo -e "${YELLOW}⚠️  Cannot check for updates (network issue or GitHub API limit)${NC}"
-        echo "   You can manually check: https://github.com/alekspetrov/navigator/releases"
+        echo "   You can manually check: https://github.com/qf-studio/navigator/releases"
         return 2
     fi
 
@@ -112,7 +112,7 @@ main() {
         echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo
         echo -e "${BLUE}What's new in v$latest_version:${NC}"
-        echo "   See: https://github.com/alekspetrov/navigator/releases/tag/v$latest_version"
+        echo "   See: https://github.com/qf-studio/navigator/releases/tag/v$latest_version"
         echo
         echo -e "${GREEN}To update Navigator:${NC}"
         echo '   Say: "Update Navigator"'

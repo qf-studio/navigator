@@ -198,7 +198,7 @@ If you customized your project's `CLAUDE.md`, update command references:
 
 You can use the updated template from:
 ```
-https://github.com/alekspetrov/navigator/blob/main/templates/CLAUDE.md
+https://github.com/qf-studio/navigator/blob/main/templates/CLAUDE.md
 ```
 
 ### Step 4: Verify Skills Work
@@ -386,9 +386,9 @@ Time to productivity: -40%
 
 ### Need Help?
 
-- **GitHub Issues**: https://github.com/alekspetrov/navigator/issues
-- **Release Notes**: https://github.com/alekspetrov/navigator/releases/tag/v3.0.0
-- **Documentation**: https://github.com/alekspetrov/navigator
+- **GitHub Issues**: https://github.com/qf-studio/navigator/issues
+- **Release Notes**: https://github.com/qf-studio/navigator/releases/tag/v3.0.0
+- **Documentation**: https://github.com/qf-studio/navigator
 
 ---
 
