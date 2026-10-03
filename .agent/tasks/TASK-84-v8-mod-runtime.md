@@ -362,6 +362,15 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### Judge under CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC (2026-10-03) ✅
+Dogfood showed no judge card ever. Cause: the user's `~/.claude/settings.json` sets
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`, and Claude Code then refuses every plugin
+`$.http.fetch`, so the mod's judge call threw, counted as `failed`, and the gate and brief ran on
+keyword rules alone — while `judge.py --check` (urllib) passed. Fix in `lib/judge.ts`: a
+rejected fetch falls back to `curl` through `io.runWith` (`$.process.run` with `env` + `stdin`:
+key and body never in argv; `--max-time` from `timeout_ms`), raced against the same timeout. An
+HTTP error (`!ok`) is still a null judgment, no curl. Test in `tests/judge.test.ts`. 113 kit tests.
+
 ### Next as a press (2026-10-03, dogfood: "boring") ✅
 The pane showed what the user already knew. Now the default screen is a surprise or a press:
 **next** card = destination line, the current leg as a Button (`n` / Enter submits

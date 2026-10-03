@@ -124,6 +124,10 @@ const ioOf = ($: EngineInterface): Io => ({
     return { ok: r.ok, status: r.status, text: r.text }
   },
   sleep: ms => $.clock.sleep(ms),
+  runWith: async (argv, init) => {
+    const r = await $.process.run(argv, init)
+    return { exitCode: r.exitCode, stdout: r.stdout }
+  },
   disowned: async () => (await read($, disowned)) ?? [],
   noteCrash: async op => {
     await update($, crashes, c => ({ ...(c ?? {}), [op]: ((c ?? {})[op] ?? 0) + 1 }))

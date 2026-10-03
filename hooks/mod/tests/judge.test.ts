@@ -75,6 +75,29 @@ describe('judge client', () => {
     }), 'fix it', S)
     expect(r).toBeNull()
   })
+  test('a refused fetch falls back to curl: key and body via env and stdin, never argv', async () => {
+    const env = async () => ({ TYPESAFE_API_KEY: 'k-9' })
+    const doc = JSON.stringify((JUDGE_CASES[0] as { doc: unknown }).doc)
+    const runs: { argv: readonly string[]; env: Record<string, string>; stdin: string; timeoutMs: number }[] = []
+    const runWith: Io['runWith'] = async (argv, init) => {
+      runs.push({ argv, env: init.env, stdin: init.stdin, timeoutMs: init.timeoutMs })
+      return { exitCode: 0, stdout: doc }
+    }
+    const refused = async () => { throw new Error('nonessential network traffic is disabled for this session') }
+    const r = await call(io({ env, http: refused, runWith }), 'fix it', S)
+    expect(r?.model).toBe('jev-1.13.0')
+    expect(runs).toHaveLength(1)
+    expect(runs[0]?.argv[0]).toBe('sh')
+    expect(runs[0]?.argv.join(' ')).not.toContain('k-9')
+    expect(runs[0]?.env).toEqual({ NAV_JUDGE_KEY: 'k-9', NAV_JUDGE_URL: 'https://api.typesafe.ai/v1/systemone', NAV_JUDGE_TIMEOUT: '2' })
+    expect(JSON.parse(runs[0]?.stdin ?? '{}').state).toBe('fix it')
+    expect(runs[0]?.timeoutMs).toBe(2500)
+    // curl failing too → null; an ok fetch never reaches curl
+    expect(await call(io({ env, http: refused, runWith: async () => ({ exitCode: 7, stdout: '' }) }), 'fix it', S)).toBeNull()
+    let curled = false
+    await call(io({ env, runWith: async () => { curled = true; return { exitCode: 0, stdout: doc } } }), 'fix it', S)
+    expect(curled).toBe(false)
+  })
   test('HTTP error or malformed body → null', async () => {
     const env = async () => ({ TYPESAFE_API_KEY: 'k' })
     expect(await call(io({ env, http: async () => ({ ok: false, status: 500, text: '' }) }), 'x', S)).toBeNull()

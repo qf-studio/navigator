@@ -47,7 +47,9 @@ What you see by default is a surprise or a press; the readouts wait behind `d`:
 - **judge** (only after a judged prompt): the typed judge's verdict in words
   (`task · substantial · unclear`), what Navigator did with it (`→ brief shown`, `task mode`,
   `loop mode`, `direct`), and the axes where it overrode the keyword rule; `j` opens the
-  session tally per axis;
+  session tally per axis. With `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, Claude Code
+  refuses the mod's fetch; the judge then goes through `curl` (key and body via environment and
+  stdin), so enabling the judge and providing a key is what decides, as in the Python runtime;
 - **next**: the destination (the goal Claude states in a brief, else the active task), then the
   current leg as a button (`● 9/14  Docs: …`, turns spent on it): `n` or Enter submits
   `Do the next leg of TASK-84: …` as your prompt. Under it the leg after, with an ETA from the

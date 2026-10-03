@@ -48,6 +48,10 @@ export type Io = {
   http: (url: string, init: { method: string; headers: Record<string, string>; body: string }) =>
     Promise<{ ok: boolean; status: number; text: string }>
   sleep: (ms: number) => Promise<void>
+  /** `$.process.run` with an environment and stdin; secrets travel this way, never in argv. */
+  runWith?: (argv: readonly string[], init: {
+    cwd: string; timeoutMs: number; env: Record<string, string>; stdin: string
+  }) => Promise<{ exitCode: number; stdout: string }>
   disowned: () => Promise<string[]>
   noteCrash: (op: string) => Promise<number>
   disown: (op: string) => Promise<void>
