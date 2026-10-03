@@ -478,8 +478,10 @@ test('(t) the session card shows Prometheus numbers when the local stack answers
   expect(all).toContain('$4.12')
   expect(all).toContain('1.1M · 90% cache')
   expect(all).toContain('7d $31.80 · 41 commits')
-  expect(all).toContain('tokens/min · prometheus :9092')
+  expect(all).toContain('tokens/min')
+  expect(all).not.toContain('prometheus') // the source shows with the details only
   expect(all).not.toContain('phase —') // the Prometheus lines replace the local ones
+  expect(await texts($, true)).toContain('session · prometheus :9092')
   expect(fetches).toHaveLength(12) // probe + range + 10 instant queries
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
 })

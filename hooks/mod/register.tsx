@@ -619,7 +619,7 @@ export const register: Register = on => {
             <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
           </Box>
           <Box {...panel} flexDirection="column" width={details ? '43%' : '60%'}>
-            {title('session')}
+            {title(details && t !== null ? `session · ${t.source}` : 'session')}
             {t === null ? (
               <Box flexDirection="column">
                 <Text wrap="truncate-end">
@@ -638,7 +638,7 @@ export const register: Register = on => {
                 <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
                 <Text wrap="truncate-end">
                   <Text color={PALETTE.accent}>{sparkline(t.perMinute, 12)}</Text>
-                  <Text color={PALETTE.dim}>  tokens/min · {t.source}</Text>
+                  <Text color={PALETTE.dim}>  tokens/min</Text>
                 </Text>
               </Box>
             )}
@@ -688,7 +688,9 @@ export const register: Register = on => {
                   onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
               </Box>
               {clock && clock.turns > 0 ? (
-                <Text color={PALETTE.dim}>{clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} here</Text>
+                <Box marginLeft={2} flexShrink={0}>
+                  <Text color={PALETTE.dim}>{clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} here</Text>
+                </Box>
               ) : null}
             </Box>
           ) : arrived(route) ? (
@@ -699,7 +701,9 @@ export const register: Register = on => {
           {then === null ? null : (
             <Box flexDirection="row" justifyContent="space-between">
               <Text wrap="truncate-end">{dimLabel('→ then')}<Text color={PALETTE.dim}>{then.label}</Text></Text>
-              <Text color={PALETTE.dim}>{etaText(legsLeft, pc)}</Text>
+              <Box marginLeft={2} flexShrink={0}>
+                <Text color={PALETTE.dim}>{etaText(legsLeft, pc)}</Text>
+              </Box>
             </Box>
           )}
           {p.marker === null ? null : (
