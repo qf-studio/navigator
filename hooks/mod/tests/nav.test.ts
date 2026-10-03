@@ -6,7 +6,7 @@ import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor
 describe('pane model', () => {
   test('eta: legs only until a leg is done, then legs × turns per leg × ms per turn', () => {
     expect(etaText(5, NO_PACE)).toBe('5 legs left')
-    expect(etaText(1, NO_PACE)).toBe('1 leg left')
+    expect(etaText(1, NO_PACE)).toBe('last leg')
     let p = recordPace(NO_PACE, 120_000, null)
     expect(etaText(5, p)).toBe('5 legs left')
     p = recordPace(p, 180_000, 2) // the leg just left took 2 turns

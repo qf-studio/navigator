@@ -711,11 +711,12 @@ export const register: Register = on => {
                 <Button key="leg" label={`● ${at}/${route.length}  ${here.label}`} hotkey="n"
                   onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
               </Box>
-              {clock && clock.turns > 0 ? (
-                <Box marginLeft={2} flexShrink={0}>
-                  <Text color={PALETTE.dim}>{clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} here</Text>
-                </Box>
-              ) : null}
+              <Box marginLeft={2} flexShrink={0}>
+                <Text color={PALETTE.dim}>
+                  {[clock && clock.turns > 0 ? `${clock.turns} ${clock.turns === 1 ? 'turn' : 'turns'} here` : null,
+                    then === null ? etaText(legsLeft, pc) : null].filter(Boolean).join(' · ')}
+                </Text>
+              </Box>
             </Box>
           ) : arrived(route) ? (
             <Text color={PALETTE.success}>arrived · pick the next destination</Text>

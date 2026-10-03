@@ -427,6 +427,17 @@ test('(s) a task checklist becomes the route', async ($, on) => {
   await ui.unmount()
 })
 
+test('(s3) on the last leg the leg row carries "last leg" since there is no then', async ($, on) => {
+  world(on, {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [x] collect evidence\n- [x] add surface\n- [ ] ship\n',
+  }, 20)
+  await $.command.run(NAV_CMD)
+  const all = await texts($)
+  expect(all).not.toContain('→ then')
+  expect(all).toContain('last leg')
+})
+
 test('(s2) a numbered plan with ✅ progress headings becomes the route', async ($, on) => {
   world(on, {
     [`${AGENT}/.nav-config.json`]: '{}',
