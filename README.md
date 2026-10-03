@@ -5,7 +5,7 @@
 Sessions that last. AI that learns. Features that ship.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-8.0.1-blue.svg)](https://github.com/alekspetrov/navigator/releases)
+[![Version](https://img.shields.io/badge/version-8.0.1-blue.svg)](https://github.com/qf-studio/navigator/releases)
 
 ---
 
@@ -145,7 +145,7 @@ Efficiency score:                  94/100 (excellent)
 
 ```bash
 # Claude Code plugin marketplace
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 /plugin install navigator
 
 # Restart Claude Code
@@ -217,7 +217,7 @@ Navigator fixes this with context engineering—the same principles Anthropic re
 **92% token savings. 20+ exchange sessions. Verified metrics.**
 
 ```bash
-/plugin marketplace add alekspetrov/navigator
+/plugin marketplace add qf-studio/navigator
 /plugin install navigator
 ```
 
@@ -239,8 +239,8 @@ Then retry. Outdated plugin version.
 
 - [Documentation](.agent/DEVELOPMENT-README.md)
 - [Philosophy](.agent/philosophy/CONTEXT-EFFICIENCY.md)
-- [Release Notes](https://github.com/alekspetrov/navigator/releases)
-- [GitHub](https://github.com/alekspetrov/navigator)
+- [Release Notes](https://github.com/qf-studio/navigator/releases)
+- [GitHub](https://github.com/qf-studio/navigator)
 
 ## License
 
