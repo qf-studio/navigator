@@ -1,6 +1,6 @@
 # TASK-84: Navigator v8 — mod-first runtime with Python fallback
 
-**Status**: 🚧 In Progress — branch `v8` (26 commits, head e0b416a), built and verified headless; awaiting interactive dogfood + go-ahead to release. One v8.0.0 release at parity.
+**Status**: ✅ Released — v8.0.0 tagged 2026-10-03 (`080a5ca`, CI run 37124200503, GitHub release live); docs site synced (nav-pane page, v7→v8 migration); `v8` fast-forwarded into `main`.
 
 ## Context
 

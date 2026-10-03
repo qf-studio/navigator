@@ -199,13 +199,13 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
-- **TASK-84** 🚧 — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
+- **TASK-84** ✅ (v8.0.0, 2026-10-03) — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
   `/nav` cards (context · session, Prometheus-fed when the local stack answers · judge verdict
   after a judged prompt · next = the current leg as a press with an ETA, legs from the checklist
   or numbered plan · off-route park/back/switch · memories with pinning · reads and tasks behind
   `d`), one-line
   band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
-  Branch `v8`, verified headless; next: dogfood → release v8.0.0 (`tasks/TASK-84-v8-mod-runtime.md`,
+  Released as v8.0.0 after a live dogfood day (`tasks/TASK-84-v8-mod-runtime.md`,
   section "Resume here").
 - **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
   (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
