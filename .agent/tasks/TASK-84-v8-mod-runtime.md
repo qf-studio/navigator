@@ -310,6 +310,15 @@ Task doc: `.agent/tasks/TASK-84-v8-mod-runtime.md` created in step 0 from this p
   crash bookkeeping mirrors `_handle_op_crash` (class name only, ISO ts, health file).
 - 82 kit tests, 10 files.
 
+### Step 9 — docs (2026-10-02/03) ✅
+CLAUDE.md "Navigator Runtime (v8)" table and the mod paragraph (cards, next, judge line, band),
+DEVELOPMENT-README TASK-84 entry, release notes `/nav` section — all kept in step with the pane
+through the dogfood changes above.
+
+### Step 10 (dogfood part) — live checklist (2026-10-03) ✅
+See "Resume here" item 2. What dogfood changed: cards layout, next as a press with ETA, judge
+line + curl fallback, trip queries without increase(), auto-refresh, grom trends, band shape.
+
 ### Step 10 (automated part) — verification matrix (2026-10-02) ✅
 | Leg | Ownership seen by Bash | WORKFLOW CHECK | session doc | ADHD block |
 |---|---|---|---|---|
@@ -462,9 +471,14 @@ fallback skips table rows and intent-brief fields.
 1. **Restart the dogfood terminal from the repo root**: `claude --plugin-dir "$PWD"` (plugin name
    `navigator`). Sessions started on the old `mods/nav-status` path keep the deleted spike in
    memory and never reload.
-2. **Dogfood checklist** (done 2026-10-02: cards layout with the `.agent/grafana` stack up
-   and down, judge card after a judged prompt): `/nav` off-route after 2 detour prompts (park/back/switch), band states, `/clear` + `/resume` re-inject once, `/compact` writes a marker,
-   a subagent gets context, a config edit toasts, `/theme` → Pilot, hot reload mid-session.
+2. **Dogfood checklist — done 2026-10-03** ✅: cards layout with the `.agent/grafana` stack up
+   and down; judge card after a judged prompt (incl. a `↑ loop: jev over rule` override); `/nav`
+   off route after 2 foreign prompts, `p` wrote the stub + toasted, `b` cleared; band
+   `nav · TASK-84 · ● 13/14 … · 2 legs left`; `/compact` wrote a marker; `/resume` and `/clear`
+   reloaded the pane with the band intact (exactly-once injection is the headless matrix's
+   finding — the transcript cannot show hook context); a broken `.nav-config.local.json` + a
+   settings nudge toasted; `/theme` → Pilot; hot reload mid-session throughout. Not exercised
+   live: a subagent's context (headless-verified), `low fuel` (needs a 70% context).
 3. **Release (needs explicit go-ahead)**: merge `v8` → `main`; `scripts/bump-version.sh 8.0.0`
    (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md`
    (route view, route steps and trip panel already in it); docs site gets a `/nav` page update; tag `v8.0.0` + push (CI `validate` + `validate-mod` + publish); docs site
