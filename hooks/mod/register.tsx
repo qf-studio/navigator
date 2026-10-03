@@ -655,7 +655,7 @@ export const register: Register = on => {
         )}
 
         <Box {...panel} flexDirection="column">
-          {title('task')}
+          {title('in progress')}
           {dest === null ? (
             <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or mark a task in progress</Text>
           ) : (
@@ -725,7 +725,7 @@ export const register: Register = on => {
         </Box>
 
         <Box {...panel} flexDirection="column">
-          {title('in progress')}
+          {title('tasks')}
           {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
           {[...p.tasks].reverse().slice(0, 5).map(task => (
             <Text wrap="truncate-end">

@@ -48,7 +48,7 @@ Three cards on top, then the task, then what surrounds it:
   (`task · substantial · unclear`), what Navigator did with it (`→ brief shown`, `task mode`,
   `loop mode`, `direct`), and the axes where it overrode the keyword rule; `j` opens the
   session tally per axis;
-- **task**: the destination (the goal Claude states in a brief, else the active task), the
+- **in progress**: the destination (the goal Claude states in a brief, else the active task), the
   current leg numbered (`● 9/14  Docs: …`) with turns spent on it, the next leg, the newest
   marker. Legs come from the task's checklist, else the numbered steps of its plan section
   (`## Work breakdown`, `## Implementation plan`, …) with `### Step n — … ✅` progress headings
@@ -57,7 +57,7 @@ Three cards on top, then the task, then what surrounds it:
   destination open a warning with **park** (writes a parked task stub), **back**, or **switch**;
 - **memories**: up to three recalled for the open tasks, one line each; `▸` pins one into the
   next prompt;
-- **in progress**: up to five tasks marked in progress, the destination marked.
+- **tasks**: up to five marked in progress, the destination marked.
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.
