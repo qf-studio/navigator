@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.0.0] — 2026-10-03 — "In Process"
+
+The hook runtime becomes a Claude Code mod (CC ≥ 2.1.287): all 16 ops in-process at byte
+parity, the Python dispatcher as the fallback (TASK-84). New `/nav` pane of cards — context,
+session (local Prometheus), the typed judge's verdict, the current leg as a press with an ETA,
+memories, off-route park/back/switch — a status band that leads with the leg, a Pilot theme,
+and the read-only update notice (TASK-81). Judge requests fall back to `curl` when Claude Code
+refuses the mod's fetch.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.0.0.md)
+
 ## [v7.9.0] — 2026-10-01 — "Say the Word"
 
 ADHD mode: a per-person reply-shape switch toggled by saying `adhd mode on/off` (TASK-82),

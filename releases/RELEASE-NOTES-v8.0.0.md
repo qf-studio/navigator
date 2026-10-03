@@ -1,6 +1,6 @@
 # Navigator v8.0.0 Release Notes — "In Process"
 
-**Release Date**: TBD (branch `v8`)
+**Release Date**: 2026-10-03
 **Type**: Major — the hook runtime becomes a Claude Code mod (TASK-84); the Python runtime stays as
 the fallback
 
