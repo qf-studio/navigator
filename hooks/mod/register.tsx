@@ -36,7 +36,7 @@ import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
   isLoopback, secondsSinceMidnight, tripQueries,
 } from './ui/trip'
-import { PALETTE, compact, gauge, percentColor, sparkline } from './ui/palette'
+import { PALETTE, compact, gauge, percentColor, sparkColor, sparkline } from './ui/palette'
 
 const PLUGIN = 'navigator'
 const PANE = 'nav'
@@ -616,7 +616,7 @@ export const register: Register = on => {
             <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
               {lowFuel ? 'compact due' : a.lastTurnCommitted ? 'good moment to compact' : 'compact safe'}
             </Text>
-            <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
+            <Text color={sparkColor(hist.ctx)}>{sparkline(hist.ctx, 14)}</Text>
           </Box>
           <Box {...panel} flexDirection="column" width={details ? '43%' : '60%'}>
             {title(details && t !== null ? `session · ${t.source}` : 'session')}
@@ -637,7 +637,7 @@ export const register: Register = on => {
                 </Text>
                 <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
                 <Text wrap="truncate-end">
-                  <Text color={PALETTE.accent}>{sparkline(t.perMinute, 12)}</Text>
+                  <Text color={sparkColor(t.perMinute)}>{sparkline(t.perMinute, 12)}</Text>
                   <Text color={PALETTE.dim}>  tokens/min</Text>
                 </Text>
               </Box>

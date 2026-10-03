@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, recordPace } from '../ui/nav'
+import { PALETTE, sparkColor } from '../ui/palette'
 
 describe('pane model', () => {
   test('eta: legs only until a leg is done, then legs × turns per leg × ms per turn', () => {
@@ -28,6 +29,11 @@ describe('pane model', () => {
     expect(lines[0]).toBe('10 calls · 1 failed · latency 400 ms, max 900 ms')
     expect(lines).toContain('unclear     agreed 2 · overrode 6 · undecided 1 · jev over rule 75%')
     expect(lines).toContain('loop        agreed 9 · overrode 0 · undecided 0 · jev over rule 0%')
+  })
+  test('a flat sparkline is dim; one with movement takes the accent', () => {
+    expect(sparkColor([])).toBe(PALETTE.dim)
+    expect(sparkColor([0, 0, 0])).toBe(PALETTE.dim)
+    expect(sparkColor([5, 5, 6])).toBe(PALETTE.accent)
   })
   test('fan-out verdict follows the turn in progress, else the last one', () => {
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 0, turnDocs: 0, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('use an Agent')

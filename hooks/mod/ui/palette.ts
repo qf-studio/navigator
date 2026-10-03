@@ -30,6 +30,12 @@ export const gauge = (percent: number | null, width: number): string => {
   return '█'.repeat(filled) + '░'.repeat(width - filled)
 }
 
+/** A series with fewer than two distinct values draws as a flat bar; show it dim. */
+export const isFlat = (values: readonly number[]): boolean => new Set(values).size < 2
+
+export const sparkColor = (values: readonly number[]): string =>
+  isFlat(values) ? PALETTE.dim : PALETTE.accent
+
 export const percentColor = (percent: number | null): string =>
   percent === null ? PALETTE.dim
     : percent >= 85 ? PALETTE.error
