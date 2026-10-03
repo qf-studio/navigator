@@ -241,6 +241,7 @@ Then retry. Outdated plugin version.
 - [Philosophy](.agent/philosophy/CONTEXT-EFFICIENCY.md)
 - [Release Notes](https://github.com/qf-studio/navigator/releases)
 - [GitHub](https://github.com/qf-studio/navigator)
+- [QuantFlow Studio](https://quantflow.studio) — the studio behind Navigator and Pilot
 
 ## License
 

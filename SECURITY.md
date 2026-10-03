@@ -17,7 +17,7 @@
 
   - **GitHub Security Advisories**:
   https://github.com/qf-studio/navigator/security/advisories/new (preferred)
-  - **Email**: hello@alekspetrov.com (if you prefer private disclosure)
+  - **Email**: aleks@quantflow.studio (if you prefer private disclosure)
 
   ### What to Include
 

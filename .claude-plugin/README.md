@@ -277,7 +277,7 @@ Navigator principles work with any context-limited AI (Cursor, GitHub Copilot, e
 - **Documentation**: [Full Docs](https://github.com/qf-studio/navigator/blob/main/docs/README.md)
 - **Issues**: [GitHub Issues](https://github.com/qf-studio/navigator/issues)
 - **Discussions**: [Community](https://github.com/qf-studio/navigator/discussions)
-- **Twitter**: [@alekspetrov](https://twitter.com/alekspetrov)
+- **Website**: [quantflow.studio](https://quantflow.studio)
 
 ---
 
