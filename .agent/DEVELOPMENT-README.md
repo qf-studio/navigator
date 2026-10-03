@@ -199,7 +199,7 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
-- **TASK-85** ✅ (2026-10-03, unreleased) — stop_completion over-fired on read-only turns when
+- **TASK-85** ✅ (v8.0.1, 2026-10-03) — stop_completion over-fired on read-only turns when
   two sessions shared a repo: the tree digest now lives per session in `tree.digests` outside the
   session-scoped `completion`; `lsof`/`pgrep`/`curl` (no output flag) join the read-only
   allowlist; the mod also trusts Claude Code's `isReadOnly` on every Bash call of a turn

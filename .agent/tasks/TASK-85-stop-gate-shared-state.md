@@ -1,6 +1,6 @@
 # TASK-85: stop_completion over-fires when two sessions share a repo
 
-**Status**: ✅ Implemented — 2026-10-03 (unreleased; ships with the next patch, v8.0.1)
+**Status**: ✅ Released — v8.0.1, 2026-10-03
 **Origin**: TASK-84 8.1 candidate 1 (mem-077). On 2026-10-03 the gate forced a continuation on
 ~6 read-only turns (lsof, curl, ps, python3 -c) of a session that shared `.agent/` with the
 dogfood terminal.

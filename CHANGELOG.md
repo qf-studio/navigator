@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.0.1] — 2026-10-03
+
+The completion gate no longer forces continuations on read-only turns when two sessions share a
+repo: the tree digest is kept per session outside the session-scoped state; `lsof`, `pgrep` and
+a `curl` that writes no file are read-only; the mod also trusts Claude Code's `isReadOnly` on
+every Bash call of a turn (TASK-85).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.0.1.md)
+
 ## [v8.0.0] — 2026-10-03 — "In Process"
 
 The hook runtime becomes a Claude Code mod (CC ≥ 2.1.287): all 16 ops in-process at byte
