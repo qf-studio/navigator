@@ -11,6 +11,9 @@ import type {
   NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavStatus,
   NavTrip, NavUsage, NavWaypointClock,
 } from '../../types'
+import { personalDir } from './lib/adhd'
+import { redactSecrets } from './lib/judge'
+import { JUDGE_DEFAULTS } from './lib/gen/judge-data.gen'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
 import { surfaceHealth } from './lib/life-health'
@@ -23,8 +26,9 @@ import { announce } from './owns'
 import { runEvent } from './runner'
 import type { Judgment } from './lib/scoring'
 import {
-  NO_PACE, NO_READS, countRead, endTurnReads, etaText, fanOutText, judgeTally, judgeView, latestMarker,
-  parseGraphStats, parseMemories, parseTasks, rateKind, recordPace, tokensOf, turnsTo,
+  JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, countRead, endTurnReads, etaText, fanOutText,
+  judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories, parseTasks, rateKind,
+  recordPace, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
@@ -63,6 +67,8 @@ const trip = atom({ plugin: 'navigator', key: 'trip' } as const, null as NavTrip
 const reads = atom({ plugin: 'navigator', key: 'reads' } as const, NO_READS)
 const judge = atom({ plugin: 'navigator', key: 'judge' } as const, null as NavJudge | null)
 const showJudge = atom({ plugin: 'navigator', key: 'showJudge' } as const, false)
+// The last judged prompts, newest first (TASK-86): the trail behind `j`, labeled with y / x.
+const judgeTrail = atom({ plugin: 'navigator', key: 'judgeTrail' } as const, [] as NavJudge[])
 // `d`: the readouts (reads card, task list) that are not a surprise or a press.
 const showDetails = atom({ plugin: 'navigator', key: 'showDetails' } as const, false)
 const pace = atom({ plugin: 'navigator', key: 'pace' } as const, NO_PACE)
@@ -189,6 +195,27 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   }))
 }
 
+/** TASK-86: `y` / `x` on the latest decision → the personal label file judge_label.py reads. */
+const labelLatest = async ($: EngineInterface, label: 'confirmed' | 'disputed'): Promise<void> => {
+  const io = ioOf($)
+  const latest = await read($, judge)
+  const root = await projectRoot(io)
+  if (latest === null || root === null) return
+  const path = `${personalDir(await io.env())}/${JUDGE_LABELS_FILE}`
+  const raw = await io.read(path).catch(() => null)
+  const project = root.split('/').filter(Boolean).pop() ?? root
+  try {
+    await io.write(path, withLabel(raw, labelEntry(latest, label, project)))
+  } catch {
+    $.ui.toast(`${PLUGIN}: could not write ${path}`)
+    return
+  }
+  const mark = (j: NavJudge | null) => (j !== null && j.at === latest.at ? { ...j, label } : j)
+  await update($, judge, mark)
+  await update($, judgeTrail, trail => (trail ?? []).map(j => mark(j) as NavJudge))
+  $.ui.toast(label === 'confirmed' ? `Labeled as ${latest.verdict}` : 'Marked disputed — label it later with judge_label.py')
+}
+
 /** The `judge` section of the shared runtime state (tallies behind the pane's `j`). */
 const judgeSection = async ($: EngineInterface): Promise<unknown> => {
   const io = ioOf($)
@@ -280,6 +307,7 @@ const OFF_ROUTE_AFTER = 2 // consecutive substantive prompts away from the desti
 const LOW_FUEL_TURNS = 5
 const TASK_LABEL = 10 // task card: label column before the text
 const MEMORY_LINES = 3
+const JUDGE_TRAIL_LINES = 8
 const PANE_COLUMNS = 72
 const AREA_ROWS = 2 // braille trend under a card's numbers (grom's stat texture)
 /** Inner text width of a top-row card at a percentage of the pane (frame + padding = 4). */
@@ -493,7 +521,11 @@ export const register: Register = on => {
     const merged = ctx === null ? null : await runEvent(ctx, EVENT_OPS.UserPromptSubmit ?? [])
     if (merged?.drop != null) return { drop: merged.drop }
     if (ctx !== null) {
-      await update($, judge, () => judgeView(ctx.judgment as Judgment | null | undefined, ctx.judgeAxes, merged?.context ?? null))
+      const text = redactSecrets(Array.from(e.text).slice(0, Number(JUDGE_DEFAULTS.max_state_chars)).join(''))
+      const view = judgeView(ctx.judgment as Judgment | null | undefined, ctx.judgeAxes, merged?.context ?? null,
+        { text, at: await $.clock.now() })
+      await update($, judge, () => view)
+      if (view !== null) await update($, judgeTrail, trail => [view, ...(trail ?? [])].slice(0, JUDGE_TRAIL_MAX))
     }
     const memory = await read($, pinned)
     if (memory !== null) await update($, pinned, () => null)
@@ -612,6 +644,7 @@ export const register: Register = on => {
     const r = { ...NO_READS, ...((await read($, reads)) ?? {}) }
     const j = await read($, judge)
     const judgeOpen = await read($, showJudge)
+    const trail = judgeOpen ? ((await read($, judgeTrail)) ?? []) : []
     const details = await read($, showDetails)
     const pc = { ...NO_PACE, ...((await read($, pace)) ?? {}) }
     const chosen = await read($, pinned)
@@ -705,6 +738,16 @@ export const register: Register = on => {
               <Text color={PALETTE.dim}>{j.model}</Text>
             </Box>
             {tally.map(line => <Text color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
+            {trail.length > 0 ? <Text> </Text> : null}
+            {trail.slice(0, JUDGE_TRAIL_LINES).map((d, i) => (
+              <Text color={i === 0 ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{trailLine(d, PANE_COLUMNS - 4)}</Text>
+            ))}
+            {judgeOpen && j.label === undefined ? (
+              <Box flexDirection="row" columnGap={3} marginTop={1}>
+                <Button key="confirm" label="verdict right" hotkey="y" plain onPress={() => labelLatest($, 'confirmed')} />
+                <Button key="dispute" label="wrong" hotkey="x" plain onPress={() => labelLatest($, 'disputed')} />
+              </Box>
+            ) : null}
           </Box>
         )}
 

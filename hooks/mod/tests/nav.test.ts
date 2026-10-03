@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, recordPace } from '../ui/nav'
+import {
+  NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, labelEntry, labelFromVerdict, recordPace, trailLine,
+  withLabel,
+} from '../ui/nav'
+import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
 
 describe('pane model', () => {
@@ -66,5 +70,43 @@ describe('braille area (grom port)', () => {
     expect(c).toHaveLength(2)
     expect(c[0]).toBe(dimHex('#7eb8da', 0.75)) // top brightest
     expect(c[1]).toBe(dimHex('#7eb8da', 0.35))
+  })
+})
+
+describe('judge trail and labels (TASK-86)', () => {
+  const decision: NavJudge = {
+    verdict: 'task · substantial · unclear', effect: 'brief shown', override: null, model: 'jev-1.13.0',
+    latencyMs: 400, text: 'make the onboarding better\nsecond line', at: Date.UTC(2026, 9, 3, 12, 3),
+  }
+  test('a confirmed verdict becomes a judge_label.py label', () => {
+    expect(labelFromVerdict('task · substantial · unclear')).toEqual({ tier: 'TASK', task: true, ambiguous: true })
+    expect(labelFromVerdict('task · large · clear')).toEqual({ tier: 'TASK', task: true, ambiguous: false })
+    expect(labelFromVerdict('task · small · clear')).toEqual({ tier: 'DIRECT', task: true, ambiguous: false })
+    expect(labelFromVerdict('task · loop · substantial')).toEqual({ tier: 'LOOP', task: true, ambiguous: false })
+    expect(labelFromVerdict('chat')).toEqual({ tier: 'DIRECT', task: false, ambiguous: false })
+    const e = labelEntry(decision, 'confirmed', 'navigator')
+    expect(e).toMatchObject({ text: decision.text, tier: 'TASK', task: true, ambiguous: true, project: 'navigator', source: 'pane', judged: decision.verdict })
+    expect(e.at).toBe('2026-10-03T12:03:00.000Z')
+    expect(labelEntry(decision, 'disputed', 'navigator')).toMatchObject({ tier: null, task: null, ambiguous: null, disputed: true })
+  })
+  test('the label file is created, deduped by prompt text, and survives a malformed file', () => {
+    const first = withLabel(null, labelEntry(decision, 'disputed', 'p'))
+    const doc = JSON.parse(first) as { _doc: string; prompts: { tier: unknown }[] }
+    expect(doc._doc).toContain('judge_label.py')
+    expect(doc.prompts).toHaveLength(1)
+    expect(doc.prompts[0]?.tier).toBeNull()
+    const second = JSON.parse(withLabel(first, labelEntry(decision, 'confirmed', 'p'))) as { prompts: { tier: unknown }[] }
+    expect(second.prompts).toHaveLength(1) // same text: replaced, not appended
+    expect(second.prompts[0]?.tier).toBe('TASK')
+    const other = JSON.parse(withLabel(first, labelEntry({ ...decision, text: 'another' }, 'confirmed', 'p'))) as { prompts: unknown[] }
+    expect(other.prompts).toHaveLength(2)
+    expect(JSON.parse(withLabel('{not json', labelEntry(decision, 'confirmed', 'p'))).prompts).toHaveLength(1)
+  })
+  test('a trail line: time, verdict, effect, the first line of the prompt, the label mark', () => {
+    const line = trailLine(decision, 72)
+    expect(line).toMatch(/^\d\d:\d\d · task · substantial · unclear  "make the onboarding better"$/)
+    expect(trailLine({ ...decision, label: 'confirmed' }, 72)).toContain(' ✓ task')
+    expect(trailLine({ ...decision, label: 'disputed' }, 72)).toContain(' ✗ task')
+    expect([...trailLine({ ...decision, text: 'x'.repeat(200) }, 60)].length).toBeLessThanOrEqual(60)
   })
 })

@@ -14,7 +14,8 @@ across projects. Labels start empty. ``label`` walks the unlabeled items interac
 ``status`` prints counts.
 
 The output file holds real prompts from private projects: it is gitignored and must stay
-local. Only aggregate numbers (scripts/judge_eval.py --fixture <file>) belong in the repo.
+local. The /nav pane writes the same shape to ~/.config/navigator/judge-labels.json (TASK-86):
+``y`` confirms the judge's verdict as the label, ``x`` leaves ``tier`` null for ``label`` here. Only aggregate numbers (scripts/judge_eval.py --fixture <file>) belong in the repo.
 """
 from __future__ import annotations
 

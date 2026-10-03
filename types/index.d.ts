@@ -56,6 +56,23 @@ export type NavJudge = {
   override: string | null
   model: string
   latencyMs: number
+  /** The prompt, secret-redacted and head-capped, and when it was judged (ms). */
+  text: string
+  at: number
+  /** Set from the pane: `y` confirmed the verdict as the label, `x` disputed it. */
+  label?: 'confirmed' | 'disputed'
+}
+/** One entry of the personal label file `scripts/judge_label.py` / `judge_eval.py` read. */
+export type NavJudgeLabel = {
+  text: string
+  tier: 'DIRECT' | 'TASK' | 'LOOP' | null
+  task: boolean | null
+  ambiguous: boolean | null
+  project: string
+  source: 'pane'
+  at: string
+  judged: string
+  disputed?: true
 }
 export type NavDestination = { title: string; taskId: string | null; source: 'brief' | 'task' }
 export type NavOffRoute = { topic: string; prompt: string; count: number }
@@ -89,6 +106,7 @@ declare module 'claude-code' {
       waypointClock: NavWaypointClock | null
       reads: NavReads
       judge: NavJudge | null
+      judgeTrail: NavJudge[]
       showJudge: boolean
       showDetails: boolean
       pace: NavPace

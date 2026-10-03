@@ -570,7 +570,7 @@ const judged = (on: On, files: Files, caseIndex: number) => {
 test('(u) the judge card: verdict in words, the effect, the axes it overrode; j opens the tally', async ($, on) => {
   const files: Files = {}
   judged(on, files, 30) // "make the onboarding better": task, substantial, ambiguous; brief shown
-  world(on, files, 20)
+  const { allWrites } = world(on, files, 20)
   await $.command.run(NAV_CMD)
   expect(await texts($)).not.toContain('judge  ')
   const r = await submit($, 'make the onboarding better')
@@ -586,7 +586,33 @@ test('(u) the judge card: verdict in words, the effect, the axes it overrode; j 
   expect(all).toContain('task        agreed 0 · overrode 1 · undecided 0 · jev over rule 100%')
   expect(all).toContain('complexity  agreed 0 · overrode 1 · undecided 0 · jev over rule 100%')
   expect(all).toContain('unclear     agreed 1 · overrode 0 · undecided 0 · jev over rule 0%')
+  // TASK-86: the trail and the label keys
+  expect(all).toMatch(/\d\d:\d\d · task · substantial · unclear  "make the onboarding better"/)
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toEqual(expect.arrayContaining(['verdict right', 'wrong']))
+  await ui.press({ key: 'confirm' })
+  const written = allWrites.find(w => w.path === `${CFG}/judge-labels.json`)
+  const doc = JSON.parse(written?.text ?? '{}') as { prompts: Record<string, unknown>[] }
+  expect(doc.prompts).toHaveLength(1)
+  expect(doc.prompts[0]).toMatchObject({ text: 'make the onboarding better', tier: 'TASK', task: true, ambiguous: true, project: 'repo', source: 'pane', judged: 'task · substantial · unclear' })
+  all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain(' ✓ task · substantial · unclear  "make the onboarding better"')
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).not.toContain('verdict right') // labeled once
   await ui.unmount()
+})
+
+test('(u3) a disputed verdict lands in the label file with tier null for judge_label.py to label', async ($, on) => {
+  const files: Files = { [`${CFG}/judge-labels.json`]: JSON.stringify({ _doc: 'x', prompts: [{ text: 'older', tier: 'DIRECT', task: false, ambiguous: false }] }) }
+  judged(on, files, 9)
+  const { allWrites } = world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'what does loop mode actually do?')
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'judge' })
+  await ui.press({ key: 'dispute' })
+  await ui.unmount()
+  const doc = JSON.parse(allWrites.find(w => w.path === `${CFG}/judge-labels.json`)?.text ?? '{}') as { prompts: Record<string, unknown>[] }
+  expect(doc.prompts).toHaveLength(2) // the older entry survives
+  expect(doc.prompts[1]).toMatchObject({ text: 'what does loop mode actually do?', tier: null, disputed: true, judged: 'chat' })
 })
 
 test('(u2) a chat prompt reads "chat · direct"; no card without a judgment', async ($, on) => {

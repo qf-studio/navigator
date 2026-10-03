@@ -48,13 +48,13 @@ export const classify = (prompt: string): Toggle | null => {
   return null
 }
 
-/** Same precedence as nav_hook_lib.personal.config_home(). */
-export const personalPath = (env: EnvVars): string => {
-  const home = env.NAVIGATOR_CONFIG_HOME
+/** The personal Navigator config dir; same precedence as nav_hook_lib.personal.config_home(). */
+export const personalDir = (env: EnvVars): string =>
+  env.NAVIGATOR_CONFIG_HOME
     ? env.NAVIGATOR_CONFIG_HOME
     : `${env.XDG_CONFIG_HOME ?? `${env.HOME ?? '~'}/.config`}/navigator`
-  return `${home}/adhd-mode.json`
-}
+
+export const personalPath = (env: EnvVars): string => `${personalDir(env)}/adhd-mode.json`
 
 /** Repo pin (true/false) wins; a personal bool next; else off by default. */
 export const resolve = (pinned: unknown, personal: unknown): Resolved => {

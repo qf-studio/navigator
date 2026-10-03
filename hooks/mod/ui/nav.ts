@@ -1,6 +1,6 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavJudge, NavMemory, NavPace, NavRate, NavReads, NavTask } from '../../../types'
+import type { NavGraph, NavJudge, NavJudgeLabel, NavMemory, NavPace, NavRate, NavReads, NavTask } from '../../../types'
 import type { Judgment } from '../lib/scoring'
 
 const TASK_ID_RE = /(TASK-\d+)/
@@ -138,7 +138,7 @@ export const judgeEffect = (context: string | null): string => {
  */
 export const judgeView = (
   j: Judgment | null | undefined, axes: Record<string, string> | undefined, context: string | null,
-  unclearAt = 0.5,
+  prompt: { text: string; at: number }, unclearAt = 0.5,
 ): NavJudge | null => {
   if (j == null) return null
   const task = j.taskVerdict()
@@ -157,7 +157,51 @@ export const judgeView = (
     override: overrode.length === 0 ? null : `↑ ${overrode.join(', ')}: jev over rule`,
     model: j.model,
     latencyMs: j.latencyMs,
+    text: prompt.text,
+    at: prompt.at,
   }
+}
+
+export const JUDGE_TRAIL_MAX = 20
+export const JUDGE_LABELS_FILE = 'judge-labels.json'
+const LABEL_DOC = 'Prompts labeled from the /nav pane (TASK-86). tier DIRECT|TASK|LOOP, task bool, '
+  + 'ambiguous bool; a disputed verdict has tier null for judge_label.py to label. Private, never commit.'
+
+/** The label a confirmed verdict stands for, in the shape scripts/judge_label.py writes. */
+export const labelFromVerdict = (verdict: string): { tier: 'DIRECT' | 'TASK' | 'LOOP'; task: boolean; ambiguous: boolean } => {
+  const words = new Set(verdict.split(' · '))
+  if (words.has('loop')) return { tier: 'LOOP', task: true, ambiguous: words.has('unclear') }
+  if (words.has('chat')) return { tier: 'DIRECT', task: false, ambiguous: false }
+  const substantial = words.has('substantial') || words.has('large')
+  return { tier: substantial ? 'TASK' : 'DIRECT', task: true, ambiguous: words.has('unclear') }
+}
+
+export const labelEntry = (j: NavJudge, label: 'confirmed' | 'disputed', project: string): NavJudgeLabel => {
+  const base = { text: j.text, project, source: 'pane' as const, at: new Date(j.at).toISOString(), judged: j.verdict }
+  if (label === 'disputed') return { ...base, tier: null, task: null, ambiguous: null, disputed: true }
+  return { ...base, ...labelFromVerdict(j.verdict) }
+}
+
+/** The label file with `entry` added, replacing an earlier entry for the same prompt text. */
+export const withLabel = (raw: string | null, entry: NavJudgeLabel): string => {
+  let doc: { _doc: string; prompts: NavJudgeLabel[] } = { _doc: LABEL_DOC, prompts: [] }
+  if (raw !== null) {
+    try {
+      const parsed = JSON.parse(raw) as { prompts?: unknown }
+      if (Array.isArray(parsed.prompts)) doc = { _doc: LABEL_DOC, prompts: parsed.prompts as NavJudgeLabel[] }
+    } catch {
+      doc = { _doc: LABEL_DOC, prompts: [] }
+    }
+  }
+  doc.prompts = [...doc.prompts.filter(p => p.text !== entry.text), entry]
+  return `${JSON.stringify(doc, null, 1)}\n`
+}
+
+/** `12:03 ✓ task · substantial · unclear  "make the onboarding better"`, cut to the width. */
+export const trailLine = (j: NavJudge, width: number): string => {
+  const mark = j.label === 'confirmed' ? '✓' : j.label === 'disputed' ? '✗' : '·'
+  const head = j.text.split('\n')[0]?.trim() ?? ''
+  return cut(`${clockOf(new Date(j.at).toISOString()) ?? '--:--'} ${mark} ${j.verdict}  "${head}"`, width)
 }
 
 type AxisRow = { agreed?: unknown; overridden?: unknown; undecided?: unknown }
