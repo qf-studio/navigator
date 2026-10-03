@@ -1,6 +1,6 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavJudge, NavMemory, NavRate, NavReads, NavTask } from '../../../types'
+import type { NavGraph, NavJudge, NavMemory, NavPace, NavRate, NavReads, NavTask } from '../../../types'
 import type { Judgment } from '../lib/scoring'
 
 const TASK_ID_RE = /(TASK-\d+)/
@@ -179,4 +179,30 @@ export const judgeTally = (section: unknown): string[] => {
     return [`${(AXIS_WORD[axis] ?? axis).padEnd(11)} agreed ${agreed} · overrode ${overridden} · undecided ${n(row.undecided)}${share}`]
   })
   return [head, ...rows]
+}
+
+export const NO_PACE: NavPace = { legTurns: [], turnMs: [] }
+const PACE_WINDOW = 32
+
+const mean = (xs: readonly number[]): number | null =>
+  xs.length === 0 ? null : xs.reduce((a, b) => a + b, 0) / xs.length
+
+/** A turn ran `ms`; if the leg changed, the one just left took `turnsOnLeg` turns. */
+export const recordPace = (p: NavPace, ms: number, turnsOnLeg: number | null): NavPace => ({
+  legTurns: turnsOnLeg === null ? p.legTurns : [...p.legTurns, turnsOnLeg].slice(-PACE_WINDOW),
+  turnMs: ms > 0 ? [...p.turnMs, ms].slice(-PACE_WINDOW) : p.turnMs,
+})
+
+const minutes = (ms: number): string => {
+  const m = Math.max(1, Math.round(ms / 60_000))
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`
+}
+
+/** `eta ~25m · 5 legs` at the pace so far; `5 legs` before any leg is done. */
+export const etaText = (legsLeft: number, pace: NavPace): string => {
+  const legs = `${legsLeft} ${legsLeft === 1 ? 'leg' : 'legs'}`
+  const turnsPerLeg = mean(pace.legTurns)
+  const msPerTurn = mean(pace.turnMs)
+  if (legsLeft <= 0 || turnsPerLeg === null || msPerTurn === null) return legs
+  return `eta ~${minutes(legsLeft * turnsPerLeg * msPerTurn)} · ${legs}`
 }

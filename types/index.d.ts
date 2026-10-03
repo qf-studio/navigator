@@ -55,6 +55,8 @@ export type NavJudge = {
 export type NavDestination = { title: string; taskId: string | null; source: 'brief' | 'task' }
 export type NavOffRoute = { topic: string; prompt: string; count: number }
 export type NavWaypointClock = { label: string; turns: number }
+/** Pace for the ETA: turns each completed leg took, and how long recent turns ran. */
+export type NavPace = { legTurns: number[]; turnMs: number[] }
 export type NavTripSpan = {
   usd: number
   tokens: number
@@ -83,6 +85,8 @@ declare module 'claude-code' {
       reads: NavReads
       judge: NavJudge | null
       showJudge: boolean
+      showDetails: boolean
+      pace: NavPace
       pinned: string | null
       crashes: Record<string, number>
       trip: NavTrip | null

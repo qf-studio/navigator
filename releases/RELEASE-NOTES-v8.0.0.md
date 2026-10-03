@@ -31,7 +31,7 @@ session. Nothing to configure.
 
 ### `/nav`: one screen, cards
 
-Three cards on top, then the task, then what surrounds it:
+What you see by default is a surprise or a press; the readouts wait behind `d`:
 
 - **context**: fill and a bar, one verdict (`compact safe` / `good moment to compact` /
   `compact due`), and the fill over the last turns as a sparkline;
@@ -42,22 +42,24 @@ Three cards on top, then the task, then what surrounds it:
   refused connection. `dashboard.enabled: false` turns it off; `dashboard.prometheus_url` points
   it at another Prometheus on this machine (loopback URLs only; read with `curl`, so it works
   with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set and nothing leaves the host);
-- **reads**: Read calls this session and how many were docs; `use an Agent` when a turn read
-  three or more code files;
+- **reads** (behind `d`): Read calls this session and how many were docs; `use an Agent`
+  when a turn read three or more code files;
 - **judge** (only after a judged prompt): the typed judge's verdict in words
   (`task · substantial · unclear`), what Navigator did with it (`→ brief shown`, `task mode`,
   `loop mode`, `direct`), and the axes where it overrode the keyword rule; `j` opens the
   session tally per axis;
-- **in progress**: the destination (the goal Claude states in a brief, else the active task), the
-  current leg numbered (`● 9/14  Docs: …`) with turns spent on it, the next leg, the newest
-  marker. Legs come from the task's checklist, else the numbered steps of its plan section
+- **next**: the destination (the goal Claude states in a brief, else the active task), then the
+  current leg as a button (`● 9/14  Docs: …`, turns spent on it): `n` or Enter submits
+  `Do the next leg of TASK-84: …` as your prompt. Under it the leg after, with an ETA from the
+  pace so far (turns per finished leg × seconds per turn × legs left), and the newest marker.
+  Legs come from the task's checklist, else the numbered steps of its plan section
   (`## Work breakdown`, `## Implementation plan`, …) with `### Step n — … ✅` progress headings
   marking them done, else research → impl → verify → complete;
 - **off route** (only while drifting): two prompts in a row that share nothing with the
   destination open a warning with **park** (writes a parked task stub), **back**, or **switch**;
 - **memories**: up to three recalled for the open tasks, one line each; `▸` pins one into the
   next prompt;
-- **tasks**: up to five marked in progress, the destination marked.
+- **tasks** (behind `d`): up to five marked in progress, the destination marked.
 - A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
   `low fuel: …`, `off route: …`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.

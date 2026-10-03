@@ -19,6 +19,7 @@ type EnvSet = { name: string; value?: string }
 // The world beneath the plugin: an in-memory FS, a fixed cwd, a fixed usage.
 const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   const allWrites: Write[] = []
+  const submitted: string[] = [] // what reached the engine's prompt.submit
   // Only writes to the personal switch; the runtime state file is saved every event.
   const writes: Write[] = []
   const envSets: EnvSet[] = []
@@ -56,7 +57,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
     envSets.push({ name: e.name, value: e.value })
     return { value: undefined }
   })
-  on('prompt.submit', (_$, e) => ({ text: e.text, context: e.context }))
+  on('prompt.submit', (_$, e) => { submitted.push(e.text); return { text: e.text, context: e.context } })
   on('tool.call', (_$, e) => ({ result: {}, text: e.tool === 'Read' ? 'x'.repeat(8000) : 'ok' }))
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
@@ -98,7 +99,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
             : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
     } }
   })
-  return { writes, allWrites, envSets, opened }
+  return { writes, allWrites, envSets, opened, submitted }
 }
 
 const submit = ($: Engine, text: string) =>
@@ -251,21 +252,28 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     const ui = await navPane($, surface)
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(texts).toContain('TASK-80   Typed judge, phase 2')
-    expect(texts).toContain('● 2/4     impl') // the current leg, numbered
     expect(texts).toContain('→ then    verify')
+    expect(texts).toContain('3 legs') // impl, verify, complete; no leg finished yet: no eta
     expect(texts).not.toContain('research') // passed legs stay out of the pane
     expect(texts).not.toContain('wire the band') // the reply's next line is not the route
-    for (const card of ['context', 'session', 'reads', 'in progress', 'memories', 'tasks']) expect(texts).toContain(card)
-    expect(texts.indexOf('context')).toBeLessThan(texts.indexOf('in progress'))
+    for (const card of ['context', 'session', 'next', 'memories']) expect(texts).toContain(card)
+    expect(texts.indexOf('context')).toBeLessThan(texts.indexOf('next'))
     expect(texts).toContain('42%')
     expect(texts).toContain('compact safe')
     expect(texts).toContain('phase IMPL')
     expect(texts).toContain('graph 195 nodes')
-    expect(texts).toContain('0  0 docs')
     expect(texts).toContain('stop gate over-fires on heredoc Bash') // memories for the open tasks
-    expect(texts).toContain('○ TASK-15  Marketing plan')
     expect(texts).not.toContain('judge  ') // nothing judged yet: no card, no key
-    expect(await ui.findAll({ type: 'Button' })).toHaveLength(5) // 2 memories + m c r
+    expect(texts).not.toContain('docs') // reads and the task list wait behind d
+    expect(texts).not.toContain('TASK-15')
+    const buttons = (await ui.findAll({ type: 'Button' })).map(b => b.text)
+    expect(buttons).toContain('● 2/4  impl') // the current leg is the press
+    expect(buttons).toHaveLength(7) // leg + 2 memories + m c r d
+    await ui.press({ key: 'details' })
+    const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+    expect(more).toContain('0  0 docs')
+    expect(more).toContain('○ TASK-15  Marketing plan')
+    await ui.press({ key: 'details' }) // state persists into the next surface's pass
     await ui.unmount()
   }
 })
@@ -273,16 +281,29 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
 test('(h) phase is sticky across turns and the leg clock counts turns', async ($, on) => {
   world(on, {}, 10)
   await $.command.run(NAV_CMD)
+  await complete($, 'Phase: RESEARCH\n')
   await complete($, 'Phase: IMPL\n')
   await complete($, 'Removed the marker.\n\nNext: run the mod tests.\n')
   const all = await texts($)
-  expect(all).toContain('● 2/4     impl')
   expect(all).toContain('1 turn here')
+  expect(all).toContain('eta ~1m · 3 legs') // research took 1 turn of 1 ms: pace known, floored to a minute
 })
 
-const texts = async ($: Engine) => {
+test('(h2) n submits the current leg as the prompt', async ($, on) => {
+  const { submitted } = world(on, {}, 10)
+  await $.command.run(NAV_CMD)
+  await complete($, 'Phase: IMPL\n')
   const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'leg' })
+  await ui.unmount()
+  expect(submitted).toEqual(['Do the next leg of TASK-80: impl'])
+})
+
+const texts = async ($: Engine, details = false) => {
+  const ui = await navPane($, 'terminal')
+  if (details) await ui.press({ key: 'details' })
   const all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  if (details) await ui.press({ key: 'details' })
   await ui.unmount()
   return all
 }
@@ -299,17 +320,17 @@ test('(i) reads card: doc and code reads counted, three code reads in a turn say
     },
   } as never)
   await complete($, 'Next: commit it\n')
-  let all = await texts($)
+  let all = await texts($, true)
   expect(all).toContain('1  1 docs')
   expect(all).toContain('fan-out ok')
   for (const f of ['a.py', 'b.py', 'c.py']) await $.tool.call({ tool: 'Read', file_path: `${CWD}/${f}` } as never)
-  all = await texts($)
+  all = await texts($, true)
   expect(all).toContain('4  1 docs')
   expect(all).toContain('use an Agent')
   await complete($, 'ok\n') // the verdict is the last turn's until a new read lands
-  expect(await texts($)).toContain('use an Agent')
+  expect(await texts($, true)).toContain('use an Agent')
   await $.tool.call({ tool: 'Read', file_path: `${AGENT}/system/x.md` } as never)
-  expect(await texts($)).toContain('fan-out ok')
+  expect(await texts($, true)).toContain('fan-out ok')
 })
 
 test('(j) a committed turn turns the fuel hint into a nudge', async ($, on) => {
@@ -399,9 +420,11 @@ test('(s) a task checklist becomes the route', async ($, on) => {
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('● 2/3     add surface')
   expect(all).toContain('→ then    ship')
   expect(all).not.toContain('collect evidence')
+  const ui = await navPane($, 'terminal')
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3  add surface')
+  await ui.unmount()
 })
 
 test('(s2) a numbered plan with ✅ progress headings becomes the route', async ($, on) => {
@@ -415,10 +438,12 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('● 2/3     Port the scorer')
   expect(all).not.toContain('keep parity')
   expect(all).toContain('→ then    Ship')
   expect(all).not.toContain('Baseline')
+  const ui = await navPane($, 'terminal')
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3  Port the scorer')
+  await ui.unmount()
 })
 
 // Prometheus of .agent/grafana/docker-compose.yml behind `curl` (the panel never uses

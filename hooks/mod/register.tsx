@@ -8,8 +8,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type {
-  NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPane, NavReads, NavStatus, NavTrip,
-  NavUsage, NavWaypointClock,
+  NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavStatus,
+  NavTrip, NavUsage, NavWaypointClock,
 } from '../../types'
 import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
@@ -23,8 +23,8 @@ import { announce } from './owns'
 import { runEvent } from './runner'
 import type { Judgment } from './lib/scoring'
 import {
-  NO_READS, countRead, endTurnReads, fanOutText, judgeTally, judgeView, latestMarker, parseGraphStats,
-  parseMemories, parseTasks, rateKind, tokensOf, turnsTo,
+  NO_PACE, NO_READS, countRead, endTurnReads, etaText, fanOutText, judgeTally, judgeView, latestMarker,
+  parseGraphStats, parseMemories, parseTasks, rateKind, recordPace, tokensOf, turnsTo,
 } from './ui/nav'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
@@ -63,6 +63,9 @@ const trip = atom({ plugin: 'navigator', key: 'trip' } as const, null as NavTrip
 const reads = atom({ plugin: 'navigator', key: 'reads' } as const, NO_READS)
 const judge = atom({ plugin: 'navigator', key: 'judge' } as const, null as NavJudge | null)
 const showJudge = atom({ plugin: 'navigator', key: 'showJudge' } as const, false)
+// `d`: the readouts (reads card, task list) that are not a surprise or a press.
+const showDetails = atom({ plugin: 'navigator', key: 'showDetails' } as const, false)
+const pace = atom({ plugin: 'navigator', key: 'pace' } as const, NO_PACE)
 // A memory the user pinned in the pane; rides the next prompt as context, then clears.
 const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
 
@@ -530,6 +533,9 @@ export const register: Register = on => {
     if (goal !== null) await update($, destination, (): NavDestination => ({ title: goal, taskId: null, source: 'brief' }))
     const { here } = await navState($)
     const label = here?.label ?? null
+    const before = await read($, waypointClock)
+    const left = before !== null && before.label !== label ? before.turns + 1 : null
+    await update($, pace, prev => recordPace({ ...NO_PACE, ...prev }, e.durationMs, left))
     await update($, waypointClock, prev => (label === null ? null
       : prev?.label === label ? { label, turns: prev.turns + 1 } : { label, turns: 0 }))
     return next(e)
@@ -572,6 +578,8 @@ export const register: Register = on => {
     const r = { ...NO_READS, ...((await read($, reads)) ?? {}) }
     const j = await read($, judge)
     const judgeOpen = await read($, showJudge)
+    const details = await read($, showDetails)
+    const pc = { ...NO_PACE, ...((await read($, pace)) ?? {}) }
     const chosen = await read($, pinned)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
@@ -581,6 +589,9 @@ export const register: Register = on => {
     const isOff = (detour?.count ?? 0) >= OFF_ROUTE_AFTER
     const at = here === null ? 0 : route.indexOf(here) + 1
     const then = here === null ? null : route.slice(at).find(w => w.state === 'todo') ?? null
+    const legsLeft = route.filter(w => w.state !== 'done').length
+    const legPrompt = here === null ? null
+      : `Do the next leg${dest?.taskId ? ` of ${dest.taskId}` : ''}: ${here.label}`
     const window = u?.rates[0]
     const cacheHit = t?.today.cacheHit ?? t?.week.cacheHit ?? null
     const tally = judgeOpen ? judgeTally(await judgeSection($)) : []
@@ -593,7 +604,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row">
-          <Box {...panel} flexDirection="column" width="31%">
+          <Box {...panel} flexDirection="column" width={details ? '31%' : '40%'}>
             {title('context')}
             <Text wrap="truncate-end">
               <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
@@ -603,7 +614,7 @@ export const register: Register = on => {
             </Text>
             <Text color={PALETTE.accent}>{sparkline(hist.ctx, 14)}</Text>
           </Box>
-          <Box {...panel} flexDirection="column" width="43%">
+          <Box {...panel} flexDirection="column" width={details ? '43%' : '60%'}>
             {title('session')}
             {t === null ? (
               <Box flexDirection="column">
@@ -628,15 +639,17 @@ export const register: Register = on => {
               </Box>
             )}
           </Box>
-          <Box {...panel} flexDirection="column" width="26%">
-            {title('reads')}
-            <Text wrap="truncate-end">
-              <Text color={PALETTE.accent} bold>{r.total}</Text>
-              <Text color={PALETTE.dim}>  {r.docs} docs</Text>
-            </Text>
-            <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
-            <Text> </Text>
-          </Box>
+          {details ? (
+            <Box {...panel} flexDirection="column" width="26%">
+              {title('reads')}
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.accent} bold>{r.total}</Text>
+                <Text color={PALETTE.dim}>  {r.docs} docs</Text>
+              </Text>
+              <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
+              <Text> </Text>
+            </Box>
+          ) : null}
         </Box>
 
         {j === null ? null : (
@@ -655,7 +668,7 @@ export const register: Register = on => {
         )}
 
         <Box {...panel} flexDirection="column">
-          {title('in progress')}
+          {title('next')}
           {dest === null ? (
             <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or mark a task in progress</Text>
           ) : (
@@ -664,12 +677,12 @@ export const register: Register = on => {
               <Text color={PALETTE.label}>{dest.title}</Text>
             </Text>
           )}
-          {here !== null ? (
+          {here !== null && legPrompt !== null ? (
             <Box flexDirection="row" justifyContent="space-between">
-              <Text wrap="truncate-end">
-                <Text color={PALETTE.accent}>{`● ${at}/${route.length}`.padEnd(TASK_LABEL)}</Text>
-                <Text color={PALETTE.label} bold>{here.label}</Text>
-              </Text>
+              <Box flexDirection="row">
+                <Button key="leg" label={`● ${at}/${route.length}  ${here.label}`} hotkey="n"
+                  onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
+              </Box>
               {clock && clock.turns > 0 ? (
                 <Text color={PALETTE.dim}>{clock.turns} {clock.turns === 1 ? 'turn' : 'turns'} here</Text>
               ) : null}
@@ -680,7 +693,10 @@ export const register: Register = on => {
             <Text wrap="truncate-end">{dimLabel('→ next')}<Text color={PALETTE.label}>{s.next}</Text></Text>
           ) : null}
           {then === null ? null : (
-            <Text wrap="truncate-end">{dimLabel('→ then')}<Text color={PALETTE.dim}>{then.label}</Text></Text>
+            <Box flexDirection="row" justifyContent="space-between">
+              <Text wrap="truncate-end">{dimLabel('→ then')}<Text color={PALETTE.dim}>{then.label}</Text></Text>
+              <Text color={PALETTE.dim}>{etaText(legsLeft, pc)}</Text>
+            </Box>
           )}
           {p.marker === null ? null : (
             <Text wrap="truncate-end">{dimLabel('marker')}<Text color={PALETTE.dim}>{p.marker}</Text></Text>
@@ -724,17 +740,19 @@ export const register: Register = on => {
           </Text>
         </Box>
 
-        <Box {...panel} flexDirection="column">
-          {title('tasks')}
-          {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
-          {[...p.tasks].reverse().slice(0, 5).map(task => (
-            <Text wrap="truncate-end">
-              <Text color={task.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{task.id === dest?.taskId ? '● ' : '○ '}</Text>
-              <Text color={task.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{task.id}</Text>
-              <Text color={PALETTE.dim}>{task.title ? `  ${task.title}` : ''}</Text>
-            </Text>
-          ))}
-        </Box>
+        {details ? (
+          <Box {...panel} flexDirection="column">
+            {title('tasks')}
+            {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
+            {[...p.tasks].reverse().slice(0, 5).map(task => (
+              <Text wrap="truncate-end">
+                <Text color={task.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{task.id === dest?.taskId ? '● ' : '○ '}</Text>
+                <Text color={task.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{task.id}</Text>
+                <Text color={PALETTE.dim}>{task.title ? `  ${task.title}` : ''}</Text>
+              </Text>
+            ))}
+          </Box>
+        ) : null}
 
         <Box flexDirection="row" columnGap={2} paddingX={1}>
           <Button key="marker" label="marker" hotkey="m" plain
@@ -743,6 +761,8 @@ export const register: Register = on => {
           <Button key="compact" label="compact" hotkey="c" plain onPress={() => $.session.compact()} />
           <Text color={PALETTE.dim}>·</Text>
           <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
+          <Text color={PALETTE.dim}>·</Text>
+          <Button key="details" label="details" hotkey="d" plain onPress={() => update($, showDetails, v => !v)} />
           {j === null ? null : <Text color={PALETTE.dim}>·</Text>}
           {j === null ? null : (
             <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
