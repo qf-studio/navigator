@@ -65,8 +65,9 @@ What you see by default is a surprise or a press; the readouts wait behind `d`:
 - **memories**: up to three recalled for the open tasks, one line each; `▸` pins one into the
   next prompt;
 - **tasks** (behind `d`): up to five marked in progress, the destination marked.
-- A one-line **band** above the prompt: `on route: Ship v8 · ● verify 3/5 · next: …`,
-  `low fuel: …`, `off route: …`, or nothing.
+- A one-line **band** above the prompt that leads with the leg:
+  `nav · TASK-84 · ● 3/5 verify · 3 legs left`, `low fuel 72% · compact after this leg · …`,
+  `off route: … · /nav to park or go back`, or nothing.
 - A **Pilot** custom theme (`/theme` → Pilot) shipped through the plugin manifest.
 
 ### Truthful update notice (TASK-81)

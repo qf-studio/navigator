@@ -183,32 +183,40 @@ export const parkedTaskDoc = (
 ].join('\n')
 
 export type BandState = {
-  destination: string | null
+  /** The task id, else the brief's goal: the short name of where the session is headed. */
+  label: string | null
   waypoint: string | null
   /** 1-based position of the current waypoint and the route length. */
   position: number
   total: number
-  next: string | null
   offRoute: string | null
   lowFuel: boolean
+  ctxPercent: number | null
+}
+
+export const legsLeftText = (position: number, total: number): string | null => {
+  if (total <= 0 || position <= 0) return null
+  const left = total - position + 1
+  return left <= 1 ? 'last leg' : `${left} legs left`
 }
 
 /**
- * One quiet line, `<state>: <what>`, or '' when there is nothing worth showing:
- *   on route: Ship v8 · ● verify 3/5 · next: run headless matrix
- *   low fuel: Ship v8 · ● verify 3/5 · compact after this waypoint
+ * One quiet line that leads with the leg, or '' when there is nothing worth showing:
+ *   nav · TASK-84 · ● 3/5 verify · 3 legs left
+ *   low fuel 72% · compact after this leg · TASK-84 · ● 3/5 verify
  *   off route: Threads feedback · /nav to park or go back
- *   no route: say what you're building, or /nav → t to pick a task
  */
 export const bandText = (s: BandState, width: number): string => {
-  const at = s.waypoint === null ? null
-    : `● ${s.waypoint}${s.total > 0 && s.position > 0 ? ` ${s.position}/${s.total}` : ''}`
-  const head = [s.destination, at].filter((x): x is string => Boolean(x)).join(' · ')
+  const leg = s.waypoint === null ? null
+    : `● ${s.total > 0 && s.position > 0 ? `${s.position}/${s.total} ` : ''}${s.waypoint}`
+  const route = [s.label, leg, leg === null ? null : legsLeftText(s.position, s.total)]
+    .filter((x): x is string => Boolean(x)).join(' · ')
+  const fuel = s.ctxPercent === null ? 'low fuel' : `low fuel ${Math.round(s.ctxPercent)}%`
   let line: string
   if (s.offRoute !== null) line = `off route: ${s.offRoute} · /nav to park or go back`
-  else if (head && s.lowFuel) line = `low fuel: ${head} · compact after this waypoint`
-  else if (head) line = `on route: ${head}${s.next ? ` · next: ${s.next}` : ''}`
-  else if (s.lowFuel) line = 'low fuel: compact soon'
+  else if (route && s.lowFuel) line = `${fuel} · compact after this leg · ${route}`
+  else if (route) line = `nav · ${route}`
+  else if (s.lowFuel) line = `${fuel} · compact soon`
   else line = ''
   return line.length > width ? `${line.slice(0, Math.max(0, width - 1))}…` : line
 }

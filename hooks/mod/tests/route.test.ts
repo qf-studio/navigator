@@ -88,12 +88,14 @@ describe('route model', () => {
     expect(isOffRoute('anything at all here goes', new Set())).toBe(false)
   })
   test('band follows "<state>: <what>" in every state', () => {
-    const base = { destination: 'Ship v8', waypoint: 'verify', position: 3, total: 5, next: 'run headless matrix', offRoute: null, lowFuel: false }
-    expect(bandText(base, 120)).toBe('on route: Ship v8 · ● verify 3/5 · next: run headless matrix')
-    expect(bandText({ ...base, lowFuel: true }, 120)).toBe('low fuel: Ship v8 · ● verify 3/5 · compact after this waypoint')
+    const base = { label: 'TASK-84', waypoint: 'verify', position: 3, total: 5, offRoute: null, lowFuel: false, ctxPercent: 42 }
+    expect(bandText(base, 120)).toBe('nav · TASK-84 · ● 3/5 verify · 3 legs left')
+    expect(bandText({ ...base, position: 5 }, 120)).toBe('nav · TASK-84 · ● 5/5 verify · last leg')
+    expect(bandText({ ...base, lowFuel: true, ctxPercent: 72 }, 120)).toBe('low fuel 72% · compact after this leg · TASK-84 · ● 3/5 verify · 3 legs left')
     expect(bandText({ ...base, offRoute: 'threads feedback' }, 120)).toBe('off route: threads feedback · /nav to park or go back')
-    expect(bandText({ ...base, destination: null, waypoint: null, next: null }, 120)).toBe('')
-    expect(bandText(base, 20)).toBe('on route: Ship v8 ·…')
+    expect(bandText({ ...base, label: null, waypoint: null }, 120)).toBe('')
+    expect(bandText({ ...base, label: null, waypoint: null, lowFuel: true, ctxPercent: null }, 120)).toBe('low fuel · compact soon')
+    expect(bandText(base, 20)).toBe('nav · TASK-84 · ● 3…')
   })
   test('next task number', () => {
     expect(nextTaskNumber(['TASK-84-x.md', 'TASK-9.md', 'README.md'])).toBe(85)

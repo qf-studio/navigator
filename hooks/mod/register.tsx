@@ -568,13 +568,13 @@ export const register: Register = on => {
     const percent = s?.ctxPercent ?? null
     const at = here === null ? 0 : route.indexOf(here) + 1
     const text = bandText({
-      destination: dest?.title ?? null,
+      label: dest === null ? null : dest.taskId ?? dest.title,
       waypoint: here?.label ?? null,
       position: at,
       total: route.length,
-      next: s?.next ?? null,
       offRoute: (detour?.count ?? 0) >= OFF_ROUTE_AFTER ? (detour?.topic ?? 'a detour') : null,
       lowFuel: (percent !== null && percent >= 70) || (left !== null && left <= LOW_FUEL_TURNS),
+      ctxPercent: percent,
     }, e.props.bodyColumns)
     if (!text) return next(e)
     const { Box, Text } = $.ui.resolve(e)

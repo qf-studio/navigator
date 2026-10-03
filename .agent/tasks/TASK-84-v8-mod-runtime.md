@@ -362,6 +362,13 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### Band leads with the leg (2026-10-03, dogfood: "no idea what I'm looking at") ✅
+The band opened with the destination title and cut the leg off at the terminal edge, and its
+`next:` echoed the reply's first line. Now: `nav · TASK-84 · ● 13/14 Docs: … · 2 legs left`
+(task id or brief goal as the label, the leg numbered, legs left or `last leg`); `low fuel 72% ·
+compact after this leg · …`; off route unchanged. `BandState` lost `destination`/`next`, gained
+`label`/`ctxPercent`; `legsLeftText` is shared with the pane's ETA wording.
+
 ### grom-style trends (2026-10-03) ✅
 The user's `grom` (`~/Projects/startups/grot`, Go) renders Prometheus as btop-style terminal
 dashboards; the pane now uses its stat texture. `ui/palette.ts` ports `BrailleArea` (2×4 dots
