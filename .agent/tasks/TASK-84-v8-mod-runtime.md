@@ -468,22 +468,12 @@ fallback skips table rows and intent-brief fields.
 
 ## ▶ Resume here (next session)
 
-1. **Restart the dogfood terminal from the repo root**: `claude --plugin-dir "$PWD"` (plugin name
-   `navigator`). Sessions started on the old `mods/nav-status` path keep the deleted spike in
-   memory and never reload.
-2. **Dogfood checklist — done 2026-10-03** ✅: cards layout with the `.agent/grafana` stack up
-   and down; judge card after a judged prompt (incl. a `↑ loop: jev over rule` override); `/nav`
-   off route after 2 foreign prompts, `p` wrote the stub + toasted, `b` cleared; band
-   `nav · TASK-84 · ● 13/14 … · 2 legs left`; `/compact` wrote a marker; `/resume` and `/clear`
-   reloaded the pane with the band intact (exactly-once injection is the headless matrix's
-   finding — the transcript cannot show hook context); a broken `.nav-config.local.json` + a
-   settings nudge toasted; `/theme` → Pilot; hot reload mid-session throughout. Not exercised
-   live: a subagent's context (headless-verified), `low fuel` (needs a 70% context).
-3. **Release (needs explicit go-ahead)**: merge `v8` → `main`; `scripts/bump-version.sh 8.0.0`
-   (regenerates mod data); CHANGELOG entry; set the date in `releases/RELEASE-NOTES-v8.0.0.md`
-   (route view, route steps and trip panel already in it); docs site gets a `/nav` page update; tag `v8.0.0` + push (CI `validate` + `validate-mod` + publish); docs site
-   sync + `vercel --prod` from the site dir (no git remote).
-4. **8.1 candidates**: isReadOnly mutation tracking in stop_completion (mem-077 over-fire),
+1–3 done: dogfood 2026-10-03, released as **v8.0.0** the same day (tag on `main`, CI
+37124200503, docs site synced). Dogfood terminal: `claude --plugin-dir "$PWD"` from the repo
+root, or the installed plugin after `claude plugin update navigator@navigator-marketplace`.
+
+4. **8.1 candidates** (pick one; a new TASK doc each): isReadOnly mutation tracking in
+   stop_completion (mem-077 over-fire — fired on ~6 read-only turns on 2026-10-03),
    prefer `last_assistant_message` in stop_state, band reason when Navigator intervenes, shell-level
    fast-exit guard (~38 ms Python spawn per owned event), `$.model.classify` judge experiment,
    the band's `next` echoes the first line of Claude's last reply (the next-action fallback
