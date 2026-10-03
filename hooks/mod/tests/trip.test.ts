@@ -14,11 +14,13 @@ const matrix = (values: number[]) => JSON.stringify({
 })
 
 describe('trip dashboard model', () => {
-  test('queries: one per metric and span, increase over the span, by type where split', () => {
+  test('queries: one per metric and span, max in the window minus the last sample before it, by type where split', () => {
     const q = tripQueries(3600)
-    expect(q['today.usd']).toBe('sum(increase(claude_code_cost_usage_total[3600s]))')
-    expect(q['week.tokens']).toBe('sum by (type) (increase(claude_code_token_usage_total[7d]))')
-    expect(q['week.lines']).toBe('sum by (type) (increase(claude_code_lines_of_code_count_total[7d]))')
+    const w = (m: string, r: string) =>
+      `(max_over_time(${m}[${r}]) - last_over_time(${m}[1d] offset ${r})) or max_over_time(${m}[${r}])`
+    expect(q['today.usd']).toBe(`sum (${w('claude_code_cost_usage_total', '3600s')})`)
+    expect(q['week.tokens']).toBe(`sum by (type) (${w('claude_code_token_usage_total', '7d')})`)
+    expect(q['week.lines']).toBe(`sum by (type) (${w('claude_code_lines_of_code_count_total', '7d')})`)
     expect(Object.keys(q)).toHaveLength(10)
     expect(tripQueries(0)['today.usd']).toContain('[60s]') // just after midnight: a 1-minute floor
   })

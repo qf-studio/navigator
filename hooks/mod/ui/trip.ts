@@ -7,13 +7,20 @@ import { compact } from './palette'
 export type Trip = { today: TripSpan; week: TripSpan; perMinute: number[] }
 export type TripResults = Record<string, Record<string, number> | null>
 
-const METRICS = {
-  usd: 'sum(increase(claude_code_cost_usage_total[R]))',
-  tokens: 'sum by (type) (increase(claude_code_token_usage_total[R]))',
-  commits: 'sum(increase(claude_code_commit_count_total[R]))',
-  lines: 'sum by (type) (increase(claude_code_lines_of_code_count_total[R]))',
-  active: 'sum(increase(claude_code_active_time_total[R]))',
-} as const
+// Not increase(): each session's counters start at their first push, so the first turn's
+// usage is never an observed rise, and a laptop asleep across the window edge leaves live
+// series without a sample there, which `offset` then misses. Per series: the max in the window
+// minus the last sample before it (looking back a day), or the whole max when there is none.
+const windowed = (metric: string, range: string, by = ''): string =>
+  `sum${by} ((max_over_time(${metric}[${range}]) - last_over_time(${metric}[1d] offset ${range}))`
+  + ` or max_over_time(${metric}[${range}]))`
+const METRICS: Record<string, (range: string) => string> = {
+  usd: r => windowed('claude_code_cost_usage_total', r),
+  tokens: r => windowed('claude_code_token_usage_total', r, ' by (type)'),
+  commits: r => windowed('claude_code_commit_count_total', r),
+  lines: r => windowed('claude_code_lines_of_code_count_total', r, ' by (type)'),
+  active: r => windowed('claude_code_active_time_total', r),
+}
 
 /** Tokens per minute over the last two hours, one point per 7.5 minutes. */
 export const PER_MINUTE = 'sum(rate(claude_code_token_usage_total[5m])) * 60'
@@ -29,7 +36,7 @@ export const isLoopback = (url: string): boolean => LOOPBACK_RE.test(url)
 export const tripQueries = (sinceMidnightSec: number): Record<string, string> => {
   const spans = { today: `${Math.max(60, Math.round(sinceMidnightSec))}s`, week: '7d' }
   return Object.fromEntries(Object.entries(spans).flatMap(([span, range]) =>
-    Object.entries(METRICS).map(([name, q]) => [`${span}.${name}`, q.replace('R', range)])))
+    Object.entries(METRICS).map(([name, q]) => [`${span}.${name}`, q(range)])))
 }
 
 export const secondsSinceMidnight = (nowMs: number): number => {

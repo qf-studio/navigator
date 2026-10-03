@@ -362,6 +362,16 @@ accent and bold, steps ahead light (`label`); routes over 16 lines keep the last
 fold the earlier ones (`✓ n earlier`), cutting the tail as `+ n more`. Colors asserted in (s2).
 Pane order: fuel (context) + saved on top, then destination (or off route), route, trip, tasks.
 
+### Trip queries without increase() (2026-10-03) ✅
+Dogfood showed `$0.00` today with a live session. Two reasons `increase()` lies here: each
+session's counters start at their first push, so the first turn's usage is never an observed
+rise; and a laptop asleep across the window edge leaves live series without a sample there, so
+`x offset R` misses them. `ui/trip.ts` now asks per series for the max in the window minus the
+last sample before it (`last_over_time(x[1d] offset R)`), or the whole max when there is none,
+summed (by `type` where split). Live check: today $0.38 (the one new session), 7d $48.15 where
+`increase()` said $0.23. The Grafana dashboards in `.agent/grafana/` still use `increase()` —
+same fix applies if their numbers matter.
+
 ### Judge under CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC (2026-10-03) ✅
 Dogfood showed no judge card ever. Cause: the user's `~/.claude/settings.json` sets
 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`, and Claude Code then refuses every plugin
@@ -400,7 +410,7 @@ route. Pane width 72. 107 kit tests.
 ### Trip panel (2026-10-02) ✅
 Claude Code's OTel metrics from the `.agent/grafana/` Prometheus (`http://localhost:9092`):
 cost, tokens + cache hit, commits, lines ±, active time — today (range back to local midnight)
-and 7 days (`increase(...[7d])`), plus a tokens/min sparkline (`query_range`, 2 h, 7.5 min step).
+and 7 days, plus a tokens/min sparkline (`query_range`, 2 h, 7.5 min step).
 Shown only when Prometheus answers with data: one `week.tokens` probe first, so a stopped Docker
 stack costs one refused connection and the panel does not exist. Fetched on `/nav` and `f`, 1 s
 timeout per request, never under Pilot. Config: `dashboard.enabled` (default on: localhost only,
