@@ -365,7 +365,9 @@ export const register: Register = on => {
     // Announce before next(): modules run before settings hooks, so the Python
     // SessionStart child already sees what the mod owns.
     await announce(ioOf($))
-    if (['clear', 'resume', 'fork', 'compact'].includes(e.source)) await refreshPane($)
+    if (['clear', 'resume', 'fork', 'compact'].includes(e.source)) {
+      await Promise.all([refreshPane($), refreshTrip($).catch(() => {})])
+    }
     const r = await next(e)
     const merged = await runFor($, 'SessionStart', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
