@@ -1,6 +1,6 @@
 # TASK-86: Judge decision trail and labeling from the /nav pane
 
-**Status**: ✅ Implemented — 2026-10-03 (unreleased; next patch)
+**Status**: ✅ Released — v8.1.0, 2026-10-03
 **Origin**: TASK-84 8.1 candidate 2; TypeSafe asked to "see the decisions" (TASK-80 surface).
 
 ## Goal

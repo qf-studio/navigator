@@ -199,7 +199,7 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
-- **TASK-86** ✅ (2026-10-03, unreleased) — judge decision trail behind `j` in `/nav` and `y`/`x`
+- **TASK-86** ✅ (v8.1.0, 2026-10-03) — judge decision trail behind `j` in `/nav` and `y`/`x`
   labeling into `~/.config/navigator/judge-labels.json`, the shape `scripts/judge_label.py` and
   `judge_eval.py --fixture` read (`tasks/TASK-86-judge-trail-labels.md`).
 - **TASK-85** ✅ (v8.0.1, 2026-10-03) — stop_completion over-fired on read-only turns when

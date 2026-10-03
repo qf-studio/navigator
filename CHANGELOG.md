@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.1.0] — 2026-10-03 — "Show Me the Decisions"
+
+The judge's decision trail behind `j` in `/nav`, with `y` / `x` labeling into the personal
+`judge-labels.json` that the eval tools read (TASK-86). Navigator is now published by QuantFlow
+Studio: owner, links and install paths say `qf-studio/navigator` and `quantflow.studio`.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.1.0.md)
+
 ## [v8.0.1] — 2026-10-03
 
 The completion gate no longer forces continuations on read-only turns when two sessions share a
