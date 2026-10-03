@@ -198,9 +198,9 @@ const minutes = (ms: number): string => {
   return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`
 }
 
-/** `eta ~25m · 5 legs` at the pace so far; `5 legs` before any leg is done. */
+/** `eta ~25m · 5 legs left` at the pace so far; `5 legs left` before any leg is done. */
 export const etaText = (legsLeft: number, pace: NavPace): string => {
-  const legs = `${legsLeft} ${legsLeft === 1 ? 'leg' : 'legs'}`
+  const legs = `${legsLeft} ${legsLeft === 1 ? 'leg' : 'legs'} left`
   const turnsPerLeg = mean(pace.legTurns)
   const msPerTurn = mean(pace.turnMs)
   if (legsLeft <= 0 || turnsPerLeg === null || msPerTurn === null) return legs

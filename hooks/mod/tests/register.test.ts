@@ -253,7 +253,7 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(texts).toContain('TASK-80   Typed judge, phase 2')
     expect(texts).toContain('→ then    verify')
-    expect(texts).toContain('3 legs') // impl, verify, complete; no leg finished yet: no eta
+    expect(texts).toContain('3 legs left') // impl, verify, complete; no leg finished yet: no eta
     expect(texts).not.toContain('research') // passed legs stay out of the pane
     expect(texts).not.toContain('wire the band') // the reply's next line is not the route
     for (const card of ['context', 'session', 'next', 'memories']) expect(texts).toContain(card)
@@ -286,7 +286,7 @@ test('(h) phase is sticky across turns and the leg clock counts turns', async ($
   await complete($, 'Removed the marker.\n\nNext: run the mod tests.\n')
   const all = await texts($)
   expect(all).toContain('1 turn here')
-  expect(all).toContain('eta ~1m · 3 legs') // research took 1 turn of 1 ms: pace known, floored to a minute
+  expect(all).toContain('eta ~1m · 3 legs left') // research took 1 turn of 1 ms: pace known, floored to a minute
 })
 
 test('(h2) n submits the current leg as the prompt', async ($, on) => {

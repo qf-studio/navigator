@@ -4,16 +4,16 @@ import { NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, recordPace } fro
 
 describe('pane model', () => {
   test('eta: legs only until a leg is done, then legs × turns per leg × ms per turn', () => {
-    expect(etaText(5, NO_PACE)).toBe('5 legs')
-    expect(etaText(1, NO_PACE)).toBe('1 leg')
+    expect(etaText(5, NO_PACE)).toBe('5 legs left')
+    expect(etaText(1, NO_PACE)).toBe('1 leg left')
     let p = recordPace(NO_PACE, 120_000, null)
-    expect(etaText(5, p)).toBe('5 legs')
+    expect(etaText(5, p)).toBe('5 legs left')
     p = recordPace(p, 180_000, 2) // the leg just left took 2 turns
-    expect(etaText(5, p)).toBe('eta ~25m · 5 legs') // 5 × 2 × 150 s
-    expect(etaText(0, p)).toBe('0 legs')
+    expect(etaText(5, p)).toBe('eta ~25m · 5 legs left') // 5 × 2 × 150 s
+    expect(etaText(0, p)).toBe('0 legs left')
     p = recordPace(p, 0, null) // a zero-length turn is not a sample
     expect(p.turnMs).toEqual([120_000, 180_000])
-    expect(etaText(30, p)).toBe('eta ~2h 30m · 30 legs')
+    expect(etaText(30, p)).toBe('eta ~2h 30m · 30 legs left')
   })
   test('effect reads the injected context', () => {
     expect(judgeEffect(null)).toBe('direct')
