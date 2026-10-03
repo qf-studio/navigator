@@ -33,6 +33,9 @@ export type NavActivity = {
   lastTurnCommitted: boolean
   /** A Write/Edit under `.agent/` this turn: the task list, marker and memories may have moved. */
   docsTouched: boolean
+  /** Bash calls this turn, and whether any came back without Claude Code's `isReadOnly` (TASK-85). */
+  bashCalls: number
+  bashMutating: boolean
 }
 
 export type NavHistory = { ctx: number[]; saved: number[] }

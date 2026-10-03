@@ -16,7 +16,7 @@ import { makeCtx } from './lib/context'
 import { surfaceHealth } from './lib/life-health'
 import { getPath, isPilotExecutor, loadConfig } from './lib/config'
 import { RELEASES_URL, dueForCheck, latestStable, updateNotice, updateSettings } from './lib/update'
-import type { Io } from './lib/types'
+import type { Io, OpCtx } from './lib/types'
 import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
 import { announce } from './owns'
@@ -42,7 +42,7 @@ const PLUGIN = 'navigator'
 const PANE = 'nav'
 const NO_ACTIVITY: NavActivity = {
   docsBytes: 0, docsReads: 0, agentRuns: 0, agentTokens: 0, committed: false,
-  lastTurnCommitted: false, docsTouched: false,
+  lastTurnCommitted: false, docsTouched: false, bashCalls: 0, bashMutating: false,
 }
 const NO_HISTORY: NavHistory = { ctx: [], saved: [] }
 const EMPTY_NAV: NavPane = {
@@ -249,10 +249,13 @@ const refreshTrip = async ($: EngineInterface): Promise<void> => {
 }
 
 /** Run the ops registered for a (Python-named) event; null outside a Navigator project. */
-const runFor = async ($: EngineInterface, event: string, payload: Record<string, unknown>) => {
+const runFor = async (
+  $: EngineInterface, event: string, payload: Record<string, unknown>, extra: Partial<OpCtx> = {},
+) => {
   const io = ioOf($)
-  const ctx = await makeCtx(io, event, payload)
-  if (ctx === null) return null
+  const made = await makeCtx(io, event, payload)
+  if (made === null) return null
+  const ctx: OpCtx = { ...made, ...extra }
   // runtime._surface_health: SessionStart leads with the last dispatch error, if unsurfaced.
   const leading = event === 'SessionStart' ? await surfaceHealth(io, `${ctx.root}/.agent`) : null
   const merged = await runEvent(ctx, EVENT_OPS[event] ?? [], leading)
@@ -463,12 +466,22 @@ export const register: Register = on => {
 
   on('classic.Stop', async ($, e, next) => {
     const r = await next(e)
-    const merged = await runFor($, 'Stop', e as unknown as Record<string, unknown>)
+    // TASK-85: Claude Code's own read-only verdict on every Bash call of the turn.
+    const a = await readActivity($)
+    const merged = await runFor($, 'Stop', e as unknown as Record<string, unknown>,
+      { bashAllReadOnly: a.bashCalls > 0 && !a.bashMutating })
     return merged?.block != null ? { ...r, block: merged.block } : r
   })
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
+    if (ran.deny === undefined) {
+      const readOnly = ran.isReadOnly === true
+      await update($, activity, a => ({
+        ...NO_ACTIVITY, ...a, bashCalls: (a?.bashCalls ?? 0) + 1,
+        bashMutating: (a?.bashMutating ?? false) || !readOnly,
+      }))
+    }
     if (/\bgit\s+commit\b/.test(e.command) && ran.deny === undefined && ran.isError !== true) {
       await update($, activity, a => ({ ...NO_ACTIVITY, ...a, committed: true }))
     }
@@ -536,7 +549,7 @@ export const register: Register = on => {
     const h = await readHistory($)
     await update($, activity, x => {
       const y = { ...NO_ACTIVITY, ...x }
-      return { ...y, committed: false, lastTurnCommitted: y.committed, docsTouched: false }
+      return { ...y, committed: false, lastTurnCommitted: y.committed, docsTouched: false, bashCalls: 0, bashMutating: false }
     })
     await update($, reads, r => endTurnReads({ ...NO_READS, ...r }))
     // The pane follows the session without `r`: Prometheus every turn (local, ~12 curls, one

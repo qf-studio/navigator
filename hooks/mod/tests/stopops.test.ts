@@ -4,7 +4,8 @@ import { deepMerge } from '../lib/config'
 import { CONFIG_DEFAULTS } from '../lib/gen/config-defaults.gen'
 import { sha256Hex } from '../lib/stop-sha256'
 import type { Io, Json, Op, OpCtx } from '../lib/types'
-import { stopCompletion } from '../ops/stop_completion'
+import { stopCompletion, turnMutating } from '../ops/stop_completion'
+import { bashReadonly } from '../lib/stop-bash'
 import { stopState } from '../ops/stop_state'
 import { CASES as A } from './fixtures/stopops-completion-a.gen'
 import { CASES as B } from './fixtures/stopops-completion-b.gen'
@@ -81,5 +82,26 @@ describe('Stop ops parity with hooks/ops/stop_completion.py and stop_state.py', 
     expect(sha256Hex('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
     expect(sha256Hex('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
     expect(sha256Hex('é😀\n'.repeat(40))).toBe(sha256Hex('é😀\n'.repeat(40)))
+  })
+})
+
+describe('TASK-85: read-only evidence', () => {
+  test('curl reads unless it names an output; lsof and pgrep are inspection', () => {
+    for (const cmd of [
+      "lsof -nP -iTCP:9464 -sTCP:LISTEN 2>/dev/null | tail -n +2",
+      "curl -sfg --noproxy '*' --max-time 1 http://localhost:9092/api/v1/query",
+      "pgrep -f 'claude --plugin-dir' | head -1",
+    ]) expect(bashReadonly(cmd)).toBe(true)
+    for (const cmd of ['curl -sSo /tmp/f https://x', 'curl -O https://x/f', 'curl --output out.json https://x', 'curl -sS --remote-name https://x/f']) {
+      expect(bashReadonly(cmd)).toBe(false)
+    }
+  })
+  test("Claude Code's isReadOnly on every Bash call makes a Bash-only turn non-mutating", () => {
+    const evidence = { bash: [['python3 probe.py', false]] as [string, boolean][], file_paths: [] as string[] }
+    const tools = new Set(['Bash'])
+    expect(turnMutating(tools, evidence as never, undefined, 'D')).toBe(true)
+    expect(turnMutating(tools, evidence as never, undefined, 'D', true)).toBe(false)
+    // a file tool beside Bash is mutating regardless
+    expect(turnMutating(new Set(['Bash', 'Edit']), evidence as never, undefined, 'D', true)).toBe(true)
   })
 })

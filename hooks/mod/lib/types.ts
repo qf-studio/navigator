@@ -81,6 +81,8 @@ export type OpCtx = {
   judgment?: unknown
   /** Per-axis outcome of this event's judgment (gate: loop, complexity; brief: task, ambiguity). */
   judgeAxes?: Record<string, string>
+  /** Mod only: every Bash call this turn came back `isReadOnly` from Claude Code (TASK-85). */
+  bashAllReadOnly?: boolean
   event: string
   payload: Json
   config: Json

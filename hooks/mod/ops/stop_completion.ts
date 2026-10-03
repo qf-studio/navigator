@@ -40,16 +40,49 @@ const treeDigest = async (ctx: OpCtx): Promise<string | null> => {
   return r === null || r.exitCode !== 0 ? null : sha256Hex(r.stdout)
 }
 
-/** stop_completion._turn_mutating (TASK-70/71 refinement of mem-037). */
+/**
+ * stop_completion._turn_mutating (TASK-70/71 refinement of mem-037). `bashAllReadOnly` is the
+ * mod's extra evidence (TASK-85): Claude Code marked every Bash call of the turn read-only, so a
+ * Bash-only turn is not mutating whatever the allowlist says. Python has no such signal.
+ */
 export const turnMutating = (
-  tools: Set<string>, evidence: Evidence, prev: unknown, digest: string | null,
+  tools: Set<string>, evidence: Evidence, prev: unknown, digest: string | null, bashAllReadOnly = false,
 ): boolean => {
   const action = [...tools].filter(t => TASK_ACTION_TOOLS.has(t))
   if (action.length === 0) return false
   if (action.some(t => t !== 'Bash')) return true
+  if (bashAllReadOnly) return false
   if (!evidence.bash.some(([cmd]) => !bashReadonly(cmd))) return false
   if (prev !== undefined && prev !== null && digest !== null && prev === digest) return false
   return true
+}
+
+// TASK-85: the tree digest is compared per session and kept in `tree.digests[session_id]`,
+// outside the session-scoped `completion`, so a Stop in another session sharing this repo
+// cannot erase it. Bounded to the most recent sessions (stop_completion.TREE_DIGESTS_MAX).
+const TREE_DIGESTS_MAX = 8
+
+const prevDigestOf = (ctx: OpCtx, completion: Json): unknown => {
+  const sid = ctx.sessionId
+  const tree = ctx.state.tree
+  const digests = isDict(tree) ? tree.digests : undefined
+  if (sid && isDict(digests) && typeof digests[sid] === 'string') return digests[sid]
+  return completion.tree_digest
+}
+
+const recordDigest = (ctx: OpCtx, digest: string): void => {
+  const sid = ctx.sessionId
+  if (!sid) return
+  const tree: Json = isDict(ctx.state.tree) ? ctx.state.tree : {}
+  ctx.state.tree = tree
+  const digests: Json = isDict(tree.digests) ? tree.digests : {}
+  tree.digests = digests
+  delete digests[sid]
+  digests[sid] = digest
+  for (const key of Object.keys(digests)) {
+    if (Object.keys(digests).length <= TREE_DIGESTS_MAX) break
+    delete digests[key]
+  }
 }
 
 const deriveIndicators = async (ctx: OpCtx, evidence: Evidence): Promise<Record<string, boolean>> => {
@@ -99,18 +132,19 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   const attach = (): void => {
     if (ctx.state.completion !== completion) ctx.state.completion = completion
   }
-  const prevDigest = completion.tree_digest
+  const prevDigest = prevDigestOf(ctx, completion)
   const digest = await treeDigest(ctx)
   if (digest !== null && digest !== prevDigest) {
     attach()
     completion.tree_digest = digest
+    recordDigest(ctx, digest)
   }
   if (pyTruthy(completion.stop_fuse)) return null
   const held = heldCount(completion)
   if (held >= maxContinues(ctx.config)) return null
 
   const [text, tools, evidence] = await turnScan(ctx.io, payload)
-  if (!turnMutating(tools, evidence, prevDigest, digest)) return null
+  if (!turnMutating(tools, evidence, prevDigest, digest, ctx.bashAllReadOnly === true)) return null
   if (parseSignals(stripAll(text)).some(sig => sig.type === 'exit')) return null
 
   const stateInd = isDict(completion.indicators) ? completion.indicators : {}

@@ -263,7 +263,7 @@ def _run_case(op, tdir: Path, cwd: Path, case: dict, cfg_patch: dict) -> dict:
         payload["transcript_path"] = str(tdir / f"{case['transcript']}.jsonl")
     state = copy.deepcopy(case["prior"])
     ctx = types.SimpleNamespace(event="Stop", payload=payload, config=_merge(g.config.DEFAULTS, cfg_patch),
-                                state=state, pilot_executor=case["pilot"], now=NOW)
+                                state=state, pilot_executor=case["pilot"], now=NOW, session_id="s")
     recorded: list = []
     with _git(case["git"], recorded):
         result = op.run(ctx)

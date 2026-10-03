@@ -491,6 +491,7 @@ def _dispatch(event: str, payload: dict, registry, now) -> DispatchResult:
             state=runtime_state,
             pilot_executor=pilot_executor,
             now=start,
+            session_id=session_id,
         )
 
         gate_blocked = False

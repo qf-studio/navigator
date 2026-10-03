@@ -97,7 +97,12 @@ READONLY_BASH_CMDS = frozenset({
     "ps", "sort", "uniq", "cut", "tr", "jq", "basename", "dirname",
     "realpath", "readlink", "printf", "read", "sleep", "true", "false",
     "test", "[", "[[",
+    # TASK-85: inspection staples observed false-firing live (2026-10-03).
+    "lsof", "pgrep", "nproc", "sw_vers",
 })
+# curl reads unless it names an output file (TASK-85): any short flag cluster
+# carrying o/O (-o, -O, -sSo) or a long --output*/--remote-name* flag writes.
+_CURL_WRITE_LONG = ("--output", "--remote-name")
 READONLY_GIT_SUBCMDS = frozenset({
     "status", "log", "diff", "show", "branch", "rev-parse", "describe",
     "shortlog", "blame", "remote", "ls-files",
@@ -319,9 +324,52 @@ def _bash_readonly(command) -> bool:
             pair = [t for t in tokens[1:] if not t.startswith("-")][:2]
             if " ".join(pair) not in READONLY_GH_SUBCMDS:
                 return False
+        elif head == "curl":
+            if any(_curl_writes(t) for t in tokens[1:]):
+                return False
         elif head not in READONLY_BASH_CMDS:
             return False
     return True
+
+
+def _curl_writes(token: str) -> bool:
+    if token.startswith("--"):
+        return token.startswith(_CURL_WRITE_LONG)
+    return token.startswith("-") and ("o" in token or "O" in token)
+
+
+# TASK-85: the tree digest is a property of the repo, not the session, and is
+# compared per session: `tree.digests[session_id]` lives outside the
+# session-scoped `completion` section, so a Stop in another session sharing
+# this repo cannot erase it. Bounded to the most recent sessions.
+TREE_DIGESTS_MAX = 8
+
+
+def _prev_digest(ctx, completion: dict):
+    sid = getattr(ctx, "session_id", None)
+    tree = ctx.state.get("tree")
+    digests = tree.get("digests") if isinstance(tree, dict) else None
+    if sid and isinstance(digests, dict) and isinstance(digests.get(sid), str):
+        return digests[sid]
+    return completion.get("tree_digest")
+
+
+def _record_digest(ctx, digest: str) -> None:
+    sid = getattr(ctx, "session_id", None)
+    if not sid:
+        return
+    tree = ctx.state.get("tree")
+    if not isinstance(tree, dict):
+        tree = {}
+        ctx.state["tree"] = tree
+    digests = tree.get("digests")
+    if not isinstance(digests, dict):
+        digests = {}
+        tree["digests"] = digests
+    digests.pop(sid, None)
+    digests[sid] = digest
+    while len(digests) > TREE_DIGESTS_MAX:
+        del digests[next(iter(digests))]
 
 
 def _turn_mutating(tools: set, evidence: dict, prev_digest=None,
@@ -481,12 +529,13 @@ def run(ctx):
     # against this turn's true end state. stop_hook_active stops return
     # above without capturing: a forced continuation's writes land in the
     # NEXT comparison, which can only over-fire, never under-fire.
-    prev_digest = completion.get("tree_digest")
+    prev_digest = _prev_digest(ctx, completion)
     digest = _tree_digest(hio.project_root(payload))
     if digest is not None and digest != prev_digest:
         if ctx.state.get("completion") is not completion:
             ctx.state["completion"] = completion
         completion["tree_digest"] = digest
+        _record_digest(ctx, digest)
     if completion.get("stop_fuse"):
         return None  # single-shot per turn; re-armed by the stop_state barrel
     held = _held_count(completion)

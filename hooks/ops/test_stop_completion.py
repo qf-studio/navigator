@@ -161,6 +161,7 @@ class StopCompletionTestBase(unittest.TestCase):
             state=state if state is not None else {},
             pilot_executor=pilot,
             now=100.0,
+            session_id="s",
         )
 
 
@@ -375,8 +376,17 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "echo hi >/dev/null 2>&1",
         "echo hi >&2",
         "test -f x && cat x",
+        # live false-fire replays (2026-10-03, TASK-85)
+        "lsof -nP -iTCP:9464 -sTCP:LISTEN 2>/dev/null | tail -n +2",
+        "curl -sfg --noproxy '*' --max-time 1 http://localhost:9092/api/v1/query",
+        "curl -sL https://navigator-site.vercel.app/ | grep -o 'v8.0.0' | head -1",
+        "pgrep -f 'claude --plugin-dir' | head -1",
     )
     MUTATING = (
+        "curl -sSo /tmp/f https://x",       # -o inside a flag cluster
+        "curl -O https://x/f",
+        "curl --output out.json https://x",
+        "curl -sS --remote-name https://x/f",
         "gh pr merge 4373",
         "gh api repos/o/r/issues -X POST",
         "gh pr view 1 && gh issue close 2",
@@ -453,6 +463,48 @@ class DigestEvidenceTest(StopCompletionTestBase):
             self.assertIsNone(stop_completion.run(ctx))
         self.assertEqual(ctx.state["completion"]["tree_digest"], "NEW")
         self.assertIs(ctx.state["completion"]["stop_fuse"], True)
+
+    # TASK-85: the digest is kept per session outside the session-scoped
+    # `completion`, so another session's events in the same repo cannot
+    # erase it and a read-only turn here still reads as non-mutating.
+    def test_other_session_cannot_erase_this_sessions_digest(self):
+        state = {"tree": {"digests": {"s": "D"}}}  # completion reset by a flip
+        ctx = self.make_ctx(self.entries(), cfg=pm_cfg(), state=state)
+        with mock.patch.object(stop_completion, "_tree_digest",
+                               return_value="D"):
+            self.assertIsNone(stop_completion.run(ctx))
+        self.assertNotIn("stop_fuse", ctx.state.get("completion", {}))
+
+    def test_session_entry_wins_over_completion_digest(self):
+        state = {"completion": {"tree_digest": "X"},
+                 "tree": {"digests": {"s": "D"}}}
+        ctx = self.make_ctx(self.entries(), cfg=pm_cfg(), state=state)
+        with mock.patch.object(stop_completion, "_tree_digest",
+                               return_value="D"):
+            self.assertIsNone(stop_completion.run(ctx))
+
+    def test_digest_recorded_per_session_and_bounded(self):
+        others = {f"old{i}": f"H{i}" for i in range(8)}
+        state = {"tree": {"digests": dict(others)}}
+        ctx = self.make_ctx(self.entries(), cfg=pm_cfg(), state=state)
+        with mock.patch.object(stop_completion, "_tree_digest",
+                               return_value="D1"):
+            result = stop_completion.run(ctx)
+        self.assertEqual(result["decision"], "block")  # first sight: vocabulary
+        digests = ctx.state["tree"]["digests"]
+        self.assertEqual(digests["s"], "D1")
+        self.assertEqual(ctx.state["completion"]["tree_digest"], "D1")
+        self.assertEqual(len(digests), stop_completion.TREE_DIGESTS_MAX)
+        self.assertNotIn("old0", digests)  # the oldest entry made room
+
+    def test_no_session_id_falls_back_to_completion_only(self):
+        ctx = self.make_ctx(self.entries(), cfg=pm_cfg(),
+                            state={"completion": {"tree_digest": "D"}})
+        ctx.session_id = None
+        with mock.patch.object(stop_completion, "_tree_digest",
+                               return_value="D"):
+            self.assertIsNone(stop_completion.run(ctx))
+        self.assertNotIn("tree", ctx.state)
 
     def test_digest_failure_keeps_prior_value(self):
         state = {"completion": {"tree_digest": "D"}}

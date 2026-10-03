@@ -58,7 +58,11 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
     return { value: undefined }
   })
   on('prompt.submit', (_$, e) => { submitted.push(e.text); return { text: e.text, context: e.context } })
-  on('tool.call', (_$, e) => ({ result: {}, text: e.tool === 'Read' ? 'x'.repeat(8000) : 'ok' }))
+  // A Bash command ending in `# ro` is one core holds read-only (TASK-85 evidence).
+  on('tool.call', (_$, e) => ({
+    result: {}, text: e.tool === 'Read' ? 'x'.repeat(8000) : 'ok',
+    ...(e.tool === 'Bash' && /# ro$/.test(String((e as { command?: string }).command)) ? { isReadOnly: true as const } : {}),
+  }))
   on('turn.complete', (_$, e) => ({ text: e.answer }))
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('classic.SessionStart', () => ({}))
@@ -609,4 +613,33 @@ test('(v) a pinned memory rides the next prompt once', async ($, on) => {
   const second = await submit($, 'go on')
   expect(second.context?.join('\n') ?? '').not.toContain('pinned')
   expect(await texts($)).toContain('▸ pins a memory into your next prompt')
+})
+
+// A Stop transcript in the harness shape: one Bash tool_use, its result, a closing line.
+const bashTurn = (cmd: string): string => [
+  { type: 'user', message: { role: 'user', content: 'check the port' } },
+  { type: 'assistant', message: { role: 'assistant', content: [
+    { type: 'text', text: 'looking' }, { type: 'tool_use', name: 'Bash', id: 'b0', input: { command: cmd } }] } },
+  { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'b0', is_error: false, content: 'ok' }] } },
+  { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'Port 9464 is held by 97009; nothing changed.' }] } },
+].map(e => JSON.stringify(e)).join('\n') + '\n'
+
+const GATE_ON = JSON.stringify({ stop_completion: { enabled: true, continue_enabled: true, max_continues: 2 } })
+
+test("(w) Stop gate: a Bash-only turn Claude Code held read-only never forces a continuation", async ($, on) => {
+  const cmd = 'sqlite3 db.sqlite "select 1" # ro' // unknown head: the allowlist alone says mutating
+  world(on, { [`${AGENT}/.nav-config.json`]: GATE_ON, [`${CWD}/t.jsonl`]: bashTurn(cmd) }, 20)
+  on('classic.Stop', () => ({}))
+  await $.tool.call({ tool: 'Bash', command: cmd } as never)
+  const r = await $.classic.Stop({ transcript_path: `${CWD}/t.jsonl`, stop_hook_active: false, session_id: 'session-1' } as never)
+  expect((r as { block?: unknown }).block).toBeUndefined()
+})
+
+test('(w2) the same turn without the read-only verdict is gated on the allowlist, and blocks', async ($, on) => {
+  const cmd = 'sqlite3 db.sqlite "select 1"'
+  world(on, { [`${AGENT}/.nav-config.json`]: GATE_ON, [`${CWD}/t.jsonl`]: bashTurn(cmd) }, 20)
+  on('classic.Stop', () => ({}))
+  await $.tool.call({ tool: 'Bash', command: cmd } as never)
+  const r = await $.classic.Stop({ transcript_path: `${CWD}/t.jsonl`, stop_hook_active: false, session_id: 'session-1' } as never)
+  expect(String((r as { block?: unknown }).block ?? '')).toContain('mutated the codebase')
 })

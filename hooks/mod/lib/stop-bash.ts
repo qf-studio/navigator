@@ -9,7 +9,13 @@ const READONLY_BASH_CMDS = new Set([
   'ps', 'sort', 'uniq', 'cut', 'tr', 'jq', 'basename', 'dirname',
   'realpath', 'readlink', 'printf', 'read', 'sleep', 'true', 'false',
   'test', '[', '[[',
+  'lsof', 'pgrep', 'nproc', 'sw_vers',
 ])
+// curl reads unless it names an output file (TASK-85): a short flag cluster carrying o/O
+// (-o, -O, -sSo) or a long --output*/--remote-name* flag writes.
+const curlWrites = (token: string): boolean =>
+  token.startsWith('--') ? token.startsWith('--output') || token.startsWith('--remote-name')
+    : token.startsWith('-') && (token.includes('o') || token.includes('O'))
 const READONLY_GIT_SUBCMDS = new Set([
   'status', 'log', 'diff', 'show', 'branch', 'rev-parse', 'describe',
   'shortlog', 'blame', 'remote', 'ls-files',
@@ -65,6 +71,8 @@ export const bashReadonly = (command: unknown): boolean => {
     } else if (head === 'gh') {
       const pair = tokens.slice(1).filter(t => !t.startsWith('-')).slice(0, 2)
       if (!READONLY_GH_SUBCMDS.has(pair.join(' '))) return false
+    } else if (head === 'curl') {
+      if (tokens.slice(1).some(curlWrites)) return false
     } else if (!READONLY_BASH_CMDS.has(head)) {
       return false
     }
