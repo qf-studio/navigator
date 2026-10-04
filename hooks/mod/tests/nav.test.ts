@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import {
-  NO_PACE, etaText, fanOutText, judgeEffect, judgeTally, labelEntry, labelFromVerdict, recordPace, trailLine,
-  withLabel,
+  NO_PACE, bashReadFiles, etaText, fanOutText, isDocPath, judgeEffect, judgeTally, labelEntry, labelFromVerdict,
+  recordPace, trailLine, withLabel,
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
@@ -108,5 +108,24 @@ describe('judge trail and labels (TASK-86)', () => {
     expect(trailLine({ ...decision, label: 'confirmed' }, 72)).toContain(' ✓ task')
     expect(trailLine({ ...decision, label: 'disputed' }, 72)).toContain(' ✗ task')
     expect([...trailLine({ ...decision, text: 'x'.repeat(200) }, 60)].length).toBeLessThanOrEqual(60)
+  })
+})
+
+describe('reads through Bash (TASK-87)', () => {
+  test('files named by cat / sed / head / grep count; flags, scripts and non-files do not', () => {
+    expect(bashReadFiles('cat .agent/DEVELOPMENT-README.md')).toEqual(['.agent/DEVELOPMENT-README.md'])
+    expect(bashReadFiles("sed -n '1,40p' hooks/mod/register.tsx | head -20")).toEqual(['hooks/mod/register.tsx'])
+    expect(bashReadFiles('grep -n "judge" hooks/mod/ui/nav.ts hooks/mod/ops/prompt_gate.ts')).toEqual(['hooks/mod/ui/nav.ts', 'hooks/mod/ops/prompt_gate.ts'])
+    expect(bashReadFiles('cd /repo && cat a.py b.py; cat a.py')).toEqual(['a.py', 'b.py'])
+    expect(bashReadFiles('ls -la hooks/mod')).toEqual([]) // ls is not a read of a file's contents
+    expect(bashReadFiles('make mod-test')).toEqual([])
+    expect(bashReadFiles('python3 scripts/gen_mod_data.py')).toEqual([]) // runs it, does not read it
+    expect(bashReadFiles("awk '/^## /{print}' README.md")).toEqual([]) // awk is not on the read-only allowlist
+    expect(bashReadFiles('head -5 /repo/.agent/tasks/TASK-80.md')).toEqual(['/repo/.agent/tasks/TASK-80.md'])
+  })
+  test('.agent paths are docs', () => {
+    expect(isDocPath('.agent/tasks/TASK-80.md')).toBe(true)
+    expect(isDocPath('/repo/.agent/system/x.md')).toBe(true)
+    expect(isDocPath('hooks/mod/register.tsx')).toBe(false)
   })
 })

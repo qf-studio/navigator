@@ -199,6 +199,9 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
+- **TASK-87** ✅ (2026-10-04, unreleased) — reads made through read-only Bash (`cat`, `sed -n`,
+  `head`, `grep`…) count in the `/nav` reads card like the Read tool; `sed` without `-i` joins
+  the read-only allowlist in both runtimes (`tasks/archive/TASK-87-bash-reads-count.md`).
 - **TASK-86** ✅ (v8.1.0, 2026-10-03) — judge decision trail behind `j` in `/nav` and `y`/`x`
   labeling into `~/.config/navigator/judge-labels.json`, the shape `scripts/judge_label.py` and
   `judge_eval.py --fixture` read (`tasks/archive/TASK-86-judge-trail-labels.md`).

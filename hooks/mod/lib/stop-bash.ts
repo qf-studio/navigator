@@ -73,6 +73,10 @@ export const bashReadonly = (command: unknown): boolean => {
       if (!READONLY_GH_SUBCMDS.has(pair.join(' '))) return false
     } else if (head === 'curl') {
       if (tokens.slice(1).some(curlWrites)) return false
+    } else if (head === 'sed') {
+      // TASK-87: `sed -n '1,40p' file` reads; any in-place flag writes.
+      if (tokens.slice(1).some(t => t === '--in-place' || t.startsWith('--in-place=')
+        || (t.startsWith('-') && !t.startsWith('--') && t.includes('i')))) return false
     } else if (!READONLY_BASH_CMDS.has(head)) {
       return false
     }

@@ -91,7 +91,10 @@ describe('TASK-85: read-only evidence', () => {
       "lsof -nP -iTCP:9464 -sTCP:LISTEN 2>/dev/null | tail -n +2",
       "curl -sfg --noproxy '*' --max-time 1 http://localhost:9092/api/v1/query",
       "pgrep -f 'claude --plugin-dir' | head -1",
+      "sed -n '1,40p' hooks/mod/register.tsx | head -20",
     ]) expect(bashReadonly(cmd)).toBe(true)
+    expect(bashReadonly("sed -i '' 's/a/b/' notes.md")).toBe(false)
+    expect(bashReadonly("sed --in-place=.bak 's/a/b/' notes.md")).toBe(false)
     for (const cmd of ['curl -sSo /tmp/f https://x', 'curl -O https://x/f', 'curl --output out.json https://x', 'curl -sS --remote-name https://x/f']) {
       expect(bashReadonly(cmd)).toBe(false)
     }

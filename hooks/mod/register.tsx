@@ -26,10 +26,11 @@ import { announce } from './owns'
 import { runEvent } from './runner'
 import type { Judgment } from './lib/scoring'
 import {
-  JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, countRead, endTurnReads, etaText, fanOutText,
-  judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories, parseTasks, rateKind,
-  recordPace, tokensOf, trailLine, turnsTo, withLabel,
+  JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, countRead, endTurnReads, etaText,
+  fanOutText, isDocPath, judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories,
+  parseTasks, rateKind, recordPace, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
+import { bashReadonly } from './lib/stop-bash'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
   nextTaskNumber, parkedTaskDoc, parseSteps, slugOf,
@@ -503,6 +504,12 @@ export const register: Register = on => {
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
+    if (ran.deny === undefined && ran.isError !== true && bashReadonly(e.command)) {
+      // TASK-87: `cat` / `sed -n` / `head` on a file is a read too; docs are `.agent/` paths.
+      for (const file of bashReadFiles(e.command)) {
+        await update($, reads, r => countRead({ ...NO_READS, ...r }, isDocPath(file)))
+      }
+    }
     if (ran.deny === undefined) {
       const readOnly = ran.isReadOnly === true
       await update($, activity, a => ({

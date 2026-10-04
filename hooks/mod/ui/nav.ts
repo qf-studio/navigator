@@ -94,6 +94,29 @@ export const clockOf = (iso: string | null): string | null => {
 /** Estimated tokens for a byte count (~4 bytes per token). */
 export const tokensOf = (bytes: number): number => Math.round(bytes / 4)
 
+// Files a read-only Bash command reads (TASK-87): the reads card counted the Read tool only,
+// so a session that reads with `cat` / `sed -n` / `head` showed 0 docs. A token is a file when
+// it has a known extension; the command must already be read-only (stop-bash.ts), so `cat > f`
+// never counts. `.agent/` paths are docs, like the Read tool's rule.
+const READ_HEADS = new Set(['cat', 'sed', 'head', 'tail', 'grep', 'rg', 'wc', 'diff'])
+const FILE_TOKEN = /^['"]?(\/?(?:[\w.~@-]+\/)*[\w.@-]+\.(?:md|markdown|txt|ts|tsx|js|jsx|mjs|py|sh|json|jsonl|ya?ml|toml|css|html|go|rs|sql))['"]?$/u
+
+export const bashReadFiles = (command: string): string[] => {
+  const files = new Set<string>()
+  for (const segment of command.split(/\|\||&&|;|\||\n/)) {
+    const tokens = segment.trim().split(/\s+/)
+    const head = tokens.find(tok => tok.length > 0 && !/^[A-Za-z_][A-Za-z0-9_]*=/.test(tok))
+    if (head === undefined || !READ_HEADS.has(head.replace(/^.*\//, ''))) continue
+    for (const tok of tokens.slice(1)) {
+      const m = FILE_TOKEN.exec(tok)
+      if (m?.[1] && !tok.startsWith('-')) files.add(m[1])
+    }
+  }
+  return [...files]
+}
+
+export const isDocPath = (path: string): boolean => path.includes('/.agent/') || path.startsWith('.agent/')
+
 export const NO_READS: NavReads = {
   total: 0, docs: 0, turnTotal: 0, turnDocs: 0, lastTurnTotal: 0, lastTurnDocs: 0,
 }

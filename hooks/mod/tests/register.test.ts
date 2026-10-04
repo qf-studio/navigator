@@ -337,6 +337,21 @@ test('(i) reads card: doc and code reads counted, three code reads in a turn say
   expect(await texts($, true)).toContain('fan-out ok')
 })
 
+test('(i2) reads through Bash count like the Read tool: cat/sed on .agent/ is a doc read, three code files say "use an Agent"', async ($, on) => {
+  world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
+  await $.command.run(NAV_CMD)
+  await $.tool.call({ tool: 'Bash', command: `sed -n '1,40p' ${AGENT}/tasks/TASK-80.md | head` } as never)
+  let all = await texts($, true)
+  expect(all).toContain('1  1 docs')
+  expect(all).toContain('fan-out ok')
+  await $.tool.call({ tool: 'Bash', command: 'cat hooks/a.ts hooks/b.ts && grep -n x hooks/c.ts' } as never)
+  all = await texts($, true)
+  expect(all).toContain('4  1 docs')
+  expect(all).toContain('use an Agent')
+  await $.tool.call({ tool: 'Bash', command: 'cat notes.md > /tmp/out.md' } as never) // a write: not a read
+  expect(await texts($, true)).toContain('4  1 docs')
+})
+
 test('(j) a committed turn turns the fuel hint into a nudge', async ($, on) => {
   world(on, { [`${AGENT}/.nav-config.json`]: '{}' }, 20)
   await $.command.run(NAV_CMD)

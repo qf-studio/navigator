@@ -381,12 +381,16 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "curl -sfg --noproxy '*' --max-time 1 http://localhost:9092/api/v1/query",
         "curl -sL https://navigator-site.vercel.app/ | grep -o 'v8.0.0' | head -1",
         "pgrep -f 'claude --plugin-dir' | head -1",
+        "sed -n '1,40p' hooks/mod/register.tsx | head -20",
+        "sed -e 's/a/b/' notes.md",
     )
     MUTATING = (
         "curl -sSo /tmp/f https://x",       # -o inside a flag cluster
         "curl -O https://x/f",
         "curl --output out.json https://x",
         "curl -sS --remote-name https://x/f",
+        "sed -i '' 's/a/b/' notes.md",         # in-place edit
+        "sed --in-place=.bak 's/a/b/' notes.md",
         "gh pr merge 4373",
         "gh api repos/o/r/issues -X POST",
         "gh pr view 1 && gh issue close 2",

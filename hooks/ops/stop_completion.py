@@ -327,6 +327,12 @@ def _bash_readonly(command) -> bool:
         elif head == "curl":
             if any(_curl_writes(t) for t in tokens[1:]):
                 return False
+        elif head == "sed":
+            # TASK-87: `sed -n '1,40p' file` reads; any in-place flag writes.
+            if any(t == "--in-place" or t.startswith("--in-place=")
+                   or (t.startswith("-") and not t.startswith("--") and "i" in t)
+                   for t in tokens[1:]):
+                return False
         elif head not in READONLY_BASH_CMDS:
             return False
     return True
