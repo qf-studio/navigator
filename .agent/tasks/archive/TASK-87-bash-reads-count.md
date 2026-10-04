@@ -1,6 +1,6 @@
 # TASK-87: Reads through Bash count in the /nav reads card
 
-**Status**: ✅ Implemented — 2026-10-04 (unreleased; next patch)
+**Status**: ✅ Released — v8.1.1, 2026-10-04
 **Origin**: dogfood 2026-10-04 — a session that read `.agent/` docs all day with `cat` / `sed -n`
 showed `0  0 docs`; the card counted the `Read` tool only. The fan-out verdict had the same
 blind spot.

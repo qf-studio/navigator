@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.1.1] — 2026-10-04
+
+The `/nav` reads card counts files read through read-only Bash (`cat`, `sed -n`, `head`,
+`grep`…) like the Read tool; `sed` without `-i` joins the read-only allowlist in both runtimes
+(TASK-87).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.1.1.md)
+
 ## [v8.1.0] — 2026-10-03 — "Show Me the Decisions"
 
 The judge's decision trail behind `j` in `/nav`, with `y` / `x` labeling into the personal
