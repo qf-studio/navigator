@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-04T09:53:13.418966+00:00",
+  "last_updated": "2026-10-04T09:53:30.039052+00:00",
   "stats": {
-    "total_nodes": 205,
+    "total_nodes": 213,
     "total_edges": 843,
-    "memory_count": 77
+    "memory_count": 81
   },
   "nodes": {
     "tasks": {
@@ -1699,6 +1699,26 @@
         "name": "Navigation",
         "aliases": [],
         "domain": "general"
+      },
+      "fetch": {
+        "name": "Fetch",
+        "aliases": [],
+        "domain": "general"
+      },
+      "claude-code": {
+        "name": "Claude-Code",
+        "aliases": [],
+        "domain": "general"
+      },
+      "false-positives": {
+        "name": "False-Positives",
+        "aliases": [],
+        "domain": "general"
+      },
+      "env-var": {
+        "name": "Env-Var",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2864,6 +2884,56 @@
         "concepts": [
           "hooks-runtime",
           "harness-behavior"
+        ],
+        "created": "2026-10-04",
+        "last_validated": "2026-10-04"
+      },
+      "mem-086": {
+        "type": "pitfall",
+        "summary": "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 makes Claude Code refuse every mod $.http.fetch (loopback included) with no visible error; the mod's typed judge was silently dead for a day. Any mod network call needs a curl fallback via $.process.run (key in env, body on stdin) and a test with http that throws (TASK-84, v8.0.0)",
+        "path": "memories/pitfalls/mem-086.md",
+        "confidence": 1.0,
+        "concepts": [
+          "hooks-runtime",
+          "fetch",
+          "claude-code"
+        ],
+        "created": "2026-10-04",
+        "last_validated": "2026-10-04"
+      },
+      "mem-087": {
+        "type": "pitfall",
+        "summary": "Only one Claude Code process can bind the OTel exporter port 9464; later sessions export nothing, silently. Prometheus then shows $0 for the day. Check lsof -iTCP:9464 before blaming the queries",
+        "path": "memories/pitfalls/mem-087.md",
+        "confidence": 1.0,
+        "concepts": [
+          "hooks-runtime",
+          "claude-code"
+        ],
+        "created": "2026-10-04",
+        "last_validated": "2026-10-04"
+      },
+      "mem-088": {
+        "type": "pitfall",
+        "summary": "completion is a session-scoped state section: a second session in the same repo resets it on every event, so stop_completion lost its previous tree digest and forced continuations on read-only turns. Repo-level evidence must live outside session-scoped sections (tree.digests[session_id], TASK-85 v8.0.1)",
+        "path": "memories/pitfalls/mem-088.md",
+        "confidence": 1.0,
+        "concepts": [
+          "hooks-runtime",
+          "hooks",
+          "false-positives"
+        ],
+        "created": "2026-10-04",
+        "last_validated": "2026-10-04"
+      },
+      "mem-089": {
+        "type": "learning",
+        "summary": "Running make test from a Bash tool inside a session whose mod set NAVIGATOR_MOD_OWNS fails the dispatcher-contract tests (Python exits early on owned ops). Use env -u NAVIGATOR_MOD_OWNS make test",
+        "path": "memories/learnings/mem-089.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks-runtime",
+          "env-var"
         ],
         "created": "2026-10-04",
         "last_validated": "2026-10-04"
@@ -8496,7 +8566,8 @@
       "mem-075",
       "mem-076",
       "mem-077",
-      "mem-082"
+      "mem-082",
+      "mem-088"
     ],
     "session-lifecycle": [
       "mem-026",
@@ -8514,7 +8585,9 @@
       "mem-036",
       "mem-034",
       "mem-035",
-      "mem-037"
+      "mem-037",
+      "mem-086",
+      "mem-087"
     ],
     "policy-vs-judgment": [
       "mem-027"
@@ -8550,7 +8623,8 @@
       "mem-033"
     ],
     "fetch": [
-      "mem-032"
+      "mem-032",
+      "mem-086"
     ],
     "caching": [
       "mem-032"
@@ -8581,7 +8655,8 @@
       "mem-036"
     ],
     "env-var": [
-      "mem-036"
+      "mem-036",
+      "mem-089"
     ],
     "shell-expansion": [
       "mem-036"
@@ -8658,7 +8733,8 @@
       "mem-037"
     ],
     "false-positives": [
-      "mem-037"
+      "mem-037",
+      "mem-088"
     ],
     "deadlock": [
       "mem-037"
@@ -8700,7 +8776,11 @@
       "mem-079",
       "mem-081",
       "mem-083",
-      "mem-085"
+      "mem-085",
+      "mem-086",
+      "mem-087",
+      "mem-088",
+      "mem-089"
     ],
     "adhd": [
       "mem-078"
