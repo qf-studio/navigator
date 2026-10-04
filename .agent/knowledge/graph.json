@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-02T14:08:07.149608+00:00",
+  "last_updated": "2026-10-04T09:53:13.418966+00:00",
   "stats": {
-    "total_nodes": 204,
+    "total_nodes": 205,
     "total_edges": 843,
-    "memory_count": 76
+    "memory_count": 77
   },
   "nodes": {
     "tasks": {
@@ -2855,6 +2855,18 @@
         ],
         "created": "2026-10-02",
         "last_validated": "2026-10-02"
+      },
+      "mem-085": {
+        "type": "pitfall",
+        "summary": "Prometheus increase() undercounts Claude Code OTel counters: a session's first push already carries its totals (no observed rise) and a laptop asleep across the window edge leaves live series without a sample, so offset misses them. Use per-series max_over_time(x[R]) - last_over_time(x[1d] offset R), or the whole max when none (ui/trip.ts, v8.0.0)",
+        "path": "memories/pitfalls/mem-085.md",
+        "confidence": 1.0,
+        "concepts": [
+          "hooks-runtime",
+          "harness-behavior"
+        ],
+        "created": "2026-10-04",
+        "last_validated": "2026-10-04"
       }
     },
     "files": {}
@@ -8589,7 +8601,8 @@
       "mem-055",
       "mem-075",
       "mem-081",
-      "mem-082"
+      "mem-082",
+      "mem-085"
     ],
     "sessionstart": [
       "mem-036"
@@ -8686,7 +8699,8 @@
       "mem-078",
       "mem-079",
       "mem-081",
-      "mem-083"
+      "mem-083",
+      "mem-085"
     ],
     "adhd": [
       "mem-078"
