@@ -123,6 +123,16 @@ Instructions for Claude to execute...
 - `sop-template.md` → Process documentation
 - `system-template.md` → Architecture documentation
 
+### 4a. Hook runtime (`hooks/`)
+
+Since v7 the workflow is enforced by a hook runtime, not prose; since v8.0.0 that runtime is a
+Claude Code **mod** (`hooks/hooks.json` → `hooks/mod/register.tsx`, CC ≥ 2.1.287) with the v7
+Python dispatcher (`hooks/nav_dispatch.py` → `nav_hook_lib.runtime`) as the fallback. Ownership
+is announced in `NAVIGATOR_MOD_OWNS`; both runtimes share `.agent/.nav-runtime-state.json`.
+Parity is asserted byte for byte by generated fixtures (`scripts/gen_mod_data.py`,
+`make mod-test`). The mod adds the `/nav` pane, the band, the Pilot theme and the update notice.
+Details: `CLAUDE.md` "Navigator Runtime (v8)", `tasks/archive/TASK-84-v8-mod-runtime.md`.
+
 ### 4. Documentation (`docs/*.md`)
 
 **Purpose**: User-facing guides
