@@ -199,6 +199,9 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
+- **TASK-88** 📋 — reject log: one JSONL line per refusal (read guard deny, gate block, stop
+  gate block) in both runtimes, bounded, on by default, a line in the pane; researched and planned
+  2026-10-04, not started (`tasks/TASK-88-reject-log.md`).
 - **TASK-87** ✅ (v8.1.1, 2026-10-04) — reads made through read-only Bash (`cat`, `sed -n`,
   `head`, `grep`…) count in the `/nav` reads card like the Read tool; `sed` without `-i` joins
   the read-only allowlist in both runtimes (`tasks/archive/TASK-87-bash-reads-count.md`).
