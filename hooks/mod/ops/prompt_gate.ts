@@ -71,7 +71,16 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   recordAxes(ctx.state, result.judge?.axes)
   ctx.judgeAxes = { ...ctx.judgeAxes, ...result.judge?.axes }
   if (strict && result.loop_mode && priorCheckShown(ctx.state) === false) {
-    return { exit_code: 2, stderr: redactPhrases(wrap('nav-workflow-block', BLOCK_MESSAGE), LOOP_TRIGGERS) }
+    return {
+      exit_code: 2,
+      stderr: redactPhrases(wrap('nav-workflow-block', BLOCK_MESSAGE), LOOP_TRIGGERS),
+      // TASK-88 reject log: the matched trigger is evidence in the log file, which never
+      // enters the model's context (the stderr above stays redacted).
+      reject: {
+        reason: 'loop trigger after a skipped WORKFLOW CHECK (strict_block)',
+        evidence: { trigger: result.loop_trigger ?? null },
+      },
+    }
   }
   const lines = warnLines(result, taskMode)
   return lines.length === 0 ? null : { additional_context: lines.join('\n') }

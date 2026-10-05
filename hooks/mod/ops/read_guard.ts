@@ -90,7 +90,17 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   const strict = getPath(cfg, 'read_guard_hook.strict_block', true)
   const staleAfter = int(getPath(cfg, 'read_guard_hook.stale_after_seconds', 300))
   const count = increment(ctx, staleAfter, toolUseId(payload))
-  if (count >= escalateAt && strict) return { exit_code: 2, stderr: blockText(count, escalateAt) }
+  if (count >= escalateAt && strict) {
+    return {
+      exit_code: 2,
+      stderr: blockText(count, escalateAt),
+      // TASK-88 reject log: the path goes to the log file, never to stderr.
+      reject: {
+        reason: `${count} .agent/ reads this turn (escalate_threshold=${escalateAt})`,
+        evidence: { path: rel, count, threshold: escalateAt },
+      },
+    }
+  }
   if (count >= escalateAt) {
     return { stderr: `[nav-read-guard] ${count} .agent/ files read this turn. `
       + 'Bulk-load anti-pattern threshold crossed (risk: 50k+ tokens). '

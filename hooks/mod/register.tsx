@@ -8,8 +8,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type {
-  NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavStatus,
-  NavTrip, NavUsage, NavWaypointClock,
+  NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavRejects,
+  NavStatus, NavTrip, NavUsage, NavWaypointClock,
 } from '../../types'
 import { personalDir } from './lib/adhd'
 import { redactSecrets } from './lib/judge'
@@ -28,8 +28,9 @@ import type { Judgment } from './lib/scoring'
 import {
   JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, bashTouchesDocs, countRead, endTurnReads, etaText,
   fanOutText, isDocPath, judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories,
-  parseTasks, rateKind, recordPace, tokensOf, trailLine, turnsTo, withLabel,
+  parseRejects, parseTasks, rateKind, recordPace, rejectsLine, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
+import { REJECTS_PATH } from './lib/rejects'
 import { bashReadonly } from './lib/stop-bash'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
@@ -72,6 +73,8 @@ const showJudge = atom({ plugin: 'navigator', key: 'showJudge' } as const, false
 const judgeTrail = atom({ plugin: 'navigator', key: 'judgeTrail' } as const, [] as NavJudge[])
 // `d`: the readouts (reads card, task list) that are not a surprise or a press.
 const showDetails = atom({ plugin: 'navigator', key: 'showDetails' } as const, false)
+const rejects = atom({ plugin: 'navigator', key: 'rejects' } as const, null as NavRejects | null)
+const showRejects = atom({ plugin: 'navigator', key: 'showRejects' } as const, false)
 const pace = atom({ plugin: 'navigator', key: 'pace' } as const, NO_PACE)
 // A memory the user pinned in the pane; rides the next prompt as context, then clears.
 const pinned = atom({ plugin: 'navigator', key: 'pinned' } as const, null as string | null)
@@ -158,12 +161,20 @@ const readActivity = async ($: EngineInterface): Promise<NavActivity> =>
   ({ ...NO_ACTIVITY, ...((await read($, activity)) ?? {}) })
 
 /** Collect what the pane shows: open tasks, the active task's steps, memories, newest marker, graph size. */
+/** TASK-88: one fs.read of the reject log; absent file = empty log. */
+const refreshRejects = async ($: EngineInterface, root: string): Promise<void> => {
+  const text = await $.fs.read(`${root}/${REJECTS_PATH}`).then(String).catch(() => '')
+  const now = Date.now()
+  await update($, rejects, () => parseRejects(text, now))
+}
+
 const refreshPane = async ($: EngineInterface): Promise<void> => {
   const root = await projectRoot(ioOf($))
   if (root === null) {
     await update($, pane, () => EMPTY_NAV)
     return
   }
+  await refreshRejects($, root).catch(() => {})
   const functions = `${$.plugin.root}/skills/nav-graph/functions`
   const graphPath = '.agent/knowledge/graph.json'
   const tasks = await run(ioOf($), ['sh', '-c',
@@ -624,9 +635,11 @@ export const register: Register = on => {
     // The pane follows the session without `r`: Prometheus every turn (local, ~12 curls, one
     // refused probe when the stack is down); the task list, marker and memories when a turn
     // wrote under .agent/ (three subprocess spawns, so not every turn).
+    const rootForRejects = await projectRoot(ioOf($))
     await Promise.all([
       refreshTrip($).catch(() => {}),
       a.docsTouched ? refreshPane($) : Promise.resolve(),
+      rootForRejects === null ? Promise.resolve() : refreshRejects($, rootForRejects).catch(() => {}),
     ])
     await update($, history, () => ({
       ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
@@ -683,6 +696,8 @@ export const register: Register = on => {
     const judgeOpen = await read($, showJudge)
     const trail = judgeOpen ? ((await read($, judgeTrail)) ?? []) : []
     const details = await read($, showDetails)
+    const rj = await read($, rejects)
+    const rejectsOpen = await read($, showRejects)
     const pc = { ...NO_PACE, ...((await read($, pace)) ?? {}) }
     const chosen = await read($, pinned)
     const percent = s?.ctxPercent ?? null
@@ -758,10 +773,19 @@ export const register: Register = on => {
                 <Text color={PALETTE.dim}>  {r.docs} docs</Text>
               </Text>
               <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
-              <Text> </Text>
+              <Text color={(rj?.today ?? 0) > 0 ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">{rejectsLine(rj)}</Text>
             </Box>
           ) : null}
         </Box>
+
+        {rejectsOpen ? (
+          <Box {...panel} flexDirection="column">
+            {title('rejects')}
+            {rj === null || rj.tail.length === 0
+              ? <Text color={PALETTE.dim}>no refusals logged ({REJECTS_PATH})</Text>
+              : rj.tail.map((line, i) => <Text key={`rj-${i}`} color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
+          </Box>
+        ) : null}
 
         {j === null ? null : (
           <Box {...panel} flexDirection="column">
@@ -889,6 +913,8 @@ export const register: Register = on => {
           <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
           <Text color={PALETTE.dim}>·</Text>
           <Button key="details" label="details" hotkey="d" plain onPress={() => update($, showDetails, v => !v)} />
+          <Text color={PALETTE.dim}>·</Text>
+          <Button key="rejects" label="rejects" hotkey="l" plain onPress={() => update($, showRejects, v => !v)} />
           {j === null ? null : <Text color={PALETTE.dim}>·</Text>}
           {j === null ? null : (
             <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />

@@ -14,6 +14,11 @@ export type OpResult = {
   continue_?: boolean
   /** v6 `{}` acknowledgment (TASK-61 parity); no output of its own. */
   ack?: true
+  /**
+   * TASK-88: why a blocking result refused, for the reject log. Runtime bookkeeping, stripped
+   * by runOps before the merge; ignored on a non-blocking result.
+   */
+  reject?: { reason: string; evidence: Json }
 }
 
 export type Json = Record<string, unknown>

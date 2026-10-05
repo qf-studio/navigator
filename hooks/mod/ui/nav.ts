@@ -1,6 +1,8 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
-import type { NavGraph, NavJudge, NavJudgeLabel, NavMemory, NavPace, NavRate, NavReads, NavTask } from '../../../types'
+import type {
+  NavGraph, NavJudge, NavJudgeLabel, NavMemory, NavPace, NavRate, NavReads, NavRejects, NavTask,
+} from '../../../types'
 import type { Judgment } from '../lib/scoring'
 
 const TASK_ID_RE = /(TASK-\d+)/
@@ -282,3 +284,40 @@ export const etaText = (legsLeft: number, pace: NavPace): string => {
 export const bashTouchesDocs = (command: string): boolean =>
   /\.agent\b/.test(command)
   || /\bgit\s+(?:mv|commit|checkout|switch|stash|pull|merge|rebase|reset|restore|cherry-pick)\b/.test(command)
+
+// TASK-88: the reject log behind `l`. One JSON line per refusal (lib/rejects.ts); the pane shows
+// today's count, the newest line, and the last REJECTS_TAIL lines when opened.
+export const REJECTS_TAIL = 8
+
+const sameLocalDay = (a: Date, b: Date): boolean =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+/** `.nav-rejects.jsonl` text → pane model; malformed lines are skipped, never thrown on. */
+export const parseRejects = (text: string, nowMs: number): NavRejects => {
+  const now = new Date(nowMs)
+  const rows: { ts: Date; op: string; reason: string }[] = []
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue
+    try {
+      const doc = JSON.parse(line) as Record<string, unknown>
+      const ts = new Date(String(doc.ts ?? ''))
+      if (Number.isNaN(ts.getTime())) continue
+      rows.push({ ts, op: String(doc.op ?? '?'), reason: String(doc.reason ?? '') })
+    } catch {
+      continue
+    }
+  }
+  const clock = (d: Date): string => clockOf(d.toISOString()) ?? '--:--'
+  const last = rows[rows.length - 1]
+  return {
+    today: rows.filter(r => sameLocalDay(r.ts, now)).length,
+    last: last === undefined ? null : { clock: clock(last.ts), op: last.op, reason: last.reason },
+    tail: rows.slice(-REJECTS_TAIL).map(r => `${clock(r.ts)} ${r.op} · ${r.reason}`),
+  }
+}
+
+/** The one-line summary under the reads card: `rejects today 3 · last 14:03 stop_completion`. */
+export const rejectsLine = (r: NavRejects | null): string => {
+  if (r === null || r.last === null) return 'rejects none'
+  return `rejects today ${r.today} · last ${r.last.clock} ${r.last.op}`
+}

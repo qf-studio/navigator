@@ -272,7 +272,7 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     expect(texts).not.toContain('TASK-15')
     const buttons = (await ui.findAll({ type: 'Button' })).map(b => b.text)
     expect(buttons).toContain('● 2/4  impl') // the current leg is the press
-    expect(buttons).toHaveLength(7) // leg + 2 memories + m c r d
+    expect(buttons).toHaveLength(8) // leg + 2 memories + m c r d l
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')

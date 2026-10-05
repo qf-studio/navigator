@@ -141,7 +141,16 @@ def run(ctx):
         # Redaction belt: no LOOP_TRIGGERS phrase may leave via stderr —
         # Claude Code echoes blocked stderr into the next prompt (mem-034).
         stderr = sentinels.redact_phrases(stderr, scoring.LOOP_TRIGGERS)
-        return {"exit_code": 2, "stderr": stderr}
+        # TASK-88 reject log: the matched trigger is evidence in the log file,
+        # which never enters the model's context (the stderr above stays redacted).
+        return {
+            "exit_code": 2,
+            "stderr": stderr,
+            "reject": {
+                "reason": "loop trigger after a skipped WORKFLOW CHECK (strict_block)",
+                "evidence": {"trigger": result.get("loop_trigger")},
+            },
+        }
 
     lines = _warn_lines(result, task_mode_enabled)
     if not lines:

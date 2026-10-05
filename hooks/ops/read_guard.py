@@ -226,7 +226,15 @@ def run(ctx):
 
     if count >= escalate_at and strict_block:
         # Deny-only channel: exit 2 + sentinel stderr (mem-035/mem-054).
-        return {"exit_code": 2, "stderr": _block_text(count, escalate_at)}
+        return {
+            "exit_code": 2,
+            "stderr": _block_text(count, escalate_at),
+            # TASK-88 reject log: the path goes to the log file, never to stderr.
+            "reject": {
+                "reason": f"{count} .agent/ reads this turn (escalate_threshold={escalate_at})",
+                "evidence": {"path": agent_rel, "count": count, "threshold": escalate_at},
+            },
+        }
     if count >= escalate_at:
         return {"stderr": (
             f"[nav-read-guard] {count} .agent/ files read this turn. "

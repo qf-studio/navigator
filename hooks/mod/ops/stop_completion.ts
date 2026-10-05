@@ -160,7 +160,15 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   completion.held_count = held + 1
   completion.signal = { exit_seen: false, heuristics_met: met, held_at: ctx.now }
   const unmet = INDICATOR_VOCABULARY.filter(name => !filtered[name])
-  return { decision: 'block', reason: reasonText(met, unmet) }
+  return {
+    decision: 'block',
+    reason: reasonText(met, unmet),
+    // TASK-88 reject log: what the gate saw, so an over-fire shows in one grep.
+    reject: {
+      reason: `mutating turn, ${met}/${INDICATOR_VOCABULARY.length} indicators met, no exit signal`,
+      evidence: { met, unmet, mutating_tools: [...tools].filter(t => TASK_ACTION_TOOLS.has(t)).sort() },
+    },
+  }
 }
 
 export const stopCompletion: Op = {

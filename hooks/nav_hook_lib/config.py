@@ -168,6 +168,9 @@ DEFAULTS = {
         "continue_enabled": False,  # mem-051: continue:true is a no-op; ships OFF permanently
         "max_continues": 2,
     },
+    "reject_log": {
+        "enabled": True,  # TASK-88: observes refusals, never blocks — may ship on
+    },
     "jit_memory": {
         "enabled": False,
     },

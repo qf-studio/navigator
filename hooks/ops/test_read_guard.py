@@ -159,6 +159,12 @@ class ThresholdLadderTest(ReadGuardTestBase):
         self.assertIn("blocked at 5 .agent/ reads (escalate_threshold=5)",
                       result["stderr"])
         self.assertEqual(ctx.state["reads"]["turn_count"], 5)
+        # TASK-88: the refusal summary the runtime logs (path only here, never stderr).
+        self.assertEqual(result["reject"]["reason"],
+                         "5 .agent/ reads this turn (escalate_threshold=5)")
+        self.assertEqual(result["reject"]["evidence"]["count"], 5)
+        self.assertEqual(result["reject"]["evidence"]["threshold"], 5)
+        self.assertTrue(result["reject"]["evidence"]["path"].endswith(".md"))
 
     def test_block_stderr_never_carries_the_file_path(self):
         # mem-034: no payload-derived substrings in the block notice (v6 rule).
@@ -179,7 +185,8 @@ class ThresholdLadderTest(ReadGuardTestBase):
         # output from this gate — exit 2 + stderr is the whole channel.
         result, _ = self.run_read(
             state={"reads": {"turn_count": 4, "updated_at": NOW - 5}})
-        self.assertEqual(set(result), {"exit_code", "stderr"})
+        # `reject` is runtime bookkeeping (TASK-88), stripped before the merge.
+        self.assertEqual(set(result) - {"reject"}, {"exit_code", "stderr"})
 
     def test_config_overrides_thresholds(self):
         self.write_config({"warn_threshold": 1, "escalate_threshold": 2})

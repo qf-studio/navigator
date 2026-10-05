@@ -55,6 +55,7 @@ v<version> Features:
 │ dispatcher              │ [x]    │ Single hook dispatcher runtime (nav_dispat... │
 │ tier1                   │ [ ]    │ Zero-token answers for whitelisted prompts    │
 │ stop_completion         │ [ ]    │ Completion gate on Stop (decision:block)      │
+│ reject_log              │ [x]    │ One JSONL line per refusal (.agent/.nav-re... │
 │ jit_memory              │ [ ]    │ Injects relevant memories after tool use      │
 │ subagent_context        │ [ ]    │ Injects project context into subagents (2k)   │
 │ failure_diagnosis       │ [ ]    │ Surfaces graph pitfalls on tool failures      │
@@ -117,6 +118,9 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
   `tier1.rules.*` in `.agent/.nav-config.json`; edit those directly)
 - `stop_completion` - Completion gate on Stop via decision:block
   (`stop_completion.continue_enabled` stays false; `max_continues` caps at 2)
+- `reject_log` - one JSON line per refusal (read-guard deny, prompt-gate block, stop-gate
+  block) in `.agent/.nav-rejects.jsonl`, both runtimes, bounded to 500 lines; observes only,
+  so it ships on. `/nav` shows it behind `l`.
 - `jit_memory` - Just-in-time memory injection after tool use
 - `subagent_context` - Project context injection into subagents
   (`subagent_context.budget_chars`, default 2000)

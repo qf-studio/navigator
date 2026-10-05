@@ -2,7 +2,8 @@
 // phases gates > responders > injectors > recorders, gate short-circuit, Pilot belt,
 // per-op crash isolation with a breaker, merge in registry order.
 import { clamp } from './lib/budget'
-import { configAllows } from './lib/config'
+import { configAllows, getPath } from './lib/config'
+import { appendReject, rejectLine } from './lib/rejects'
 import { isoUtc, save } from './lib/state'
 import type { Merged, Op, OpCtx, OpResult } from './lib/types'
 import { noteCrash, owns } from './owns'
@@ -81,6 +82,24 @@ const noteOpError = async (ctx: OpCtx, op: string, error: unknown): Promise<void
   await ctx.io.write(`${ctx.root}/${HEALTH_FILE}`, `${JSON.stringify(doc, null, 2)}\n`).catch(() => {})
 }
 
+/**
+ * runtime._log_reject: THE one reject-log append point in the mod (TASK-88). The `reject` key
+ * is always stripped; a line is written only for a result that actually blocks, when
+ * `reject_log.enabled` holds. Under Pilot the belt strips the block next, so the line says
+ * `suppressed: true`. A failed append never reaches the op or the user.
+ */
+const logReject = async (ctx: OpCtx, op: string, result: OpResult): Promise<OpResult> => {
+  if (!('reject' in result)) return result
+  const { reject, ...cleaned } = result
+  if (!reject || typeof reject !== 'object' || !isBlocking(cleaned)) return cleaned
+  if (getPath(ctx.config, 'reject_log.enabled', true) !== true) return cleaned
+  const toolEvent = ctx.event === 'PreToolUse' || ctx.event === 'PostToolUse'
+  const tool = toolEvent && typeof ctx.payload.tool_name === 'string' ? ctx.payload.tool_name : null
+  const line = rejectLine(isoUtc(ctx.now), ctx.sessionId, ctx.event, op, tool, reject, ctx.pilotExecutor)
+  await appendReject(ctx.io, ctx.root, line).catch(() => false)
+  return cleaned
+}
+
 export const runOps = async (
   ctx: OpCtx, ops: readonly Op[], leading: string | null = null,
 ): Promise<Merged> => {
@@ -104,6 +123,7 @@ export const runOps = async (
       continue
     }
     if (!result) continue
+    result = await logReject(ctx, op.spec.name, result)
     if (ctx.pilotExecutor) result = suppressBlocking(result)
     if (isGate && isBlocking(result)) gateBlocked = true
     outcomes.push({ index, result })

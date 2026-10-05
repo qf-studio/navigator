@@ -237,6 +237,17 @@ FEATURES = {
         "default": False,
         "type": "config"
     },
+    "reject_log": {
+        "name": "reject_log",
+        "display_name": "Reject Log",
+        "version": "8.2.0",
+        "description": "One JSONL line per refusal (.agent/.nav-rejects.jsonl)",
+        "short_desc": "Reject log: every gate refusal, greppable",
+        "config_key": "reject_log",
+        "enabled_key": "enabled",
+        "default": True,
+        "type": "config"
+    },
     "jit_memory": {
         "name": "jit_memory",
         "display_name": "JIT Memory",

@@ -204,6 +204,9 @@ line — re-running nav-init must not duplicate entries):
 .agent/.nav-runtime-state.json
 .agent/.nav-runtime-state.lock
 
+# Navigator reject log (one line per refusal; local diagnostics, TASK-88)
+.agent/.nav-rejects.jsonl
+
 # Navigator personal config override (per contributor, see nav-features --local)
 .agent/.nav-config.local.json
 
@@ -215,6 +218,7 @@ Idempotent append, one command:
 ```bash
 for line in ".context-markers/" ".agent/.nav-temp/" \
             ".agent/.nav-runtime-state.json" ".agent/.nav-runtime-state.lock" \
+            ".agent/.nav-rejects.jsonl" \
             ".agent/.nav-config.local.json" ".agent/onboarding/"; do
   grep -qxF "$line" .gitignore 2>/dev/null || echo "$line" >> .gitignore
 done

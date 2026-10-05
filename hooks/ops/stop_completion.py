@@ -583,4 +583,17 @@ def run(ctx):
     # Channel shape from the spike-proven emitter (mem-051): decision:block
     # + reason; continue:true is never used (it is a no-op).
     doc = json.loads(signals.stop_block(_reason(met, unmet)))
-    return {"decision": doc["decision"], "reason": doc["reason"]}
+    return {
+        "decision": doc["decision"],
+        "reason": doc["reason"],
+        # TASK-88 reject log: what the gate saw, so an over-fire shows in one grep.
+        "reject": {
+            "reason": f"mutating turn, {met}/{len(INDICATOR_VOCABULARY)} indicators met, "
+                      "no exit signal",
+            "evidence": {
+                "met": met,
+                "unmet": unmet,
+                "mutating_tools": sorted(tools & stop_state.TASK_ACTION_TOOLS),
+            },
+        },
+    }

@@ -140,6 +140,9 @@ export const CONFIG_DEFAULTS = {
     "continue_enabled": false,
     "max_continues": 2
   },
+  "reject_log": {
+    "enabled": true
+  },
   "jit_memory": {
     "enabled": false
   },

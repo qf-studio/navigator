@@ -57,6 +57,7 @@ on it.
 | `stderr` | str | Joined; runtime emits it — see sentinel discipline below |
 | `system_message` | str | Surfaced as `systemMessage` |
 | `ack` | bool | v6 parity: emit the bare `{}` doc when the merge is otherwise empty |
+| `reject` | `{reason, evidence}` | TASK-88 bookkeeping, never output: on a blocking result the runtime appends one line to `.agent/.nav-rejects.jsonl` (`reject_log.enabled`, default on) and strips the key before the merge; ignored on a non-blocking result |
 
 ## Phase semantics (`OpSpec.phase`, executed in this order)
 

@@ -202,9 +202,11 @@ Other threads:
 - **TASK-89** ✅ (v8.1.2, 2026-10-05) — the `/nav` pane follows Bash edits, `git mv` /
   commits and subagent runs (not only Edit/Write), and the next card advances mid-turn from the
   active doc's checklist (`tasks/archive/TASK-89-pane-follows-bash-and-agent-edits.md`).
-- **TASK-88** 📋 — reject log: one JSONL line per refusal (read guard deny, gate block, stop
-  gate block) in both runtimes, bounded, on by default, a line in the pane; researched and planned
-  2026-10-04, not started (`tasks/TASK-88-reject-log.md`).
+- **TASK-88** ✅ (2026-10-05, unreleased) — reject log: a refusing op attaches `reject: {reason,
+  evidence}`; the runtime (one append point per runtime) writes one JSON line to
+  `.agent/.nav-rejects.jsonl`, bounded to 500, `reject_log.enabled` default on, `suppressed: true`
+  under Pilot; `/nav` shows today's count under reads and the tail behind `l`
+  (`tasks/archive/TASK-88-reject-log.md`).
 - **TASK-87** ✅ (v8.1.1, 2026-10-04) — reads made through read-only Bash (`cat`, `sed -n`,
   `head`, `grep`…) count in the `/nav` reads card like the Read tool; `sed` without `-i` joins
   the read-only allowlist in both runtimes (`tasks/archive/TASK-87-bash-reads-count.md`).

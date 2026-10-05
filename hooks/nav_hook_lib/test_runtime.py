@@ -50,6 +50,7 @@ if str(HERE) not in sys.path:
 
 import budget
 import config
+import rejects
 import runtime
 import state
 
@@ -933,6 +934,92 @@ class ContextObjectTest(RuntimeTestBase):
         self.assertTrue(seen["state_is_dict"])
         self.assertIs(seen["pilot"], False)
         self.assertEqual(seen["now"], 1234.5)
+
+
+class RejectLogTest(RuntimeTestBase):
+    """TASK-88: one JSONL line per refusal, written by the runtime, never by ops."""
+
+    REJECT = {"reason": "too many reads", "evidence": {"path": "tasks/x.md", "count": 5}}
+
+    def read_rejects(self):
+        path = self.agent_dir / rejects.REJECTS_FILE_NAME
+        if not path.exists():
+            return []
+        return [json.loads(ln) for ln in path.read_text(encoding="utf-8").splitlines() if ln]
+
+    def test_blocking_gate_with_reject_appends_one_line_and_strips_the_key(self):
+        registry = {"PreToolUse": [self.make_op(
+            "rl_gate", phase="gates",
+            result={"exit_code": 2, "stderr": "blocked", "reject": dict(self.REJECT)})]}
+        result = runtime.dispatch("PreToolUse", self.payload(tool_name="Read"),
+                                  registry=registry, now=1700000000.0)
+        self.assertEqual(result.exit_code, 2)
+        self.assertNotIn("reject", result.stdout or "")
+        lines = self.read_rejects()
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(lines[0], {
+            "ts": "2023-11-14T22:13:20+00:00", "session": SESSION_ID,
+            "event": "PreToolUse", "op": "rl_gate", "tool": "Read",
+            "reason": "too many reads",
+            "evidence": {"path": "tasks/x.md", "count": 5},
+        })
+
+    def test_stop_block_line_has_no_tool_key(self):
+        registry = {"Stop": [self.make_op(
+            "rl_stop", phase="gates",
+            result={"decision": "block", "reason": "finish", "reject": dict(self.REJECT)})]}
+        runtime.dispatch("Stop", self.payload(), registry=registry)
+        (line,) = self.read_rejects()
+        self.assertNotIn("tool", line)
+        self.assertNotIn("suppressed", line)
+        self.assertEqual(line["op"], "rl_stop")
+
+    def test_non_blocking_result_with_reject_writes_nothing(self):
+        registry = {"Stop": [self.make_op(
+            "rl_soft", phase="gates",
+            result={"stderr": "warn only", "reject": dict(self.REJECT)})]}
+        result = runtime.dispatch("Stop", self.payload(), registry=registry)
+        self.assertEqual(result.stderr, "warn only")
+        self.assertEqual(self.read_rejects(), [])
+
+    def test_disabled_by_config_writes_nothing_but_still_blocks(self):
+        self.write_config({"reject_log": {"enabled": False}})
+        registry = {"Stop": [self.make_op(
+            "rl_off", phase="gates",
+            result={"decision": "block", "reason": "finish", "reject": dict(self.REJECT)})]}
+        result = runtime.dispatch("Stop", self.payload(), registry=registry)
+        self.assertIn('"block"', result.stdout)
+        self.assertEqual(self.read_rejects(), [])
+
+    def test_under_pilot_the_line_is_marked_suppressed_and_no_block_escapes(self):
+        real = config.is_pilot_executor
+        config.is_pilot_executor = lambda: True
+        self.addCleanup(lambda: setattr(config, "is_pilot_executor", real))
+        registry = {"Stop": [self.make_op(
+            "rl_pilot", phase="gates",
+            result={"decision": "block", "reason": "finish", "reject": dict(self.REJECT)})]}
+        result = runtime.dispatch("Stop", self.payload(), registry=registry)
+        self.assertNotIn("block", result.stdout or "")
+        (line,) = self.read_rejects()
+        self.assertIs(line["suppressed"], True)
+
+    def test_line_bytes_are_compact_and_ordered(self):
+        text = rejects.line("T", "s1", "Stop", "op", None, self.REJECT)
+        self.assertEqual(text, '{"ts":"T","session":"s1","event":"Stop","op":"op",'
+                               '"reason":"too many reads",'
+                               '"evidence":{"path":"tasks/x.md","count":5}}')
+        self.assertEqual(rejects.line("T", None, "PreToolUse", "op", "Read", {}, True),
+                         '{"ts":"T","session":null,"event":"PreToolUse","op":"op",'
+                         '"tool":"Read","reason":"","evidence":{},"suppressed":true}')
+
+    def test_append_keeps_the_newest_lines_once_past_the_rewrite_mark(self):
+        path = self.agent_dir / rejects.REJECTS_FILE_NAME
+        path.write_text("".join(f"{{\"n\":{i}}}\n" for i in range(rejects.REWRITE_AT)))
+        self.assertTrue(rejects.append(self.agent_dir, '{"n":"last"}'))
+        lines = path.read_text().splitlines()
+        self.assertEqual(len(lines), rejects.KEEP_LINES)
+        self.assertEqual(lines[-1], '{"n":"last"}')
+        self.assertEqual(json.loads(lines[0])["n"], rejects.REWRITE_AT - rejects.KEEP_LINES + 1)
 
 
 if __name__ == "__main__":

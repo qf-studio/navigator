@@ -22,6 +22,16 @@ export type NavPane = {
   steps?: { id?: string; label: string; done: boolean }[]
 }
 
+/** TASK-88: the reject log (`.agent/.nav-rejects.jsonl`) as the pane shows it. */
+export type NavRejects = {
+  /** Lines whose timestamp falls on the local calendar day of `now`. */
+  today: number
+  /** The newest line, or null when the log is empty. */
+  last: { clock: string; op: string; reason: string } | null
+  /** The newest lines, formatted `HH:MM op · reason`, oldest first (REJECTS_TAIL at most). */
+  tail: string[]
+}
+
 export type NavUsage = { rates: NavRate[]; usd: number | null }
 
 export type NavActivity = {
@@ -109,6 +119,8 @@ declare module 'claude-code' {
       judgeTrail: NavJudge[]
       showJudge: boolean
       showDetails: boolean
+      rejects: NavRejects | null
+      showRejects: boolean
       pace: NavPace
       pinned: string | null
       crashes: Record<string, number>

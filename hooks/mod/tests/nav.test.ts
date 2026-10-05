@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   NO_PACE, bashReadFiles, etaText, fanOutText, isDocPath, judgeEffect, judgeTally, labelEntry, labelFromVerdict,
-  recordPace, trailLine, withLabel,
+  parseRejects, recordPace, rejectsLine, trailLine, withLabel,
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
@@ -38,6 +38,22 @@ describe('pane model', () => {
     expect(sparkColor([])).toBe(PALETTE.dim)
     expect(sparkColor([0, 0, 0])).toBe(PALETTE.dim)
     expect(sparkColor([5, 5, 6])).toBe(PALETTE.accent)
+  })
+  test('reject log: today count, newest line, tail; malformed lines skipped (TASK-88)', () => {
+    const now = Date.parse('2026-10-05T12:00:00Z')
+    const text = [
+      '{"ts":"2026-10-04T09:00:00+00:00","op":"read_guard","reason":"old"}',
+      'not json',
+      '{"ts":"2026-10-05T09:06:06+00:00","op":"stop_completion","reason":"mutating turn, 1/6 indicators met"}',
+    ].join('\n')
+    const r = parseRejects(text, now)
+    expect(r.today).toBe(1)
+    expect(r.last?.op).toBe('stop_completion')
+    expect(r.tail.length).toBe(2)
+    expect(r.tail[1]).toContain('stop_completion · mutating turn, 1/6 indicators met')
+    expect(rejectsLine(r)).toContain('rejects today 1 · last ')
+    expect(rejectsLine(parseRejects('', now))).toBe('rejects none')
+    expect(rejectsLine(null)).toBe('rejects none')
   })
   test('fan-out verdict follows the turn in progress, else the last one', () => {
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 0, turnDocs: 0, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('use an Agent')

@@ -89,11 +89,12 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 try:
-    from . import budget, config, hio, signals, state
+    from . import budget, config, hio, rejects, signals, state
 except ImportError:  # top-level module under per-directory unittest discovery
     import budget
     import config
     import hio
+    import rejects
     import signals
     import state
 
@@ -305,6 +306,34 @@ def _suppress_blocking(result: dict) -> dict:
 
 def _import_op(name: str):
     return importlib.import_module(f"{OPS_PACKAGE}.{name}")
+
+
+def _log_reject(result: dict, cfg, agent_dir, event: str, op_name: str, payload: dict,
+                session_id, pilot_executor: bool, ts: float) -> dict:
+    """TASK-88: the ONE reject-log append point in the Python runtime.
+
+    A refusing op attaches ``reject: {reason, evidence}`` to its blocking
+    result. The key is always stripped before the merge (it is bookkeeping,
+    not output); a line is appended only when the result actually blocks and
+    ``reject_log.enabled`` is true. Under Pilot the merge belt will strip the
+    block next, so the line carries ``suppressed: true`` — the refusal was
+    computed, not applied. A failed append never reaches the op or the user.
+    """
+    if "reject" not in result:
+        return result
+    cleaned = dict(result)
+    reject = cleaned.pop("reject")
+    if not isinstance(reject, dict) or not _is_blocking(cleaned):
+        return cleaned
+    if not config.get(cfg, "reject_log.enabled", True):
+        return cleaned
+    tool = payload.get("tool_name") if event in _TOOL_MATCHER_EVENTS else None
+    try:
+        rejects.append(agent_dir, rejects.line(
+            _iso(ts), session_id, event, op_name, tool, reject, suppressed=pilot_executor))
+    except Exception:
+        pass
+    return cleaned
 
 
 # ---------------------------------------------------------------------------
@@ -551,6 +580,8 @@ def _dispatch(event: str, payload: dict, registry, now) -> DispatchResult:
                 _handle_op_crash(runtime_state, agent_dir, event, op_name, error,
                                  clock(), error_lines)
                 continue
+            result = _log_reject(result, cfg, agent_dir, event, op_name, payload,
+                                 session_id, pilot_executor, clock())
             if pilot_executor:
                 result = _suppress_blocking(result)  # merge-level Pilot belt
             outcomes.append((index, result))

@@ -177,6 +177,13 @@ class DualConditionTest(StopCompletionTestBase):
         self.assertNotIn("exit_code", result)
         reason = result["reason"]
         self.assertIn("0/6", reason)
+        # TASK-88: the reject-log summary names what the gate saw.
+        self.assertEqual(result["reject"]["reason"],
+                         "mutating turn, 0/6 indicators met, no exit signal")
+        self.assertEqual(result["reject"]["evidence"]["met"], 0)
+        self.assertEqual(result["reject"]["evidence"]["unmet"],
+                         list(stop_completion.INDICATOR_VOCABULARY))
+        self.assertEqual(result["reject"]["evidence"]["mutating_tools"], ["Edit"])
         for name in stop_completion.INDICATOR_VOCABULARY:
             self.assertIn(name, reason)
         self.assertIn('"exit"', reason)  # tells the model how to yield

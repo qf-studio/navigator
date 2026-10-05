@@ -54,6 +54,7 @@ temp/
 .agent/.nav-runtime-state.json
 .agent/.nav-runtime-state.lock
 .agent/.nav-dispatch-health.json
+.agent/.nav-rejects.jsonl
 
 # Personal config override + per-person onboarding state (GH-30, GH-31)
 .agent/.nav-config.local.json

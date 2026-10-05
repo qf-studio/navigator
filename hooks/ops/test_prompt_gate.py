@@ -114,6 +114,10 @@ class BlockRulesTest(GateTestBase):
         self.assertTrue(result["stderr"].startswith("<nav-workflow-block>"))
         self.assertTrue(result["stderr"].endswith("</nav-workflow-block>"))
         self.assertNotIn("additional_context", result)  # warn suppressed
+        # TASK-88: the matched trigger is log evidence (the file never enters context).
+        self.assertEqual(result["reject"]["reason"],
+                         "loop trigger after a skipped WORKFLOW CHECK (strict_block)")
+        self.assertIn(result["reject"]["evidence"]["trigger"], scoring.LOOP_TRIGGERS)
 
     def test_block_stderr_contains_no_trigger_phrase(self):
         # mem-034 permanent probe (also asserted end-to-end in
