@@ -73,7 +73,7 @@ numbers), reads (fan-out verdict), the typed judge's verdict on the last prompt 
 Navigator did with it (`j`: the session tally and the last decisions, `y`/`x` label the latest
 into `~/.config/navigator/judge-labels.json` for `scripts/judge_eval.py`), next (the current leg as a press that submits it, with an ETA from
 the pace so far), memories with pinning, reads and tasks behind `d`, the reject log behind `l`
-(today's count and the newest refusal under reads; `.agent/.nav-rejects.jsonl`, one JSON line per
+(`3 rejects · 14:03 stop_completion` under reads; `.agent/.nav-rejects.jsonl`, one JSON line per
 read-guard deny, prompt-gate block or stop-gate block, written by both runtimes, TASK-88), and marker/compact
 buttons; a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte

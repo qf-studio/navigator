@@ -67,8 +67,8 @@ Half a day with parity fixtures.
   `["Bash"]`); prompt_gate `{trigger}`.
 - **Config**: `reject_log.enabled`, default on (observes, never blocks). Gitignored here and by
   `nav-init`.
-- **Pane**: under reads (with `d`): `rejects today N · last HH:MM <op>`; `l` opens the last
-  eight lines. Hotkeys must be a lowercase letter, so `l`, not the planned `R`.
+- **Pane**: under reads (with `d`): `N rejects · HH:MM <op>` (shortened after the first live
+  screenshot: the 26%-wide card truncated the op name); `l` opens the last eight lines. Hotkeys must be a lowercase letter, so `l`, not the planned `R`.
 
 ### Deviations from the plan
 

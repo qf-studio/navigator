@@ -316,8 +316,12 @@ export const parseRejects = (text: string, nowMs: number): NavRejects => {
   }
 }
 
-/** The one-line summary under the reads card: `rejects today 3 · last 14:03 stop_completion`. */
+/**
+ * The one-line summary under the reads card: `3 rejects · 14:03 stop_completion`. The card is
+ * narrow (26%), so the op name — the useful part — must fit before any truncation.
+ */
 export const rejectsLine = (r: NavRejects | null): string => {
-  if (r === null || r.last === null) return 'rejects none'
-  return `rejects today ${r.today} · last ${r.last.clock} ${r.last.op}`
+  if (r === null || r.last === null) return 'no rejects'
+  const n = r.today
+  return `${n} reject${n === 1 ? '' : 's'} · ${r.last.clock} ${r.last.op}`
 }

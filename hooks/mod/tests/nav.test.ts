@@ -51,9 +51,10 @@ describe('pane model', () => {
     expect(r.last?.op).toBe('stop_completion')
     expect(r.tail.length).toBe(2)
     expect(r.tail[1]).toContain('stop_completion · mutating turn, 1/6 indicators met')
-    expect(rejectsLine(r)).toContain('rejects today 1 · last ')
-    expect(rejectsLine(parseRejects('', now))).toBe('rejects none')
-    expect(rejectsLine(null)).toBe('rejects none')
+    expect(rejectsLine(r)).toMatch(/^1 reject · \d\d:\d\d stop_completion$/)
+    expect(rejectsLine({ ...r, today: 3 })).toMatch(/^3 rejects · /)
+    expect(rejectsLine(parseRejects('', now))).toBe('no rejects')
+    expect(rejectsLine(null)).toBe('no rejects')
   })
   test('fan-out verdict follows the turn in progress, else the last one', () => {
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 0, turnDocs: 0, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('use an Agent')
