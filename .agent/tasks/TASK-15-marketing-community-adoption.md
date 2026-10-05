@@ -1,6 +1,6 @@
 # TASK-15: Marketing Strategy & Community Adoption Plan
 
-**Status**: 🚧 In Progress — ongoing campaign, not autonomously executable. Refreshed
+**Status**: 📋 Backlog — postponed 2026-10-05; marketing runs through the owner's Threads and LinkedIn accounts for now, back to this plan later. Refreshed 2026-10-05 against the repo at v8.2.7 (research pass over README, CLAUDE.md, the docs site, `.agent/marketing/`, grafana, archived launch plans). The 2025-10-20 plan is preserved below under "Retired plan" and in git history (`git show f1c7171:.agent/tasks/TASK-15-marketing-community-adoption.md`).
 2026-10-05 against the repo at v8.2.7 (research pass over README, CLAUDE.md, the docs site,
 `.agent/marketing/`, grafana, archived launch plans). The 2025-10-20 plan is preserved below
 under "Retired plan" and in git history (`git show f1c7171:.agent/tasks/TASK-15-marketing-community-adoption.md`).
@@ -40,7 +40,7 @@ under "Retired plan" and in git history (`git show f1c7171:.agent/tasks/TASK-15-
 
 ---
 
-## Live checklist (the pane routes on these)
+## Live checklist (routes on the pane again once Status returns to In Progress)
 
 - [ ] Post the v8.2.6–v8.2.8 cut on Threads: short labeled cut, 500-char cap, pane
       screenshot (stop-gate over-fires fixed; finished task no longer the destination).

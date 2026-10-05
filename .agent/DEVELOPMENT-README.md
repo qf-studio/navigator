@@ -282,7 +282,7 @@ Other threads:
   IFR + reuse-inventory questions in research/planner agents (shipped v7.1.0)
 - **TASK-73** ✅ — TRIZ Phase 2: `nav-triz` skill (three candidates from different
   separation modes + recommendation), `triz_suggest.py`, software-mapped principles reference
-- **TASK-15** 🚧 — marketing strategy & community adoption; refreshed 2026-10-05 against v8.2.7: seven live legs (Threads cut, drafts decision, screen capture, Show HN, CONTRIBUTING, marker-compression re-measure, monthly metrics), 2025 plan retired in an appendix
+- **TASK-15** 📋 — marketing strategy & community adoption; postponed 2026-10-05 (owner posts on Threads + LinkedIn directly); refreshed 2026-10-05 against v8.2.7: seven live legs (Threads cut, drafts decision, screen capture, Show HN, CONTRIBUTING, marker-compression re-measure, monthly metrics), 2025 plan retired in an appendix
 - **TASK-35** — project memory (research)
 - **TASK-37** — nav-simplify complexity / cost scoring (design)
 - **TASK-55** — landing + docs site: built + deployed (navigator-site.vercel.app); only DNS cutover left
