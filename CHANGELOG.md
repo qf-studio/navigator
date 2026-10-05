@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.8] — 2026-10-05
+
+The Stop gate no longer forces a continuation on a turn whose only action is a read-only
+subagent (Explore, Plan, claude-code-guide, navigator-research, task-planner); unknown agent
+types still count as mutating (TASK-92).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.8.md)
+
 ## [v8.2.7] — 2026-10-05
 
 The `/nav` next card and the compact marker decide "in progress" from a task doc's `**Status**`
