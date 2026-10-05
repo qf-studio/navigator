@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.0] — 2026-10-05 — "Show Me the Refusals"
+
+A reject log: every refusal the runtime makes (read-guard deny, prompt-gate block, stop-gate
+block) is one JSON line in `.agent/.nav-rejects.jsonl`, written by both runtimes from one
+append point each, bounded, on by default (`reject_log.enabled`), marked `suppressed` under
+Pilot. The `/nav` pane shows today's count under reads and the tail behind `l` (TASK-88).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.0.md)
+
 ## [v8.1.2] — 2026-10-05
 
 The `/nav` pane follows doc edits made through Bash, `git mv` / commits and subagents, and the
