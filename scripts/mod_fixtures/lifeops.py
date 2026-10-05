@@ -68,6 +68,8 @@ PROFILE = {
 }
 TASKS = {
     ".agent/tasks/README.md": "# Tasks index\n",
+    ".agent/tasks/TASK-00-prose.md": "# TASK-00: Prose\n\n**Status**: ✅ Implemented\n\n"
+    "Docs whose line is plain `In Progress` were recorded as in progress 🚧 before.\n",
     ".agent/tasks/TASK-01-alpha.md": "# TASK-01: Alpha thing\n\n**Status**: 🚧 In Progress\n",
     ".agent/tasks/TASK-02-beta.md": "Intro line\n## TASK-02: Beta\nstatus: `done`\n",
     ".agent/tasks/TASK-03-gamma.md": "no heading here, in-progress soon\n",
@@ -171,8 +173,8 @@ def _scenarios():
               {}, {}, {}, {}))
 
     # compact_marker
-    cm ={**_base_files(), **TASKS, ".agent/tasks/TASK-04.md": "# Four 🚧\n",
-          ".agent/tasks/TASK-05.md": "# Five in progress\n", ".agent/tasks/TASK-06.md": "# Six in progress\n",
+    cm ={**_base_files(), **TASKS, ".agent/tasks/TASK-04.md": "# Four\n\n**Status:** 🚧 Shipping\n",
+          ".agent/tasks/TASK-05.md": "# Five\n\n> Status: in-progress\n", ".agent/tasks/TASK-06.md": "# Six in progress\n",
           ".agent/tasks/TASK-07.md": "# Seven in progress\n", "t.jsonl": TRANSCRIPT}
     for trig in ("manual", "auto", "weird", None):
         payload = {"transcript_path": "{T}/p/t.jsonl", "session_id": "sess-1"}

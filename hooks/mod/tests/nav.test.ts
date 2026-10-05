@@ -6,6 +6,7 @@ import {
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
+import { isInProgress } from '../lib/tasks'
 
 describe('pane model', () => {
   test('eta: legs only until a leg is done, then legs × turns per leg × ms per turn', () => {
@@ -155,5 +156,26 @@ describe('reads through Bash (TASK-87)', () => {
     expect(isDocPath('.agent/tasks/TASK-80.md')).toBe(true)
     expect(isDocPath('/repo/.agent/system/x.md')).toBe(true)
     expect(isDocPath('hooks/mod/register.tsx')).toBe(false)
+  })
+})
+
+describe('in-progress predicate (TASK-91)', () => {
+  test('the Status line decides, in every form the repo uses', () => {
+    expect(isInProgress('# T\n\n**Status**: 🚧 In Progress\n')).toBe(true)
+    expect(isInProgress('# T\n\n**Status:** 🚧 Shipping\n')).toBe(true)
+    expect(isInProgress('# T\n\n**Status**: In Progress\n')).toBe(true)
+    expect(isInProgress('# T\n\n> Status: in-progress\n')).toBe(true)
+    expect(isInProgress('**Status**: ✅ Implemented\n')).toBe(false)
+    expect(isInProgress('**Status**: Design\n')).toBe(false)
+  })
+  test('a finished doc that quotes the phrase in prose is not in progress', () => {
+    const doc = '# TASK-67: Vocabulary\n\n**Status**: ✅ Implemented\n\n'
+      + 'Plain `**Status**: In Progress` lines were recorded as 🚧 unknown.\n'
+    expect(isInProgress(doc)).toBe(false)
+  })
+  test('no Status line keeps the legacy head scan', () => {
+    expect(isInProgress('# Six in progress\n')).toBe(true)
+    expect(isInProgress('no heading, in-progress soon\n')).toBe(true)
+    expect(isInProgress('# Done\n')).toBe(false)
   })
 })

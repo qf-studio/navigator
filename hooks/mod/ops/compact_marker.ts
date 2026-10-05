@@ -2,6 +2,7 @@
 // PreCompact writes a heuristic marker (git state, in-progress tasks, transcript summary) and
 // points .active at it; PostCompact appends Claude Code's compact summary to that marker.
 import { getPath } from '../lib/config'
+import { isInProgress } from '../lib/tasks'
 import { pyInt } from '../lib/life-budget'
 import {
   JSONDecodeError, type PyValue, cpLen, cpSlice, dumps, fromJs, get, isDict, isFile, loads, pyStr,
@@ -156,8 +157,7 @@ export const activeTaskHint = async (io: Io, root: string): Promise<string | nul
     for (const name of await globMd(io, dir)) {
       if (name.toUpperCase().startsWith('README')) continue
       const head = (await safeRead(io, `${dir}/${name}`, 400)) ?? ''
-      const low = head.toLowerCase()
-      if (low.includes('in progress') || low.includes('in-progress') || head.includes('🚧')) {
+      if (isInProgress(head)) {
         candidates.push(`- \`${name}\` — ${titleOf(head, name)}`)
       }
       if (candidates.length >= 5) break

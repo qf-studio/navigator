@@ -187,6 +187,29 @@ def _git_state(root: Path) -> str:
 # Active task hint (v6 verbatim)
 # ---------------------------------------------------------------------------
 
+# The `**Status**:` / `**Status:**` / `Status:` line, tolerant like task_to_graph.py.
+_STATUS_LINE = re.compile(
+    r"(?im)^[>\s]*\*{0,2}\s*status\s*\*{0,2}\s*:\s*\*{0,2}\s*(.+?)\s*$"
+)
+_IN_PROGRESS_WORDS = re.compile(r"\bin[ -]progress\b", re.IGNORECASE)
+
+
+def is_in_progress(text: str) -> bool:
+    """True when a task doc is in progress (TASK-91).
+
+    With a Status line only that line decides (🚧 or the phrase "in progress"), so prose
+    that quotes the phrase elsewhere — TASK-67's own doc does — no longer counts. Docs
+    without a Status line keep the legacy whole-head scan. Mirrored in
+    hooks/mod/lib/tasks.ts.
+    """
+    match = _STATUS_LINE.search(text)
+    if match:
+        value = match.group(1)
+        return "🚧" in value or bool(_IN_PROGRESS_WORDS.search(value))
+    low = text.lower()
+    return "in progress" in low or "in-progress" in low or "🚧" in text
+
+
 def _active_task_hint(root: Path):
     tasks_dir = root / ".agent" / "tasks"
     if not tasks_dir.is_dir():
@@ -197,8 +220,7 @@ def _active_task_hint(root: Path):
             if path.name.upper().startswith("README"):
                 continue
             head = hio.safe_read(path, max_bytes=400) or ""
-            low = head.lower()
-            if "in progress" in low or "in-progress" in low or "🚧" in head:
+            if is_in_progress(head):
                 title = next(
                     (
                         line.lstrip("# ").strip()

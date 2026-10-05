@@ -26,6 +26,11 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   const opened: string[] = []
   // A Navigator project: ops only run where `.agent/` exists (v7 parity).
   if (!(`${AGENT}/.nav-config.json` in files)) files[`${AGENT}/.nav-config.json`] = '{}'
+  // Two in-progress task docs unless the test brings its own (TASK-91: the Status line decides).
+  if (!Object.keys(files).some(f => f.startsWith(`${AGENT}/tasks/`))) {
+    files[`${AGENT}/tasks/TASK-15-x.md`] = '# TASK-15: Marketing plan\n\n**Status**: 🚧 In Progress\n'
+    files[`${AGENT}/tasks/TASK-80-judge.md`] = '# TASK-80: Typed judge, phase 2\n\n**Status**: 🚧 In Progress\n'
+  }
   on('session.version', () => ({ value: { version: '2.1.287', base: '2.1.287', builtAt: '' } }))
   on('session.id', () => ({ value: 'session-1' }))
   mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
@@ -92,10 +97,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
     return { value: {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
-        ? String(e.argv[2]).startsWith('find')
-          ? '400000\n'
-          : '.agent/tasks/TASK-15-x.md|# TASK-15: Marketing plan\n'
-            + '.agent/tasks/TASK-80-judge.md|# TASK-80: Typed judge, phase 2\n'
+        ? '400000\n' // the docs-tree byte count
         : String(e.argv[1]).endsWith('graph_manager.py')
           ? 'Total Nodes: 195\nTotal Edges: 843\nMemories: 71\n'
           : e.argv.includes('--concepts')
@@ -417,7 +419,7 @@ test('(q) short replies never count, and an on-topic prompt clears the detour', 
 test('(r) park writes a task stub and returns to the route', async ($, on) => {
   const { allWrites } = world(on, {
     [`${AGENT}/.nav-config.json`]: '{}',
-    [`${AGENT}/tasks/TASK-84-v8.md`]: '# TASK-84: v8',
+    [`${AGENT}/tasks/TASK-84-v8.md`]: '# TASK-84: v8\n\n**Status**: 🚧 In Progress\n',
   }, 20)
   await $.command.run(NAV_CMD)
   await submit($, 'what should I post on threads about marketing feedback replies')
@@ -435,7 +437,7 @@ test('(r) park writes a task stub and returns to the route', async ($, on) => {
 test('(s) a task checklist becomes the route', async ($, on) => {
   world(on, {
     [`${AGENT}/.nav-config.json`]: '{}',
-    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n**Status**: 🚧 In Progress\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n',
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
@@ -449,7 +451,7 @@ test('(s) a task checklist becomes the route', async ($, on) => {
 test('(s3) on the last leg the leg row carries "last leg" since there is no then', async ($, on) => {
   world(on, {
     [`${AGENT}/.nav-config.json`]: '{}',
-    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [x] collect evidence\n- [x] add surface\n- [ ] ship\n',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n**Status**: 🚧 In Progress\n- [x] collect evidence\n- [x] add surface\n- [ ] ship\n',
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
@@ -461,7 +463,7 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   world(on, {
     [`${AGENT}/.nav-config.json`]: '{}',
     [`${CWD}/.agent/tasks/TASK-80-judge.md`]: [
-      '# TASK-80', '## Work breakdown', '| # | Step |', '|---|---|',
+      '# TASK-80', '**Status**: 🚧 In Progress', '## Work breakdown', '| # | Step |', '|---|---|',
       '| 1 | Baseline | ', '| 2 | Port the scorer; keep parity | ', '| 3 | Ship |',
       '## Progress log', '### Step 1 — baseline ✅',
     ].join('\n'),
@@ -572,12 +574,12 @@ test('(t8) git mv / git commit reload the pane too; other mutating Bash does not
 test('(t9) editing the active task doc moves the next card before the turn ends (TASK-89)', async ($, on) => {
   const files: Files = {
     [`${AGENT}/.nav-config.json`]: '{}',
-    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [ ] collect evidence\n- [ ] add surface\n- [ ] ship\n',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n**Status**: 🚧 In Progress\n- [ ] collect evidence\n- [ ] add surface\n- [ ] ship\n',
   }
   world(on, files, 20)
   await $.command.run(NAV_CMD)
   expect(await texts($)).toContain('→ then    add surface')
-  files[`${CWD}/.agent/tasks/TASK-80-judge.md`] = '# TASK-80\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n'
+  files[`${CWD}/.agent/tasks/TASK-80-judge.md`] = '# TASK-80\n**Status**: 🚧 In Progress\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n'
   await $.tool.call({ tool: 'Edit', file_path: `${CWD}/.agent/tasks/TASK-80-judge.md`, old_string: 'a', new_string: 'b' } as never)
   const mid = await texts($) // no turn.complete yet: the leg already advanced
   expect(mid).toContain('→ then    ship')

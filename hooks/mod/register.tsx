@@ -32,6 +32,7 @@ import {
 } from './ui/nav'
 import { REJECTS_PATH } from './lib/rejects'
 import { bashReadonly } from './lib/stop-bash'
+import { isInProgress } from './lib/tasks'
 import {
   arrived, bandText, buildRoute, captureGoal, contentWords, currentWaypoint, detourTopic, isOffRoute,
   nextTaskNumber, parkedTaskDoc, parseSteps, slugOf,
@@ -168,6 +169,26 @@ const refreshRejects = async ($: EngineInterface, root: string): Promise<void> =
   await update($, rejects, () => parseRejects(text, now))
 }
 
+/**
+ * `path|# TASK-80: Title` lines for every task doc whose Status line says in progress
+ * (TASK-91: the Status line decides, not a prose mention anywhere in the doc).
+ */
+const inProgressTaskLines = async ($: EngineInterface, root: string): Promise<string> => {
+  const dir = `${root}/.agent/tasks`
+  const names = (await $.fs.list(dir).catch(() => []))
+    .map(f => f.name)
+    .filter(n => n.endsWith('.md') && !n.toUpperCase().startsWith('README'))
+    .sort()
+  const lines: string[] = []
+  for (const name of names) {
+    const text = await $.fs.read(`${dir}/${name}`).then(String).catch(() => '')
+    if (!isInProgress(text)) continue
+    const heading = text.split('\n').find(l => l.startsWith('# ')) ?? ''
+    lines.push(`.agent/tasks/${name}|${heading}`)
+  }
+  return lines.join('\n')
+}
+
 const refreshPane = async ($: EngineInterface): Promise<void> => {
   const root = await projectRoot(ioOf($))
   if (root === null) {
@@ -177,9 +198,7 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
   await refreshRejects($, root).catch(() => {})
   const functions = `${$.plugin.root}/skills/nav-graph/functions`
   const graphPath = '.agent/knowledge/graph.json'
-  const tasks = await run(ioOf($), ['sh', '-c',
-    'for f in $(grep -il "status.*\\(🚧\\|in progress\\)" .agent/tasks/*.md); do '
-    + 'printf "%s|%s\\n" "$f" "$(grep -m1 "^# " "$f")"; done'], root)
+  const tasks = await inProgressTaskLines($, root)
   const stats = await run(ioOf($), ['python3', `${functions}/graph_manager.py`, '--action', 'stats',
     '--graph-path', graphPath], root)
   const memories = await run(ioOf($), ['python3', `${functions}/memory_recall.py`, '--auto',

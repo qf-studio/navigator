@@ -295,5 +295,46 @@ class EventBranchingTest(CompactMarkerTestBase):
             self.assertIsNone(compact_marker.run(ctx))
 
 
+class InProgressPredicateTests(unittest.TestCase):
+    """TASK-91: the Status line decides; prose mentions elsewhere do not."""
+
+    def test_status_line_forms(self):
+        for text in (
+            "# T\n\n**Status**: 🚧 In Progress\n",
+            "# T\n\n**Status:** 🚧 Shipping\n",
+            "# T\n\n**Status**: In Progress\n",
+            "# T\n\n> Status: in-progress\n",
+        ):
+            self.assertTrue(compact_marker.is_in_progress(text), text)
+
+    def test_finished_doc_quoting_the_phrase_is_not_in_progress(self):
+        text = (
+            "# TASK-67: Vocabulary\n\n**Status**: ✅ Implemented\n\n"
+            "Plain `**Status**: In Progress` lines were recorded as 🚧 unknown.\n"
+        )
+        self.assertFalse(compact_marker.is_in_progress(text))
+
+    def test_other_status_values(self):
+        for text in ("**Status**: ✅ Implemented\n", "**Status**: Design\n", "**Status**: Blocked\n"):
+            self.assertFalse(compact_marker.is_in_progress(text), text)
+
+    def test_no_status_line_keeps_legacy_head_scan(self):
+        self.assertTrue(compact_marker.is_in_progress("# Six in progress\n"))
+        self.assertTrue(compact_marker.is_in_progress("no heading, in-progress soon\n"))
+        self.assertFalse(compact_marker.is_in_progress("# Done\n"))
+
+    def test_active_task_hint_skips_prose_only_doc(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tasks = root / ".agent" / "tasks"
+            tasks.mkdir(parents=True)
+            (tasks / "TASK-01-done.md").write_text(
+                "# TASK-01: Done\n\n**Status**: ✅ Implemented\n\nwas in progress once\n"
+            )
+            (tasks / "TASK-02-live.md").write_text("# TASK-02: Live\n\n**Status**: 🚧 In Progress\n")
+            hint = compact_marker._active_task_hint(root)
+            self.assertEqual(hint, "**In-progress tasks**:\n- `TASK-02-live.md` — TASK-02: Live")
+
+
 if __name__ == "__main__":
     unittest.main()
