@@ -1,6 +1,6 @@
 # TASK-93: Reply modes — one table, one op; STE mode joins ADHD mode
 
-**Status**: ✅ Implemented — 2026-10-05 (ships in v8.3.0)
+**Status**: ✅ Released — v8.3.0, 2026-10-05
 
 ## Origin
 
