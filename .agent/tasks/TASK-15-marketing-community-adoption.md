@@ -42,8 +42,8 @@ under "Retired plan" and in git history (`git show f1c7171:.agent/tasks/TASK-15-
 
 ## Live checklist (the pane routes on these)
 
-- [ ] Post the v8.2.6 + v8.2.7 cut on Threads (stop-gate fix; finished task no longer the
-      destination). Short labeled cut, 500-char cap, pane screenshot.
+- [ ] Post the v8.2.6–v8.2.8 cut on Threads: short labeled cut, 500-char cap, pane
+      screenshot (stop-gate over-fires fixed; finished task no longer the destination).
 - [ ] Decide the three unposted drafts (deep research, typed judge, team-friendly): one
       "September in Navigator" roundup post, or delete the drafts.
 - [ ] Record a 2-minute screen capture of a real session: nav-start → `/nav` pane → a reject

@@ -180,7 +180,24 @@ def _evaluate_heuristics(filtered: dict):
     return met >= MIN_HEURISTICS, met
 
 
-def _collect_tool_evidence(name: str, block: dict, file_paths: list, bash_uses: list):
+# TASK-92: subagent types whose tool set cannot write (Explore/Plan are Claude Code's own
+# read-only agents; the Navigator ones declare Read/Grep/Glob/Bash/LSP). A turn whose only
+# action tools are such agents is not mutating. Unknown or missing types stay mutating.
+READONLY_AGENT_TYPES = frozenset({
+    "Explore", "Plan", "claude-code-guide", "navigator-research", "task-planner",
+})
+AGENT_TOOLS = frozenset({"Task", "Agent"})
+
+
+def _agent_readonly(subagent_type) -> bool:
+    """`navigator:navigator-research` and `navigator-research` are the same agent."""
+    if not isinstance(subagent_type, str) or not subagent_type:
+        return False
+    return subagent_type.rsplit(":", 1)[-1] in READONLY_AGENT_TYPES
+
+
+def _collect_tool_evidence(name: str, block: dict, file_paths: list, bash_uses: list,
+                           agents: list):
     """Pull observable evidence out of one tool_use block (TASK-65).
 
     File-mutating tools contribute their target path (file_path or, for
@@ -199,6 +216,8 @@ def _collect_tool_evidence(name: str, block: dict, file_paths: list, bash_uses: 
         cmd = inp.get("command")
         if isinstance(cmd, str):
             bash_uses.append((block.get("id"), cmd))
+    elif name in AGENT_TOOLS:
+        agents.append(inp.get("subagent_type"))
 
 
 def _turn_scan(payload: dict):
@@ -223,6 +242,7 @@ def _turn_scan(payload: dict):
     tools: set = set()
     file_paths: list = []
     bash_uses: list = []          # (tool_use_id, command) in the turn span
+    agents: list = []             # subagent_type of every Task/Agent call (TASK-92)
     result_errors: dict = {}      # tool_use_id -> is_error(bool)
     tpath = payload.get("transcript_path")
     entries = transcript.tail_entries(tpath) if tpath else []
@@ -263,14 +283,14 @@ def _turn_scan(payload: dict):
                 if block.get("type") == "tool_use" and isinstance(block.get("name"), str):
                     name = block["name"]
                     tools.add(name)
-                    _collect_tool_evidence(name, block, file_paths, bash_uses)
+                    _collect_tool_evidence(name, block, file_paths, bash_uses, agents)
         if chunks and not text:
             text = "\n".join(chunks)
     inline = payload.get("last_assistant_message")
     if isinstance(inline, str) and inline.strip():
         text = inline
     bash = [(cmd, result_errors.get(tid, False)) for tid, cmd in bash_uses]
-    return text, tools, {"file_paths": file_paths, "bash": bash}
+    return text, tools, {"file_paths": file_paths, "bash": bash, "agents": agents}
 
 
 def _bash_readonly(command) -> bool:
@@ -399,11 +419,19 @@ def _turn_mutating(tools: set, evidence: dict, prev_digest=None,
     Bash-only turn did not mutate THIS codebase — whatever its commands were
     named (daemon restarts, sqlite reads, sibling-repo work). File tools and
     Task/Agent turns never take this path: subagents and Edit/Write carry
-    their own mutation evidence. Missing digests fall back to vocabulary.
+    their own mutation evidence — except Task/Agent calls whose subagent_type
+    is in READONLY_AGENT_TYPES (TASK-92), which leave the action set before
+    the check. Missing digests fall back to vocabulary.
     """
     action = tools & stop_state.TASK_ACTION_TOOLS
     if not action:
         return False
+    agents = evidence.get("agents") or ()
+    if action & AGENT_TOOLS and agents and all(_agent_readonly(t) for t in agents):
+        # TASK-92: a research-only subagent cannot have mutated the tree.
+        action = action - AGENT_TOOLS
+        if not action:
+            return False
     if action - {"Bash"}:
         return True
     if not any(not _bash_readonly(cmd) for cmd, _ in evidence.get("bash", ())):

@@ -4,7 +4,7 @@ import { deepMerge } from '../lib/config'
 import { CONFIG_DEFAULTS } from '../lib/gen/config-defaults.gen'
 import { sha256Hex } from '../lib/stop-sha256'
 import type { Io, Json, Op, OpCtx } from '../lib/types'
-import { stopCompletion, turnMutating } from '../ops/stop_completion'
+import { agentReadonly, stopCompletion, turnMutating } from '../ops/stop_completion'
 import { bashReadonly } from '../lib/stop-bash'
 import { stopState } from '../ops/stop_state'
 import { CASES as A } from './fixtures/stopops-completion-a.gen'
@@ -117,5 +117,21 @@ describe('TASK-85: read-only evidence', () => {
     expect(turnMutating(tools, evidence as never, undefined, 'D', true)).toBe(false)
     // a file tool beside Bash is mutating regardless
     expect(turnMutating(new Set(['Bash', 'Edit']), evidence as never, undefined, 'D', true)).toBe(true)
+  })
+  test('a read-only subagent is not a task action; unknown types still are (TASK-92)', () => {
+    const ro = (agents: (string | null)[], extra: string[] = []) => turnMutating(
+      new Set(['Agent', ...extra]),
+      { bash: [['git status', false]], file_paths: [], agents } as never, undefined, 'D')
+    expect(agentReadonly('navigator:navigator-research')).toBe(true)
+    expect(agentReadonly('Explore')).toBe(true)
+    expect(agentReadonly('general-purpose')).toBe(false)
+    expect(agentReadonly(null)).toBe(false)
+    expect(ro(['navigator:navigator-research'], ['Bash'])).toBe(false)
+    expect(ro(['Explore', 'task-planner'])).toBe(false)
+    expect(ro(['general-purpose'])).toBe(true)
+    expect(ro([null])).toBe(true)
+    expect(ro(['Explore', 'general-purpose'])).toBe(true)
+    expect(ro(['Explore'], ['Edit'])).toBe(true)
+    expect(ro(['Explore'], ['Bash'])).toBe(false) // falls through to the Bash evidence
   })
 })

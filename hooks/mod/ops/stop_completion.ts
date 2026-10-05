@@ -40,6 +40,16 @@ const treeDigest = async (ctx: OpCtx): Promise<string | null> => {
   return r === null || r.exitCode !== 0 ? null : sha256Hex(r.stdout)
 }
 
+// TASK-92: subagent types whose tool set cannot write (mirrors stop_completion.py
+// READONLY_AGENT_TYPES). Unknown or missing types stay mutating.
+const READONLY_AGENT_TYPES = new Set(['Explore', 'Plan', 'claude-code-guide', 'navigator-research', 'task-planner'])
+const AGENT_TOOLS = new Set(['Task', 'Agent'])
+
+/** `navigator:navigator-research` and `navigator-research` are the same agent. */
+export const agentReadonly = (subagentType: string | null): boolean =>
+  typeof subagentType === 'string' && subagentType !== ''
+  && READONLY_AGENT_TYPES.has(subagentType.slice(subagentType.lastIndexOf(':') + 1))
+
 /**
  * stop_completion._turn_mutating (TASK-70/71 refinement of mem-037). `bashAllReadOnly` is the
  * mod's extra evidence (TASK-85): Claude Code marked every Bash call of the turn read-only, so a
@@ -48,8 +58,14 @@ const treeDigest = async (ctx: OpCtx): Promise<string | null> => {
 export const turnMutating = (
   tools: Set<string>, evidence: Evidence, prev: unknown, digest: string | null, bashAllReadOnly = false,
 ): boolean => {
-  const action = [...tools].filter(t => TASK_ACTION_TOOLS.has(t))
+  let action = [...tools].filter(t => TASK_ACTION_TOOLS.has(t))
   if (action.length === 0) return false
+  const agents = evidence.agents ?? []
+  if (action.some(t => AGENT_TOOLS.has(t)) && agents.length > 0 && agents.every(agentReadonly)) {
+    // TASK-92: a research-only subagent cannot have mutated the tree.
+    action = action.filter(t => !AGENT_TOOLS.has(t))
+    if (action.length === 0) return false
+  }
   if (action.some(t => t !== 'Bash')) return true
   if (bashAllReadOnly) return false
   if (!evidence.bash.some(([cmd]) => !bashReadonly(cmd))) return false

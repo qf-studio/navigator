@@ -71,7 +71,7 @@ export const lastAssistantTurn = async (io: Io, path: unknown): Promise<[string,
   return [chunks.join('\n'), tools]
 }
 
-export type Evidence = { file_paths: string[]; bash: [string, boolean][] }
+export type Evidence = { file_paths: string[]; bash: [string, boolean][]; agents: (string | null)[] }
 
 /** stop_completion._turn_scan: last text, tool names and evidence over the ending turn. */
 export const turnScan = async (io: Io, payload: Json): Promise<[string, Set<string>, Evidence]> => {
@@ -79,6 +79,7 @@ export const turnScan = async (io: Io, payload: Json): Promise<[string, Set<stri
   const tools = new Set<string>()
   const filePaths: string[] = []
   const bashUses: [unknown, string][] = []
+  const agents: (string | null)[] = [] // subagent_type of every Task/Agent call (TASK-92)
   const resultErrors = new Map<string, boolean>()
   const tpath = payload.transcript_path
   const entries = pyTruthy(tpath) ? await tailEntries(io, tpath) : []
@@ -117,6 +118,8 @@ export const turnScan = async (io: Io, payload: Json): Promise<[string, Set<stri
             }
           } else if (name === 'Bash' && typeof inp.command === 'string') {
             bashUses.push([block.id, inp.command])
+          } else if (name === 'Task' || name === 'Agent') {
+            agents.push(typeof inp.subagent_type === 'string' ? inp.subagent_type : null)
           }
         }
       }
@@ -127,5 +130,5 @@ export const turnScan = async (io: Io, payload: Json): Promise<[string, Set<stri
   if (typeof inline === 'string' && pyStrip(inline)) text = inline
   const bash: [string, boolean][] = bashUses.map(([tid, cmd]) =>
     [cmd, typeof tid === 'string' ? (resultErrors.get(tid) ?? false) : false])
-  return [text, tools, { file_paths: filePaths, bash }]
+  return [text, tools, { file_paths: filePaths, bash, agents }]
 }

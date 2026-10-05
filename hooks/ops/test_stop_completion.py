@@ -328,6 +328,32 @@ class BreakerTest(StopCompletionTestBase):
         result = stop_completion.run(self.make_ctx(entries, cfg=pm_cfg()))
         self.assertEqual(result["decision"], "block")
 
+    def test_readonly_agent_turn_is_not_mutating(self):
+        # TASK-92: a research-only subagent beside read-only Bash never continues.
+        entries = turn_with_tools([
+            {"name": "Agent", "input": {"prompt": "look", "subagent_type": "navigator:navigator-research"}},
+            {"name": "Bash", "input": {"command": "grep -rn foo . | head"}},
+        ])
+        self.assertIsNone(stop_completion.run(self.make_ctx(entries, cfg=pm_cfg())))
+        entries = turn_with_tools([
+            {"name": "Task", "input": {"prompt": "find", "subagent_type": "Explore"}},
+        ])
+        self.assertIsNone(stop_completion.run(self.make_ctx(entries, cfg=pm_cfg())))
+
+    def test_unknown_or_missing_agent_type_stays_mutating(self):
+        for inp in ({"prompt": "fix", "subagent_type": "general-purpose"}, {"prompt": "fix"}):
+            entries = turn_with_tools([{"name": "Agent", "input": inp}])
+            result = stop_completion.run(self.make_ctx(entries, cfg=pm_cfg()))
+            self.assertEqual(result["decision"], "block", inp)
+
+    def test_readonly_agent_beside_file_tool_is_mutating(self):
+        entries = turn_with_tools([
+            {"name": "Agent", "input": {"prompt": "look", "subagent_type": "Explore"}},
+            {"name": "Edit", "input": {"file_path": "/tmp/x.py"}},
+        ])
+        result = stop_completion.run(self.make_ctx(entries, cfg=pm_cfg()))
+        self.assertEqual(result["decision"], "block")
+
     def test_file_tool_beside_readonly_bash_is_mutating(self):
         entries = turn_with_tools([
             {"name": "Bash", "input": {"command": "git status"}},
