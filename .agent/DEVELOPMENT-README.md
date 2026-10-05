@@ -200,7 +200,7 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
-- **TASK-90** ✅ (unreleased, 2026-10-05) — stop gate no longer fires on Bash-only turns that
+- **TASK-90** ✅ (v8.2.6, 2026-10-05) — stop gate no longer fires on Bash-only turns that
   `cd` or call `/bin/ls`: `cd` is read-only, absolute-path heads resolve to their basename
   before the allowlist lookup (`tasks/TASK-90-stop-gate-cd-and-path-heads.md`).
 - **TASK-89** ✅ (v8.1.2, 2026-10-05) — the `/nav` pane follows Bash edits, `git mv` /
@@ -458,5 +458,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-05 (TASK-90 stop-gate over-fire on `cd` / `/bin/ls` fixed, unreleased; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-05 (v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

@@ -1,6 +1,6 @@
 # TASK-90: Stop gate over-fires on `cd` and absolute-path read-only heads
 
-**Status**: ✅ Implemented — 2026-10-05 (unreleased)
+**Status**: ✅ Released — v8.2.6, 2026-10-05
 **Origin**: reject log 2026-10-05 — every stop_completion block that day (3 of 3) carried
 `mutating_tools: ["Bash"]` on a turn that only listed, read and ran `git status`. One of them
 forced a continuation on a session-start summary. First item on the TASK-84 "8.1 candidates"

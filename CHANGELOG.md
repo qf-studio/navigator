@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.6] — 2026-10-05
+
+The Stop gate no longer forces a continuation on Bash-only turns that `cd` or call `/bin/ls`:
+`cd` is read-only and an absolute-path head resolves to its basename before the allowlist
+lookup (TASK-90; 3 of 3 stop-gate rejects that day were this).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.6.md)
+
 ## [v8.2.5] — 2026-10-05
 
 Stacked `/nav` (below 72 columns): the judge row puts the model version on its own line so
