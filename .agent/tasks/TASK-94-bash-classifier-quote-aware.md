@@ -1,6 +1,6 @@
 # TASK-94: Bash read-only classifier ignores quotes
 
-**Status**: 📐 Design — 2026-10-05 (research done, awaiting go)
+**Status**: ✅ Released — v8.3.1, 2026-10-05
 
 ## Origin
 
@@ -53,16 +53,30 @@ behavior asserted by new fixture transcripts.
 
 ## Change
 
-- [ ] `_mask_quotes` / `maskQuotes` + call site; update the L132 comment.
-- [ ] Python tests: READONLY gains `grep "a\|b" f | head`, `grep ">" f`,
+- [x] `_mask_quotes` / `maskQuotes` + call site; update the L132 comment.
+- [x] Python tests: READONLY gains `grep "a\|b" f | head`, `grep ">" f`,
       `gh pr view 1 --jq '.a | .b'`, `printf "%s | %s\n" a b`, `echo $'a|b'`,
       `echo "unterminated | x`; MUTATING gains `echo "x" > out.txt`, `sh -c "ls"`,
       `echo "a" > "$F"`, `bash -c "rm x"`.
-- [ ] Kit test (same cases) and fixtures `bash_quoted_ro`, `bash_quoted_mut` in
+- [x] Kit test (same cases) and fixtures `bash_quoted_ro`, `bash_quoted_mut` in
       `scripts/mod_fixtures/stopops.py`; regenerate; `make mod-gen-check mod-test`.
-- [ ] Re-run the three-day replay (`/tmp/measure.py` from the research run, or the same
+- [x] Re-run the three-day replay (`/tmp/measure.py` from the research run, or the same
       logic in `scripts/`): expect ~137 flips, 0 true writes. Record the numbers here.
-- [ ] Release 8.3.1 (patch), site stop-completion page one sentence.
+- [x] Release 8.3.1 (patch), site stop-completion page one sentence.
+
+## Result (2026-10-05)
+
+Three-day replay of this repo's transcripts, same script as the research run:
+
+| Measure | Before | After |
+|---|---|---|
+| Bash calls | 620 | 624 |
+| Classified mutating | 522 | 388 |
+
+134 verdicts flipped to read-only, none a real write (the research pass checked every
+flip against known mutators, heredocs and redirect targets). Tests: Python +14 parser
+cases, kit +1 (mask unit + the same cases), two parity transcripts (`bash_quoted_ro`,
+`bash_quoted_mut`); 775 Python, 157 kit, all green.
 
 ## Won't do (this task)
 

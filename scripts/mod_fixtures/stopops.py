@@ -102,6 +102,10 @@ def _transcripts() -> dict:
         "bash_control": _bash_turn("for f in *.py; do wc -l $f; done", "if test -f x; then cat x; fi",
                                    "command -v jq", "time ls"),
         "bash_command_rm": _bash_turn("command rm x"),
+        # TASK-94: quoted operators are arguments; a quoted redirect target is still a write.
+        "bash_quoted_ro": _bash_turn('grep -n "a\\|b" f | head -3', "gh pr view 1 --jq '.a | .b'",
+                                     'printf "%s | %s\\n" a b', "grep '>' f"),
+        "bash_quoted_mut": _bash_turn('echo "x" > "$F"', 'sh -c "ls"'),
         "agent": [_user("research"), _asst([_tool("a1", "Agent", {"prompt": "look"})]),
                   _user_blocks([_result("a1")]), _asst([_text("Agent finished.")])],
         # TASK-92: read-only subagents are not task actions; unknown types still are.

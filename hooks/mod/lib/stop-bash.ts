@@ -37,6 +37,41 @@ const REDIRECT = new RegExp(`[0-9]*>>?${WS}*(${NWS}+)`, 'gu')
 const TRANSPARENT_HEADS = new Set(['if', 'elif', 'then', 'else', 'do', 'while', 'until', '!', 'time'])
 const STANDALONE_HEADS = new Set(['for', 'done', 'fi', 'esac', 'case'])
 
+/**
+ * stop_completion._mask_quotes (TASK-94): the contents of quoted spans become `x` of the
+ * same length, quote characters kept. `'…'` has no escapes; inside `"…"` a backslash consumes
+ * the next character; a backslash outside quotes escapes the next character; an unterminated
+ * quote masks to the end. Heads, flags and redirect targets are never inside quotes.
+ */
+export const maskQuotes = (text: string): string => {
+  let out = ''
+  let i = 0
+  const n = text.length
+  while (i < n) {
+    const ch = text[i]
+    if (ch === "'") {
+      out += ch
+      i += 1
+      while (i < n && text[i] !== "'") { out += 'x'; i += 1 }
+      if (i < n) { out += "'"; i += 1 }
+    } else if (ch === '"') {
+      out += ch
+      i += 1
+      while (i < n && text[i] !== '"') {
+        if (text[i] === '\\' && i + 1 < n) { out += 'xx'; i += 2 } else { out += 'x'; i += 1 }
+      }
+      if (i < n) { out += '"'; i += 1 }
+    } else if (ch === '\\' && i + 1 < n) {
+      out += '\\x'
+      i += 2
+    } else {
+      out += ch
+      i += 1
+    }
+  }
+  return out
+}
+
 export const bashReadonly = (command: unknown): boolean => {
   if (typeof command !== 'string' || !pyStrip(command)) return true
   let text = command
@@ -48,6 +83,7 @@ export const bashReadonly = (command: unknown): boolean => {
     }
     text = text.replace(SUBSTITUTION, '')
   }
+  text = maskQuotes(text) // TASK-94: quoted | > ; never split or redirect
   for (const m of text.matchAll(REDIRECT)) {
     const target = m[1] ?? ''
     if (target !== '/dev/null' && !target.startsWith('&')) return false

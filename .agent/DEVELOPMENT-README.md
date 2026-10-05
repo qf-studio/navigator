@@ -207,6 +207,10 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-94** ✅ (v8.3.1, 2026-10-05) — the Bash read-only classifier masks quoted spans before
+  the redirect and segment scans, so `grep "a\|b"`, `--jq '.a | .b'` and `printf "%s | %s"`
+  no longer read as mutating; 134 of 522 verdicts in a three-day replay flip, zero real
+  writes (`tasks/TASK-94-bash-classifier-quote-aware.md`).
 - **TASK-92** ✅ (v8.2.8, 2026-10-05) — stop gate no longer fires on turns whose only action is
   a read-only subagent (Explore, Plan, claude-code-guide, navigator-research, task-planner);
   unknown agent types still count as mutating (`tasks/TASK-92-readonly-agents-not-task-actions.md`).
@@ -472,5 +476,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-05 (v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-05 (v8.3.1 — TASK-94 quote-aware Bash classifier; v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

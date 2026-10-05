@@ -389,6 +389,15 @@ class ReadonlyBashParserTest(unittest.TestCase):
     """
 
     READONLY = (
+        # TASK-94: quoted | > ; are arguments, not operators.
+        'grep -n "a\\|b" f | head -3',
+        "grep '>' f",
+        "gh pr view 1 --jq '.a | .b'",
+        'printf "%s | %s\\n" a b',
+        "echo $'a|b' | cat",
+        'echo "unterminated | x',
+        'echo "a \\" | b"',
+        "grep -rn 'x; rm' . | wc -l",
         # live false-fire replays (2026-07-16)
         "gh pr view 4373 --json state,reviewDecision",
         "gh issue list --label pilot --state open --limit 20",
@@ -425,6 +434,13 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "sed -e 's/a/b/' notes.md",
     )
     MUTATING = (
+        # TASK-94: quoting never hides a write.
+        'echo "x" > out.txt',
+        'echo "a" > "$F"',
+        'sh -c "ls"',
+        'bash -c "rm x"',
+        "eval 'ls'",
+        "xargs rm < 'list'",
         "curl -sSo /tmp/f https://x",       # -o inside a flag cluster
         "curl -O https://x/f",
         "curl --output out.json https://x",

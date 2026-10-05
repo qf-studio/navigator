@@ -129,8 +129,55 @@ _SUBSTITUTION_RE = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
 _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # Output redirects: any target other than /dev/null or a file descriptor
 # (&1, &2) makes the segment mutating — closes the `echo x > file` hole that
-# allowlisted heads opened (TASK-71; safe direction, quoted '>' may over-fire).
+# allowlisted heads opened (TASK-71). Quoted spans are masked first (TASK-94),
+# so a '>' or '|' inside an argument no longer splits or redirects.
 _REDIRECT_RE = re.compile(r"[0-9]*>>?\s*(\S+)")
+
+
+def _mask_quotes(text: str) -> str:
+    """Replace the contents of quoted spans with ``x`` (same length), keeping the
+    quote characters (TASK-94).
+
+    ``'…'`` has no escapes; inside ``"…"`` a backslash consumes the next character;
+    a backslash outside quotes escapes the next character. An unterminated quote
+    masks to the end — bash would not run that line. Heads, flags and redirect
+    targets are never inside quotes, so the rules downstream see the same tokens;
+    a quoted redirect target still reads as a write. Mirrored in stop-bash.ts.
+    """
+    out = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "'":
+            out.append(ch)
+            i += 1
+            while i < n and text[i] != "'":
+                out.append("x")
+                i += 1
+            if i < n:
+                out.append("'")
+                i += 1
+        elif ch == '"':
+            out.append(ch)
+            i += 1
+            while i < n and text[i] != '"':
+                if text[i] == "\\" and i + 1 < n:
+                    out.append("xx")
+                    i += 2
+                else:
+                    out.append("x")
+                    i += 1
+            if i < n:
+                out.append('"')
+                i += 1
+        elif ch == "\\" and i + 1 < n:
+            out.append("\\x")
+            i += 2
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
 # Shell words that wrap another command in the same segment — stripped, then
 # the remainder is classified. `for` is standalone: its segment holds only
 # the loop variable and word list; the body arrives as later segments.
@@ -298,7 +345,7 @@ def _bash_readonly(command) -> bool:
 
     Segments split on ``&&``/``||``/``;``/``|``/newline. Before the head
     check (TASK-71): ``$(...)``/backtick substitutions are validated
-    recursively then removed; output redirects to anything but /dev/null or
+    recursively then removed; quoted spans are masked (TASK-94); output redirects to anything but /dev/null or
     a file descriptor are mutating; leading ``VAR=`` assignments and
     control-flow words are stripped; ``git`` and ``gh`` resolve by
     subcommand; ``command -v`` is a lookup. Anything unrecognized → False
@@ -315,6 +362,7 @@ def _bash_readonly(command) -> bool:
             if not _bash_readonly(match.group(1) or match.group(2) or ""):
                 return False
         text = _SUBSTITUTION_RE.sub("", text)
+    text = _mask_quotes(text)  # TASK-94: quoted | > ; never split or redirect
     for match in _REDIRECT_RE.finditer(text):
         target = match.group(1)
         if target != "/dev/null" and not target.startswith("&"):

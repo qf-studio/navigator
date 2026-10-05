@@ -5,7 +5,7 @@ import { CONFIG_DEFAULTS } from '../lib/gen/config-defaults.gen'
 import { sha256Hex } from '../lib/stop-sha256'
 import type { Io, Json, Op, OpCtx } from '../lib/types'
 import { agentReadonly, stopCompletion, turnMutating } from '../ops/stop_completion'
-import { bashReadonly } from '../lib/stop-bash'
+import { bashReadonly, maskQuotes } from '../lib/stop-bash'
 import { stopState } from '../ops/stop_state'
 import { CASES as A } from './fixtures/stopops-completion-a.gen'
 import { CASES as B } from './fixtures/stopops-completion-b.gen'
@@ -109,6 +109,20 @@ describe('TASK-85: read-only evidence', () => {
     for (const cmd of ['/usr/bin/rm -rf build', './ls', '~/bin/pilot-board', 'cd /tmp && make build']) {
       expect(bashReadonly(cmd)).toBe(false)
     }
+  })
+  test('TASK-94: quoted | > ; are arguments; quoting never hides a write', () => {
+    expect(maskQuotes('grep "a|b" f > "o"')).toBe('grep "xxx" f > "x"')
+    expect(maskQuotes("echo 'it''s' \\| x")).toBe("echo 'xx''x' \\x x")
+    expect(maskQuotes('echo "a \\" | b')).toBe('echo "xxxxxxxx')
+    for (const cmd of [
+      'grep -n "a\\|b" f | head -3', "grep '>' f", "gh pr view 1 --jq '.a | .b'",
+      'printf "%s | %s\\n" a b', "echo $'a|b' | cat", 'echo "unterminated | x',
+      'echo "a \\" | b"', "grep -rn 'x; rm' . | wc -l",
+    ]) expect(bashReadonly(cmd)).toBe(true)
+    for (const cmd of [
+      'echo "x" > out.txt', 'echo "a" > "$F"', 'sh -c "ls"', 'bash -c "rm x"', "eval 'ls'",
+      "xargs rm < 'list'",
+    ]) expect(bashReadonly(cmd)).toBe(false)
   })
   test("Claude Code's isReadOnly on every Bash call makes a Bash-only turn non-mutating", () => {
     const evidence = { bash: [['python3 probe.py', false]] as [string, boolean][], file_paths: [] as string[] }
