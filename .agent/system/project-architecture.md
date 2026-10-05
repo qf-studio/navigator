@@ -131,6 +131,12 @@ Python dispatcher (`hooks/nav_dispatch.py` → `nav_hook_lib.runtime`) as the fa
 is announced in `NAVIGATOR_MOD_OWNS`; both runtimes share `.agent/.nav-runtime-state.json`.
 Parity is asserted byte for byte by generated fixtures (`scripts/gen_mod_data.py`,
 `make mod-test`). The mod adds the `/nav` pane, the band, the Pilot theme and the update notice.
+Every refusal either runtime makes (read-guard deny, prompt-gate block, stop-gate block) is one
+JSON line in `.agent/.nav-rejects.jsonl` (TASK-88, v8.2.0): the op attaches
+`reject: {reason, evidence}` to its blocking result, the runtime strips it and appends the line
+from one point (`runtime._log_reject` / `runner.ts logReject`), bounded to 500 lines,
+`reject_log.enabled` default on, `suppressed: true` under Pilot. Local-only files under
+`.agent/`: `.nav-runtime-state.json`, `.nav-dispatch-health.json`, `.nav-rejects.jsonl`.
 Details: `CLAUDE.md` "Navigator Runtime (v8)", `tasks/archive/TASK-84-v8-mod-runtime.md`.
 
 ### 4. Documentation (`docs/*.md`)

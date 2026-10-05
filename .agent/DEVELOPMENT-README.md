@@ -198,7 +198,8 @@ Other threads:
   continuation in this repo where `continue_enabled` is on. Docs site synced same day
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
-  Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
+  The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
+  `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
 - **TASK-89** ✅ (v8.1.2, 2026-10-05) — the `/nav` pane follows Bash edits, `git mv` /
   commits and subagent runs (not only Edit/Write), and the next card advances mid-turn from the
   active doc's checklist (`tasks/archive/TASK-89-pane-follows-bash-and-agent-edits.md`).
@@ -206,7 +207,10 @@ Other threads:
   evidence}`; the runtime (one append point per runtime) writes one JSON line to
   `.agent/.nav-rejects.jsonl`, bounded to 500, `reject_log.enabled` default on, `suppressed: true`
   under Pilot; `/nav` shows today's count under reads and the tail behind `l`
-  (`tasks/archive/TASK-88-reject-log.md`).
+  (`tasks/archive/TASK-88-reject-log.md`). Follow-up patches v8.2.1–v8.2.5: rejects on two
+  lines, the next row keeps one sentence of the reply, and below 72 columns the top cards
+  stack, the gauge fills the card, the judge version takes its own line and the next card
+  wraps (`hooks/mod/ui/nav.ts` `paneLayout`).
 - **TASK-87** ✅ (v8.1.1, 2026-10-04) — reads made through read-only Bash (`cat`, `sed -n`,
   `head`, `grep`…) count in the `/nav` reads card like the Read tool; `sed` without `-i` joins
   the read-only allowlist in both runtimes (`tasks/archive/TASK-87-bash-reads-count.md`).
@@ -450,5 +454,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-01 (v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-05 (v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)
