@@ -4,7 +4,7 @@ import type { Io } from './lib/types'
 
 /** Ops ported to the mod. An op joins this list in the same commit as its parity tests. */
 export const OWNED: readonly string[] = [
-  'prompt_gate', 'prompt_tier1', 'prompt_adhd', 'prompt_brief',
+  'prompt_gate', 'prompt_tier1', 'prompt_modes', 'prompt_brief',
   'read_guard', 'jit_memory', 'graph_sync', 'profile_sync', 'failure_diagnosis',
   'stop_completion', 'stop_state', 'session_start', 'compact_marker', 'subagent_context',
   'config_guard', 'setup',

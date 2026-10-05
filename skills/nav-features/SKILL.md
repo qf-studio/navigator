@@ -61,6 +61,7 @@ v<version> Features:
 │ failure_diagnosis       │ [ ]    │ Surfaces graph pitfalls on tool failures      │
 │ judge                   │ [ ]    │ Jev judgments overlay the prompt scorers      │
 │ adhd_mode               │ [ ]    │ Per-person reply shaping (one next action,... │
+│ ste_mode                │ [ ]    │ STE sentence rules, personal switch           │
 │ config_guard            │ [x]    │ Warns when .nav-config.json edits break JSON  │
 │ setup_hook              │ [x]    │ One-line runtime status on the Setup event    │
 └─────────────────────────┴────────┴───────────────────────────────────────────────┘
@@ -135,6 +136,11 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
   `adhd mode on` / `adhd mode off` at any prompt (answered by the hook, zero model
   turn). `--local` pins `adhd_mode.on` in `.nav-config.local.json`; a repo pin wins
   over the personal switch. `adhd_mode.enabled` only makes the machinery available
+- `ste_mode` - Simplified Technical English sentences (ASD-STE100 Part 1: one idea per
+  sentence, 20 words, imperative, active voice, no gerunds). Same personal-switch
+  mechanics as `adhd_mode`: `enable ste_mode` writes `~/.config/navigator/ste-mode.json`,
+  or say `ste mode on` / `use ste` / `ste mode off` at any prompt. Both modes may be on;
+  the ADHD block comes first and the STE block applies inside it
 - `config_guard` - systemMessage warning on invalid `.nav-config.json` edits
   (safety surface, ON by default)
 - `setup_hook` - One-line runtime status on the Setup event (safety surface,

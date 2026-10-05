@@ -7,9 +7,9 @@ import { failureDiagnosis } from './failure_diagnosis'
 import { graphSync } from './graph_sync'
 import { jitMemory } from './jit_memory'
 import { profileSync } from './profile_sync'
-import { promptAdhd } from './prompt_adhd'
 import { promptBrief } from './prompt_brief'
 import { promptGate } from './prompt_gate'
+import { promptModes } from './prompt_modes'
 import { promptTier1 } from './prompt_tier1'
 import { readGuard } from './read_guard'
 import { sessionStart } from './session_start'
@@ -20,7 +20,7 @@ import { subagentContext } from './subagent_context'
 
 export const EVENT_OPS: Record<string, readonly Op[]> = {
   SessionStart: [sessionStart],
-  UserPromptSubmit: [promptGate, promptTier1, promptAdhd, promptBrief],
+  UserPromptSubmit: [promptGate, promptTier1, promptModes, promptBrief],
   PreToolUse: [readGuard],
   PostToolUse: [jitMemory, graphSync, profileSync],
   Stop: [stopCompletion, stopState],

@@ -9,6 +9,7 @@ const CWD = '/repo'
 const AGENT = `${CWD}/.agent`
 const CFG = '/cfg'
 const PERSONAL = `${CFG}/adhd-mode.json`
+const PERSONAL_STE = `${CFG}/ste-mode.json`
 const REPO_CONFIG = `${CWD}/.agent/.nav-config.json`
 const SURFACES = ['terminal', 'desktop'] as const
 
@@ -54,7 +55,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   )
   on('fs.write', (_$, e) => {
     allWrites.push({ path: e.path, text: e.text })
-    if (e.path === PERSONAL) writes.push({ path: e.path, text: e.text })
+    if (e.path === PERSONAL || e.path === PERSONAL_STE) writes.push({ path: e.path, text: e.text })
     files[e.path] = e.text
     return { value: undefined }
   })
@@ -180,6 +181,28 @@ test('(c3) a prompt that merely mentions ADHD is not a toggle', async ($, on) =>
   expect(writes).toHaveLength(0)
 })
 
+test('(c4) "use ste" writes the STE file only; both blocks stack in table order', async ($, on) => {
+  const { writes } = world(on, { [PERSONAL]: JSON.stringify({ on: true }) })
+  const t = await submit($, 'use ste')
+  expect(t.drop).toContain('STE mode: on (personal, /cfg/ste-mode.json)')
+  expect(t.drop).toContain('Say "ste mode off" to stop.')
+  expect(writes).toHaveLength(1)
+  expect(writes[0]?.path).toBe(PERSONAL_STE)
+  const r = await submit($, 'fix the flaky test')
+  expect(r.context).toHaveLength(1)
+  const ctx = r.context?.[0] ?? ''
+  expect(ctx.startsWith('ADHD MODE: on (')).toBe(true)
+  expect(ctx).toContain('\n\nSTE MODE: on (')
+  expect(ctx.indexOf('ADHD MODE')).toBeLessThan(ctx.indexOf('STE MODE'))
+})
+
+test('(c5) a disabled mode answers its toggle without writing', async ($, on) => {
+  const { writes } = world(on, { [REPO_CONFIG]: JSON.stringify({ ste_mode: { enabled: false } }) })
+  const r = await submit($, 'ste mode on')
+  expect(r.drop).toContain('STE mode: disabled in this repo (ste_mode.enabled')
+  expect(writes).toHaveLength(0)
+})
+
 test('(d) the band is one quiet line: waypoint, then destination once known', async ($, on) => {
   world(on, {}, 42)
   await complete($, 'NAVIGATOR_STATUS\nPhase: IMPL\nIteration: 2/5\nNext Action: run tests\n')
@@ -227,7 +250,7 @@ test('(d4) subagent turns do not drive the band', async ($, on) => {
 test('(e) session.start claims ADHD ownership through the environment', async ($, on) => {
   const { envSets } = world(on, {})
   await $.session.start({ cwd: CWD, surface: 'terminal', isInteractive: true })
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state,session_start,compact_marker,subagent_context,config_guard,setup' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_modes,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state,session_start,compact_marker,subagent_context,config_guard,setup' })
 })
 
 const NAV_CMD = {
@@ -373,7 +396,7 @@ test('(l) context forecast projects turns to 70%', async ($, on) => {
 test('(n) classic.SessionStart re-announces ownership before the Python child runs', async ($, on) => {
   const { envSets } = world(on, {})
   await $.classic.SessionStart({ source: 'compact' } as never)
-  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_adhd,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state,session_start,compact_marker,subagent_context,config_guard,setup' })
+  expect(envSets).toContainEqual({ name: 'NAVIGATOR_MOD_OWNS', value: 'prompt_gate,prompt_tier1,prompt_modes,prompt_brief,read_guard,jit_memory,graph_sync,profile_sync,failure_diagnosis,stop_completion,stop_state,session_start,compact_marker,subagent_context,config_guard,setup' })
 })
 
 test('(o) read_guard through tool.call: warn as context at 3, deny at 5', async ($, on) => {

@@ -41,7 +41,7 @@ const ctxOf = (io: Io, event = 'UserPromptSubmit', pilotExecutor = false): OpCtx
 
 // Ops named after OWNED entries so the ownership check lets them run.
 const op = (phase: Op['spec']['phase'], result: OpResult | null | (() => never)): Op => ({
-  spec: { name: 'prompt_adhd', phase, configKey: null },
+  spec: { name: 'prompt_modes', phase, configKey: null },
   run: async () => (typeof result === 'function' ? result() : result),
 })
 
@@ -85,7 +85,7 @@ describe('ownership', () => {
   test('at the minimum it announces the owned ops', async () => {
     const io = fakeIo()
     await announce(io)
-    expect(io.owned).toContain('prompt_adhd')
+    expect(io.owned).toContain('prompt_modes')
   })
 })
 
@@ -119,9 +119,9 @@ describe('runner', () => {
     const crash = op('injectors', () => { throw new Error('boom') })
     const ok = { ...op('injectors', { additional_context: 'still here' }) }
     for (let i = 0; i < 3; i += 1) await runOps(ctxOf(io), [crash, ok])
-    expect(io.crashes.prompt_adhd).toBe(3)
-    expect(io.off).toContain('prompt_adhd')
-    expect(io.owned).not.toContain('prompt_adhd')
+    expect(io.crashes.prompt_modes).toBe(3)
+    expect(io.off).toContain('prompt_modes')
+    expect(io.owned).not.toContain('prompt_modes')
   })
   test('merge maps blocks per event: drop on prompts, deny on tools, block on Stop', () => {
     expect(merge('PreToolUse', [{ exit_code: 2, stderr: 'too many reads' }]).deny).toBe('too many reads')
@@ -146,10 +146,10 @@ describe('crash bookkeeping (runtime._handle_op_crash parity)', () => {
     const ctx = { ...ctxOf(io), now: 1_700_000_000 }
     await runOps(ctx, [op('injectors', () => { throw new RangeError('keep going forever') })])
     const errors = (ctx.state.meta as { op_errors: { op: string; error: string; ts: string }[] }).op_errors
-    expect(errors[0]).toEqual({ op: 'prompt_adhd', error: 'RangeError', ts: '2023-11-14T22:13:20+00:00' })
+    expect(errors[0]).toEqual({ op: 'prompt_modes', error: 'RangeError', ts: '2023-11-14T22:13:20+00:00' })
     const health = writes.find(w => w.path.endsWith('.nav-dispatch-health.json'))
     expect(JSON.parse(health?.text ?? '{}')).toEqual({
-      last_error: { ts: '2023-11-14T22:13:20+00:00', event: 'UserPromptSubmit', op: 'prompt_adhd', error: 'RangeError' },
+      last_error: { ts: '2023-11-14T22:13:20+00:00', event: 'UserPromptSubmit', op: 'prompt_modes', error: 'RangeError' },
       surfaced: false,
     })
   })

@@ -253,12 +253,14 @@ features for themselves without touching the shared file.
 guide and `.completed` live under `~/.config/navigator/onboarding/<repo-id>/`
 (`skills/nav-onboard/functions/onboarding_paths.py`; `NAVIGATOR_ONBOARDING_HOME` overrides).
 
-**Per-person switches** (v7.9.0, TASK-82): `hooks/nav_hook_lib/personal.py` keeps small JSON
-files under `~/.config/navigator/<name>.json` (`NAVIGATOR_CONFIG_HOME` overrides). ADHD mode is
-the first: `adhd-mode.json` `{"on": true}` is written when the user says `adhd mode on`. The
-repo config block `adhd_mode` only pins (`on: true|false`) or defers (`null`); `enabled` makes
-the machinery available. Resolution in `nav_hook_lib/adhd.py`: repo pin > personal file > off.
-Tests that spawn the dispatcher must set `NAVIGATOR_CONFIG_HOME` to a temp dir.
+**Per-person switches** (v7.9.0 TASK-82, v8.3.0 TASK-93): `hooks/nav_hook_lib/personal.py`
+keeps small JSON files under `~/.config/navigator/<name>.json` (`NAVIGATOR_CONFIG_HOME`
+overrides). Reply modes are the users: `hooks/nav_hook_lib/reply_modes.py` holds the `MODES`
+table (ADHD, STE), each row with its own file (`<key>-mode.json` `{"on": true}`, written when
+the user says `<key> mode on`) and its own repo block `<key>_mode` that pins (`on: true|false`),
+defers (`null`) or hides the mode (`enabled: false`); `reply_modes.enabled` gates the single
+`prompt_modes` op. Resolution per mode: repo pin > personal file > off. Blocks stack in table
+order. Tests that spawn the dispatcher must set `NAVIGATOR_CONFIG_HOME` to a temp dir.
 
 **Not committed to plugin repo**: Generated per-project
 

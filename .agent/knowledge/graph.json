@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-05T15:36:03.016341+00:00",
+  "last_updated": "2026-10-05T18:00:03.129001+00:00",
   "stats": {
-    "total_nodes": 217,
-    "total_edges": 843,
-    "memory_count": 82
+    "total_nodes": 223,
+    "total_edges": 851,
+    "memory_count": 83
   },
   "nodes": {
     "tasks": {
@@ -917,6 +917,20 @@
           "theory of mind",
           "api"
         ]
+      },
+      "TASK-93": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-93-reply-modes-ste.md",
+        "title": "Reply modes \u2014 one table, one op; STE mode joins ADHD mode",
+        "status": "completed",
+        "concepts": [
+          "knowledge",
+          "simplification",
+          "workflow",
+          "skills",
+          "deployment",
+          "testing",
+          "context"
+        ]
       }
     },
     "system": {
@@ -1732,6 +1746,26 @@
       },
       "ghostty": {
         "name": "Ghostty",
+        "aliases": [],
+        "domain": "general"
+      },
+      "reply-modes": {
+        "name": "Reply-Modes",
+        "aliases": [],
+        "domain": "general"
+      },
+      "prompt_adhd": {
+        "name": "Prompt_Adhd",
+        "aliases": [],
+        "domain": "general"
+      },
+      "prompt_modes": {
+        "name": "Prompt_Modes",
+        "aliases": [],
+        "domain": "general"
+      },
+      "ste": {
+        "name": "Ste",
         "aliases": [],
         "domain": "general"
       }
@@ -2965,6 +2999,24 @@
         ],
         "created": "2026-10-05",
         "last_validated": "2026-10-05"
+      },
+      "mem-091": {
+        "type": "decision",
+        "summary": "Reply modes: one MODES table + one prompt_modes op, not one op per mode - TASK-93: a mode is a row (key, label, config block, personal file, rule block); phrases generated from the key; blocks stack in table order (shape before sentences); MAX_TOTAL_BLOCK_CHARS asserted",
+        "path": "memories/decisions/mem-091.md",
+        "confidence": 0.9,
+        "concepts": [
+          "adhd",
+          "reply-modes",
+          "prompt_adhd",
+          "prompt_modes",
+          "ste"
+        ],
+        "created": "2026-10-05",
+        "last_validated": "2026-10-05",
+        "contradiction": "more reply modes vs per-prompt token cost and rule conflicts",
+        "separation": "level",
+        "principle": "segmentation: one row per mode, fixed merge order, static cost cap"
       }
     },
     "files": {}
@@ -7527,6 +7579,46 @@
       "from": "TASK-83",
       "to": "api",
       "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "knowledge",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "simplification",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "workflow",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-93",
+      "to": "context",
+      "type": "implements"
+    },
+    {
+      "from": "mem-091",
+      "to": "TASK-93",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -7707,7 +7799,8 @@
       "mem-073",
       "TASK-74",
       "mem-076",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "context": [
       "TASK-32",
@@ -7827,7 +7920,8 @@
       "mem-072",
       "mem-073",
       "TASK-74",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "skills": [
       "TASK-32",
@@ -7950,7 +8044,8 @@
       "mem-072",
       "mem-073",
       "TASK-74",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "session": [
       "TASK-32",
@@ -8129,7 +8224,8 @@
       "mem-073",
       "mem-074",
       "mem-077",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "backend": [
       "TASK-16",
@@ -8396,7 +8492,8 @@
       "mem-072",
       "mem-073",
       "TASK-74",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "code quality": [
       "TASK-19",
@@ -8471,7 +8568,8 @@
       "TASK-69",
       "mem-074",
       "TASK-74",
-      "TASK-83"
+      "TASK-83",
+      "TASK-93"
     ],
     "theory of mind": [
       "TASK-19",
@@ -8523,7 +8621,8 @@
       "TASK-55",
       "TASK-62",
       "TASK-65",
-      "TASK-69"
+      "TASK-69",
+      "TASK-93"
     ],
     "knowledge-graph": [
       "mem-003",
@@ -8811,7 +8910,8 @@
       "mem-089"
     ],
     "adhd": [
-      "mem-078"
+      "mem-078",
+      "mem-091"
     ],
     "handoff": [
       "mem-078"
@@ -8833,6 +8933,18 @@
     ],
     "ghostty": [
       "mem-090"
+    ],
+    "reply-modes": [
+      "mem-091"
+    ],
+    "prompt_adhd": [
+      "mem-091"
+    ],
+    "prompt_modes": [
+      "mem-091"
+    ],
+    "ste": [
+      "mem-091"
     ]
   }
 }

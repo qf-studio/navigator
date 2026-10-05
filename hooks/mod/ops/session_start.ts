@@ -2,7 +2,7 @@
 // SessionStart: archive the v6 state files once, then inject the Navigator session block
 // (config, drift, graph stats, memories, profile, open tasks, marker, navigator index).
 import { getPath } from '../lib/config'
-import { personalPath, resolve, statusLine } from '../lib/adhd'
+import { MODES, modeEnabled, personalPath, resolve, statusLine } from '../lib/reply_modes'
 import { pyInt } from '../lib/life-budget'
 import {
   type PyDict, type PyValue, cpLen, cpSlice, dumps, fromJs, get, isDict, isFile, loads,
@@ -87,13 +87,20 @@ const judgeNotice = async (io: Io, block: PyValue): Promise<string> => {
   }
 }
 
-const adhdNotice = async (io: Io, config: Record<string, unknown>): Promise<string> => {
+// One line per reply mode that someone switched explicitly (TASK-82/93); silent by default.
+const modesNotice = async (io: Io, config: Record<string, unknown>): Promise<string> => {
   try {
-    const path = personalPath(await io.env())
-    const personal = await safeJson(io, path)
-    const on = personal === null ? null : get(personal, 'on')
-    const line = statusLine(resolve(getPath(config, 'adhd_mode.on'), on), path)
-    return line ? `\n\n${line}` : ''
+    const env = await io.env()
+    let out = ''
+    for (const mode of MODES) {
+      if (!modeEnabled(getPath(config, `${mode.configKey}.enabled`))) continue
+      const path = personalPath(env, mode)
+      const personal = await safeJson(io, path)
+      const on = personal === null ? null : get(personal, 'on')
+      const line = statusLine(mode, resolve(getPath(config, `${mode.configKey}.on`), on), path)
+      if (line) out += `\n\n${line}`
+    }
+    return out
   } catch {
     return ''
   }
@@ -114,7 +121,7 @@ const configSection = async (io: Io, root: string, layered: Record<string, unkno
     ['auto_update', orEmptyGet(get(cfg, 'auto_update'), 'enabled')],
   ])
   return `## Navigator Config (.agent/.nav-config.json)\n\n\`\`\`json\n${dumps(summary, 2)}\n\`\`\``
-    + await judgeNotice(io, get(cfg, 'judge')) + await adhdNotice(io, layered)
+    + await judgeNotice(io, get(cfg, 'judge')) + await modesNotice(io, layered)
 }
 
 const profileSection = async (io: Io, root: string) => {

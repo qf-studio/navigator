@@ -165,6 +165,8 @@ TIER1_RULE_IDS = {
 ALL_FEATURE_BLOCKS = {
     "deep_research",  # 7.3.0 (TASK-74)
     "adhd_mode",  # 7.9.0 (TASK-82)
+    "reply_modes",  # 8.3.0 (TASK-93)
+    "ste_mode",  # 8.3.0 (TASK-93)
     "tom_features",
     "loop_mode",
     "simplification",

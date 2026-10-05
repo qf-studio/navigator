@@ -181,7 +181,14 @@
     "noul_low": 0.4,
     "noul_high": 0.6
   },
+  "reply_modes": {
+    "enabled": true
+  },
   "adhd_mode": {
+    "enabled": true,
+    "on": null
+  },
+  "ste_mode": {
     "enabled": true,
     "on": null
   }

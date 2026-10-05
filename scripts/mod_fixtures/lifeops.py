@@ -161,6 +161,10 @@ def _scenarios():
     s.append(("session_start", "SessionStart", "adhd-personal-on",
               {**full, "cfg/adhd-mode.json": json.dumps({"on": True})}, {},
               {"NAVIGATOR_CONFIG_HOME": "{T}/p/cfg"}, stubs, {}, {}))
+    s.append(("session_start", "SessionStart", "modes-adhd-on-ste-pinned-off",
+              {**full, "cfg/adhd-mode.json": json.dumps({"on": True}),
+               ".agent/.nav-config.json": json.dumps({**CONFIG, "ste_mode": {"on": False}})},
+              {}, {"NAVIGATOR_CONFIG_HOME": "{T}/p/cfg"}, stubs, {}, {}))
     s.append(("session_start", "SessionStart", "profile-weird",
               {**full, ".agent/.user-profile.json": json.dumps(
                   {"preferences": None, "corrections": "abcdefgh", "goals": {"a": 1}})},

@@ -403,17 +403,20 @@ class MemoriesGateAndOrderingTest(SessionStartOpTestBase):
         self.assertFalse((self.plugin_dir / "recall_argv.txt").exists())
 
 
-class SectionAdhdNoticeTest(SessionStartOpTestBase):
-    """TASK-82: one line when ADHD mode resolves by an explicit switch; silent otherwise."""
+class SectionModesNoticeTest(SessionStartOpTestBase):
+    """TASK-82/93: one line per reply mode resolved by an explicit switch; silent otherwise."""
 
     def test_silent_by_default(self):
         self.assertNotIn("ADHD mode", self.run_op()["additional_context"])
 
     def test_personal_switch_named(self):
-        from nav_hook_lib import adhd
-        adhd.set_personal(True)
+        from nav_hook_lib import reply_modes
+        reply_modes.set_personal(reply_modes.by_key("adhd"), True)
+        reply_modes.set_personal(reply_modes.by_key("ste"), False)
         body = self.run_op()["additional_context"]
         self.assertIn("ADHD mode: on (personal switch", body)
+        self.assertIn("\n\nSTE mode: off (personal switch", body)
+        self.assertLess(body.index("ADHD mode: on"), body.index("STE mode: off"))
 
     def test_local_pin_counts(self):
         (self.agent / ".nav-config.local.json").write_text(

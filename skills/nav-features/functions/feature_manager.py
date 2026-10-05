@@ -23,15 +23,21 @@ import argparse
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
-# Per-person switches (ADHD mode) resolve through the hook runtime's lib so the
-# table and the hooks agree. The plugin root holds hooks/ next to skills/.
+# Per-person switches (reply modes: ADHD, STE) resolve through the hook runtime's
+# lib so the table and the hooks agree. The plugin root holds hooks/ next to skills/.
 _HOOKS_DIR = Path(__file__).resolve().parents[3] / "hooks"
 if str(_HOOKS_DIR) not in sys.path:
     sys.path.insert(0, str(_HOOKS_DIR))
 try:
-    from nav_hook_lib import adhd as _adhd
+    from nav_hook_lib import reply_modes as _modes
 except Exception:  # older/partial install: personal switches read as off
-    _adhd = None
+    _modes = None
+
+def _personal_on(config_key: str):
+    """The person's own switch for the reply mode behind ``config_key``, or None."""
+    mode = _modes.by_config_key(config_key) if _modes is not None else None
+    return _modes.personal_on(mode) if mode is not None else None
+
 
 # Feature definitions with metadata
 FEATURES = {
@@ -210,6 +216,18 @@ FEATURES = {
         "description": "Per-person reply shaping (one next action, bold deadlines, short lists); say 'adhd mode on/off' any time",
         "short_desc": "ADHD-friendly reply shape, personal switch",
         "config_key": "adhd_mode",
+        "enabled_key": "on",
+        "default": False,
+        "type": "config",
+        "personal": True
+    },
+    "ste_mode": {
+        "name": "ste_mode",
+        "display_name": "STE Mode",
+        "version": "8.3.0",
+        "description": "Per-person Simplified Technical English sentences (ASD-STE100 Part 1 subset); say 'ste mode on/off' any time",
+        "short_desc": "STE sentence rules, personal switch",
+        "config_key": "ste_mode",
         "enabled_key": "on",
         "default": False,
         "type": "config",
@@ -406,7 +424,7 @@ def is_feature_enabled(config: Dict, feature_name: str) -> bool:
         if isinstance(config_section, dict) else None
     if feature.get("personal") and not isinstance(value, bool):
         # Repo value absent/null: the person's own switch decides.
-        personal = _adhd.personal_on() if _adhd is not None else None
+        personal = _personal_on(config_key)
         return personal if isinstance(personal, bool) else feature["default"]
     return value if value is not None else feature["default"]
 
@@ -583,17 +601,19 @@ def main():
         feature = FEATURES.get(args.feature) or {}
         if feature.get("personal") and not args.local:
             # Personal switch: lives under ~/.config/navigator, never in the repo.
-            if _adhd is None or not _adhd.set_personal(enable):
-                print("❌ Could not write the personal ADHD switch", file=sys.stderr)
+            mode = _modes.by_config_key(feature["config_key"]) if _modes is not None else None
+            if mode is None or not _modes.set_personal(mode, enable):
+                print(f"❌ Could not write the personal {feature['display_name']} switch",
+                      file=sys.stderr)
                 return 1
             state = "on" if enable else "off"
             print(f"{'✅' if enable else '⏸ Off'} {feature['display_name']} {state} "
-                  f"(personal switch, {_adhd.personal.path(_adhd.STATE_NAME)}; "
+                  f"(personal switch, {_modes.personal_path(mode)}; "
                   f"applies in every repo from the next prompt)")
             if is_locally_overridden(local, args.feature) or \
-                    isinstance((shared.get("adhd_mode") or {}).get("on"), bool):
-                print("⚠️  this repo pins adhd_mode.on in its config, which wins over "
-                      "the personal switch here")
+                    isinstance((shared.get(mode.config_key) or {}).get("on"), bool):
+                print(f"⚠️  this repo pins {mode.config_key}.on in its config, which wins "
+                      "over the personal switch here")
             print()
             print(show_features(merge_config(shared, local), local=local))
             return 0

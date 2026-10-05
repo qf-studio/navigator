@@ -51,7 +51,7 @@ Each behavior is an op with a config off-switch in `.agent/.nav-config.json`:
 |---|---|---|---|
 | Workflow gating | prompt_gate | `prompt.submit` | `workflow_enforcer_hook.enabled`, `.strict_block` |
 | Tier-1 instant answers | prompt_tier1 | `prompt.submit` | `tier1.enabled`, per rule via `tier1.rules` |
-| ADHD mode toggle + reply-shape block | prompt_adhd | `prompt.submit` | `adhd_mode.enabled`; `adhd mode on/off` or `adhd_mode.on` |
+| Reply modes (ADHD shape, STE sentences) | prompt_modes | `prompt.submit` | `reply_modes.enabled`; per mode `<key>_mode.enabled`, `<key> mode on/off` or `<key>_mode.on` |
 | Intent briefs on ambiguous prompts | prompt_brief | `prompt.submit` | `brief_hook.enabled` |
 | Repeated-Read guard | read_guard | `tool.call` (Read) | `read_guard_hook.enabled`, `.strict_block` |
 | Session context injection | session_start | `classic.SessionStart` | `session_start_hook.enabled` |
@@ -254,18 +254,29 @@ config. Verify with `python3 hooks/nav_hook_lib/judge.py --check`; session start
 key source or warns when none is found. Setup SOP:
 `.agent/sops/integrations/typesafe-judge-setup.md`. Replay the eval with `scripts/judge_eval.py`.
 
-### ADHD Mode (v7.9.0)
+### Reply Modes: ADHD and STE (v7.9.0, v8.3.0)
 
-A per-person switch for reply shape: one next action first, time-critical items first
-with the deadline in bold, bullets over prose, lists capped at five, numbered steps with
-"step k of n", no preamble, one sub-two-minute closing action. Say `adhd mode on` or
-`adhd mode off` at any prompt: the hook answers with zero model turn and writes
-`~/.config/navigator/adhd-mode.json`, so the switch follows you across repos and takes
-effect on the next prompt without a restart. While on, the rule block rides every prompt
-as injected context; while off it exists nowhere in the context. Subagents never see it.
-A repo can pin it with `adhd_mode.on: true|false` (shared or `.local`); `null` defers to
-the person. Enforced by prompt_adhd (hook runtime); this text is documentation, not the
-mechanism. Design: `.agent/tasks/TASK-82-adhd-mode.md`.
+Per-person switches that shape replies. Each mode is one row in a table
+(`hooks/nav_hook_lib/reply_modes.py`, mirrored in `hooks/mod/lib/reply_modes.ts`) and one
+op serves them all. Say `<key> mode on`, `<key> mode off` or `<key> mode` at any prompt:
+the hook answers with zero model turn and writes `~/.config/navigator/<key>-mode.json`, so
+the switch follows you across repos and takes effect on the next prompt without a restart.
+While on, that mode's rule block rides every prompt as injected context; while off it
+exists nowhere in the context. Subagents never see it. A repo can pin a mode with
+`<key>_mode.on: true|false` (shared or `.local`); `null` defers to the person;
+`<key>_mode.enabled: false` hides the mode entirely.
+
+- **ADHD** (`adhd mode on`): reply shape. One next action first, time-critical items
+  first with the deadline in bold, bullets over prose, lists capped at five, numbered
+  steps with "step k of n", no preamble, one sub-two-minute closing action.
+- **STE** (`ste mode on`, `use ste`): sentence style from ASD-STE100 Simplified
+  Technical English, Part 1 only. One idea per sentence, 20 words for instructions,
+  imperative instructions, active voice, present tense, no gerunds, no noun clusters,
+  full sentences. The controlled dictionary is not applied.
+
+When both are on, the blocks stack in table order: shape first, sentences inside it.
+Enforced by prompt_modes (hook runtime); this text is documentation, not the mechanism.
+Design: `.agent/tasks/TASK-82-adhd-mode.md`, `.agent/tasks/TASK-93-reply-modes-ste.md`.
 
 ---
 

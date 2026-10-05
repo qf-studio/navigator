@@ -244,6 +244,15 @@ VERSION_CONFIGS: Dict[str, Dict[str, Any]] = {
             "on": None
         }
     },
+    "8.3.0": {
+        "reply_modes": {
+            "enabled": True
+        },
+        "ste_mode": {
+            "enabled": True,
+            "on": None
+        }
+    },
 }
 
 

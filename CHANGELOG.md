@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.0] — 2026-10-05
+
+Reply modes become a table: one `prompt_modes` op serves every row of
+`reply_modes.MODES`, and STE mode (ASD-STE100 Simplified Technical English sentence rules,
+`use ste` / `ste mode off`) joins ADHD mode as row two. Blocks stack in table order; a new
+mode is one row per runtime plus a config block (TASK-93). `prompt_adhd` is gone.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.0.md)
+
 ## [v8.2.8] — 2026-10-05
 
 The Stop gate no longer forces a continuation on a turn whose only action is a read-only

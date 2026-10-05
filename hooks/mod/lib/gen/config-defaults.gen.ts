@@ -186,7 +186,14 @@ export const CONFIG_DEFAULTS = {
     "api_key_file": "~/.config/typesafe/api_key",
     "max_state_chars": 4000
   },
+  "reply_modes": {
+    "enabled": true
+  },
   "adhd_mode": {
+    "enabled": true,
+    "on": null
+  },
+  "ste_mode": {
     "enabled": true,
     "on": null
   }

@@ -186,7 +186,14 @@ Other threads:
   removal); v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
   a new `/skills/nav-features` page. First release whose specs live only in issues — the
   precedent for `task_id_source: github` in this repo, not yet switched on here
-- **TASK-82** ✅ — ADHD mode: `ops/prompt_adhd.py` + `nav_hook_lib/adhd.py` + `personal.py`.
+- **TASK-93** ✅ — Reply modes: `nav_hook_lib/reply_modes.py` holds the `MODES` table (ADHD, STE)
+  and `ops/prompt_modes.py` replaces `prompt_adhd`; `hooks/mod/lib/reply_modes.ts` +
+  `ops/prompt_modes.ts` mirror it. STE = ASD-STE100 Part 1 sentence rules, `use ste` /
+  `ste mode off`, own file `~/.config/navigator/ste-mode.json`, own block `ste_mode`.
+  Blocks stack in table order (shape before sentences); `MAX_TOTAL_BLOCK_CHARS` asserted.
+  Adding a mode = one row per runtime + a config block. Ships v8.3.0 (2026-10-05)
+- **TASK-82** ✅ — ADHD mode (now row 1 of `reply_modes.MODES`; files below are historical):
+  `ops/prompt_adhd.py` + `nav_hook_lib/adhd.py` + `personal.py`.
   Exact phrases `adhd mode on|off|status` answer via decision:block (zero model turn) and
   write the person's switch (`~/.config/navigator/adhd-mode.json`); while on, the reply-shape
   rule block (~206 tokens) rides every UserPromptSubmit; repo pin `adhd_mode.on`. Released
@@ -345,7 +352,7 @@ Hook commands resolve via `${CLAUDE_PLUGIN_ROOT}` (the installed plugin director
 | `profile_sync.py` | PostToolUse Write/Edit on `.user-profile.json` (recorder) | Convert new corrections into graph memories |
 | `prompt_gate.py` | UserPromptSubmit (gate) | Soft-warn on Loop Mode trigger, hard-block (exit 2) when prior turn skipped WORKFLOW CHECK AND `strict_block=true` (config key stays `workflow_enforcer_hook`) |
 | `prompt_brief.py` | UserPromptSubmit (injector) | Score prompt ambiguity (TASK-56, shipped v6.18.0); on ambiguous task-shaped prompts inject a NAV-BRIEF instruction + relevant graph memories so the model renders an intent brief before implementing. Never blocks (exit 0 only — mem-034). Composes with `prompt_gate` on the same event. Live-validated 2026-07-09: full cycle (brief → confirmation → BRIEF DRIFT on scope growth → re-confirmation) ran on a real bug, and the hook's own memory recall surfaced the graph corruption fixed in v6.18.1 — see `sops/debugging/knowledge-graph-memory-corruption.md` |
-| `prompt_adhd.py` | UserPromptSubmit (responder) | ADHD mode (TASK-82): exact phrases `adhd mode on/off/status` flip or report the personal switch (`~/.config/navigator/adhd-mode.json`) via decision:block at zero model invocation; while on, injects the reply-shape rule block on every prompt ahead of the brief. Repo pin `adhd_mode.on` wins; silent under Pilot and while the nav-status mod owns ADHD (`config.mod_owns`, TASK-83) |
+| `prompt_modes.py` | UserPromptSubmit (responder) | Reply modes (TASK-82 ADHD, TASK-93 STE): exact phrases `<key> mode on/off/status` for every row of `reply_modes.MODES` flip or report that mode's personal switch (`~/.config/navigator/<key>-mode.json`) via decision:block at zero model invocation; while any mode is on, injects the active rule blocks (table order) on every prompt ahead of the brief. Repo pin `<key>_mode.on` wins, `<key>_mode.enabled: false` hides a mode; silent under Pilot and while the mod owns the op (`config.mod_owns`) |
 | `read_guard.py` | PreToolUse Read on `.agent/` (gate) | Count non-allowlisted reads per turn; warn at 3, block at 5 (`strict_block=true`); deny-only channel (mem-035) |
 
 ### Composition lessons captured
@@ -465,5 +472,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-05 (v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-05 (v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

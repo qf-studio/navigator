@@ -149,6 +149,16 @@ class PersonalSwitchTest(unittest.TestCase):
         self.assertEqual(json.loads(self.local.read_text()), {"adhd_mode": {"on": False}})
         self.assertIn("[ ] L", self.row(self.run_fm("show").stdout))
 
+    def test_ste_mode_has_its_own_personal_file(self):
+        out = self.run_fm("enable", "ste_mode")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("STE Mode on (personal switch", out.stdout)
+        self.assertEqual(json.loads((self.home / "ste-mode.json").read_text())["on"], True)
+        self.assertFalse((self.home / "adhd-mode.json").exists())
+        shown = self.run_fm("show").stdout
+        self.assertIn("[x]", next(l for l in shown.splitlines() if "ste_mode" in l))
+        self.assertIn("[ ]", self.row(shown))
+
 
 if __name__ == "__main__":
     unittest.main()

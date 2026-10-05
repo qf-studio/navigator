@@ -11,7 +11,7 @@ import type {
   NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavRejects,
   NavStatus, NavTrip, NavUsage, NavWaypointClock,
 } from '../../types'
-import { personalDir } from './lib/adhd'
+import { personalDir } from './lib/reply_modes'
 import { redactSecrets } from './lib/judge'
 import { JUDGE_DEFAULTS } from './lib/gen/judge-data.gen'
 import { readJson } from './lib/config'
