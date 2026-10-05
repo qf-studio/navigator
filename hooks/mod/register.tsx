@@ -28,7 +28,7 @@ import type { Judgment } from './lib/scoring'
 import {
   JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, bashTouchesDocs, countRead, endTurnReads, etaText,
   fanOutText, isDocPath, judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories,
-  parseRejects, parseTasks, rateKind, recordPace, rejectsLast, rejectsLine, tokensOf, trailLine, turnsTo, withLabel,
+  paneLayout, parseRejects, parseTasks, rateKind, recordPace, rejectsLast, rejectsLine, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
 import { REJECTS_PATH } from './lib/rejects'
 import { bashReadonly } from './lib/stop-bash'
@@ -345,10 +345,8 @@ const LOW_FUEL_TURNS = 5
 const TASK_LABEL = 10 // task card: label column before the text
 const MEMORY_LINES = 3
 const JUDGE_TRAIL_LINES = 8
-const PANE_COLUMNS = 72
+const PANE_COLUMNS = 72 // asked for; the terminal decides (e.props.bodyColumns is the truth)
 const AREA_ROWS = 2 // braille trend under a card's numbers (grom's stat texture)
-/** Inner text width of a top-row card at a percentage of the pane (frame + padding = 4). */
-const cardInner = (percent: number): number => Math.max(8, Math.floor((PANE_COLUMNS * percent) / 100) - 4)
 
 /** Where the session is headed: a goal Claude stated in a brief, else the active task. */
 const navState = async ($: EngineInterface) => {
@@ -723,8 +721,10 @@ export const register: Register = on => {
           {i === rows.length - 1 && tail ? <Text color={PALETTE.dim}>{tail}</Text> : null}
         </Text>
       ))
-    const ctxInner = cardInner(details ? 31 : 40)
-    const sessionInner = cardInner(details ? 43 : 60)
+    const cols = typeof e.props.bodyColumns === 'number' && e.props.bodyColumns > 0 ? e.props.bodyColumns : PANE_COLUMNS
+    const layout = paneLayout(cols, details)
+    const { narrow, ctxInner, sessionInner } = layout
+    const cardWidth = (wide: string, withDetails: string) => (narrow ? '100%' : details ? withDetails : wide)
     const title = (text: string, color: string = PALETTE.accent) => (
       <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
     )
@@ -732,8 +732,8 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row">
-          <Box {...panel} flexDirection="column" width={details ? '31%' : '40%'}>
+        <Box flexDirection={narrow ? 'column' : 'row'}>
+          <Box {...panel} flexDirection="column" width={cardWidth('40%', '31%')}>
             {title('context')}
             <Text wrap="truncate-end">
               <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
@@ -743,7 +743,7 @@ export const register: Register = on => {
             </Text>
             {trend(hist.ctx, ctxInner, ctxColor)}
           </Box>
-          <Box {...panel} flexDirection="column" width={details ? '43%' : '60%'}>
+          <Box {...panel} flexDirection="column" width={cardWidth('60%', '43%')}>
             {title(details && t !== null ? `session · ${t.source}` : 'session')}
             {t === null ? (
               <Box flexDirection="column">
@@ -766,7 +766,7 @@ export const register: Register = on => {
             )}
           </Box>
           {details ? (
-            <Box {...panel} flexDirection="column" width="26%">
+            <Box {...panel} flexDirection="column" width={narrow ? '100%' : '26%'}>
               {title('reads')}
               <Text wrap="truncate-end">
                 <Text color={PALETTE.accent} bold>{r.total}</Text>
@@ -802,7 +802,7 @@ export const register: Register = on => {
             {tally.map(line => <Text color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
             {trail.length > 0 ? <Text> </Text> : null}
             {trail.slice(0, JUDGE_TRAIL_LINES).map((d, i) => (
-              <Text color={i === 0 ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{trailLine(d, PANE_COLUMNS - 4)}</Text>
+              <Text color={i === 0 ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{trailLine(d, cols - 4)}</Text>
             ))}
             {judgeOpen && j.label === undefined ? (
               <Box flexDirection="row" columnGap={3} marginTop={1}>
@@ -905,7 +905,7 @@ export const register: Register = on => {
           </Box>
         ) : null}
 
-        <Box flexDirection="row" columnGap={2} paddingX={1}>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={2} paddingX={1}>
           <Button key="marker" label="marker" hotkey="m" plain
             onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })} />
           <Text color={PALETTE.dim}>·</Text>

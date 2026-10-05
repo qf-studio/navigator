@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   NO_PACE, bashReadFiles, etaText, fanOutText, isDocPath, judgeEffect, judgeTally, labelEntry, labelFromVerdict,
-  parseRejects, recordPace, rejectsLast, rejectsLine, trailLine, withLabel,
+  paneLayout, parseRejects, recordPace, rejectsLast, rejectsLine, trailLine, withLabel,
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
@@ -57,6 +57,14 @@ describe('pane model', () => {
     expect(rejectsLine(parseRejects('', now))).toBe('no rejects')
     expect(rejectsLast(parseRejects('', now))).toBeNull()
     expect(rejectsLine(null)).toBe('no rejects')
+  })
+  test('pane layout: three cards in a row from 72 columns (the pane default), stacked below', () => {
+    expect(paneLayout(120, true)).toEqual({ narrow: false, ctxInner: 33, sessionInner: 47, readsInner: 27 })
+    expect(paneLayout(72, false)).toEqual({ narrow: false, ctxInner: 24, sessionInner: 39, readsInner: 14 })
+    expect(paneLayout(60, true)).toEqual({ narrow: true, ctxInner: 56, sessionInner: 56, readsInner: 56 })
+    expect(paneLayout(71, false).narrow).toBe(true)
+    expect(paneLayout(72, false).narrow).toBe(false)
+    expect(paneLayout(10, true).ctxInner).toBe(8) // never below the floor
   })
   test('fan-out verdict follows the turn in progress, else the last one', () => {
     expect(fanOutText({ total: 9, docs: 9, turnTotal: 0, turnDocs: 0, lastTurnTotal: 3, lastTurnDocs: 0 })).toBe('use an Agent')

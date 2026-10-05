@@ -75,7 +75,7 @@ into `~/.config/navigator/judge-labels.json` for `scripts/judge_eval.py`), next 
 the pace so far), memories with pinning, reads and tasks behind `d`, the reject log behind `l`
 (`3 rejects` + `14:03 stop_completion` under reads; `.agent/.nav-rejects.jsonl`, one JSON line per
 read-guard deny, prompt-gate block or stop-gate block, written by both runtimes, TASK-88), and marker/compact
-buttons; a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
+buttons (below 72 columns the three top cards stack and the button row wraps); a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte
 by generated fixtures (`scripts/gen_mod_data.py`, `make mod-test`).
 

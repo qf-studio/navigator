@@ -330,3 +330,25 @@ export const rejectsLine = (r: NavRejects | null): string => {
 /** `14:03 stop_completion`, or null when the log is empty. */
 export const rejectsLast = (r: NavRejects | null): string | null =>
   r === null || r.last === null ? null : `${r.last.clock} ${r.last.op}`
+
+// Pane layout from its real width (TASK-88 follow-up). The pane asks for 72 columns (the
+// width the three-card row was drawn for) but gets what the terminal has; below that the top
+// cards stack and every card is full width.
+export const NARROW_BELOW = 72
+export type PaneLayout = {
+  narrow: boolean
+  /** Inner text width of the context / session / reads cards (frame + padding = 4). */
+  ctxInner: number
+  sessionInner: number
+  readsInner: number
+}
+export const paneLayout = (cols: number, details: boolean): PaneLayout => {
+  const inner = (percent: number): number => Math.max(8, Math.floor((cols * percent) / 100) - 4)
+  if (cols < NARROW_BELOW) return { narrow: true, ctxInner: inner(100), sessionInner: inner(100), readsInner: inner(100) }
+  return {
+    narrow: false,
+    ctxInner: inner(details ? 31 : 40),
+    sessionInner: inner(details ? 43 : 60),
+    readsInner: inner(26),
+  }
+}

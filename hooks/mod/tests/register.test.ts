@@ -240,7 +240,7 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
     component: 'Pane',
     requestId: 'nav',
     props: {
-      title: 'Navigator', isFocused: true, bodyColumns: 60, placement: 'inline',
+      title: 'Navigator', isFocused: true, bodyColumns: 72, placement: 'inline', // the pane's own default width
       scroll: { offset: 0, bodyRows: 20 }, view: {},
     },
   })
