@@ -1,6 +1,6 @@
 # TASK-91: In-progress task detection reads the Status line, not prose
 
-**Status**: ✅ Implemented — 2026-10-05
+**Status**: ✅ Released — v8.2.7, 2026-10-05
 
 ## Origin
 

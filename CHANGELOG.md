@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.7] — 2026-10-05
+
+The `/nav` next card and the compact marker decide "in progress" from a task doc's `**Status**`
+line only, so a finished doc that quotes the phrase in prose (TASK-67's did) no longer
+surfaces as the destination (TASK-91).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.7.md)
+
 ## [v8.2.6] — 2026-10-05
 
 The Stop gate no longer forces a continuation on Bash-only turns that `cd` or call `/bin/ls`:
