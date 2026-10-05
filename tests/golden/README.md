@@ -102,6 +102,15 @@ the TASK-60 runtime prints nothing for silent ops. The ports must reproduce the 
 or get that delta explicitly sanctioned (task-doc decision + re-record) — never silently
 accept the difference.
 
+- **`auto_update` section excluded from the fixture config (TASK-81, 2026-10-05).** The
+  golden was recorded with the section silent by accident: `--check-drift` read the plugin
+  version from `claude plugin list`, which saw the isolated HOME and found nothing. Since
+  TASK-81 the drift check reads the plugin's own manifest, so in this repo it reports
+  `6.18.1 behind plugin (v<current>)` — a line that changes on every release and cannot be
+  golden-pinned. `session_start_hook.include_sections` in `fixtures/agent/.nav-config.json`
+  drops `auto_update`; the recorded stdout is unchanged (the config summary does not render
+  that key).
+
 ## Re-recording
 
 `python3 record_goldens.py` re-runs the v6 scripts against the frozen stored payloads and

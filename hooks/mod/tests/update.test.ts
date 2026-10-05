@@ -34,24 +34,38 @@ describe('update notice logic (TASK-81)', () => {
 })
 
 describe('session.start update check', () => {
-  const world = (on: On,
-    opts: { pilot?: string; latest?: string; fetches: string[]; toasts: string[] }) => {
+  type World = {
+    pilot?: string; latest?: string; fetches: string[]; toasts: string[]
+    config?: Record<string, unknown>; manifest?: false; offline?: true; runs?: (readonly string[])[]
+  }
+  const world = (on: On, opts: World) => {
     mock.env(on, { HOME: '/h', ...(opts.pilot ? { PILOT_EXECUTOR: opts.pilot } : {}) })
     mock.store(on)
     mock.clock(on, { now: 10_000_000 })
     on('session.cwd', () => ({ value: '/repo' }))
     on('session.version', () => ({ value: { version: '2.1.287', base: '2.1.287', builtAt: '' } }))
     on('fs.exists', (_$, e) => ({ value: e.path === '/repo/.agent' }))
-    on('fs.read', (_$, e) => (e.path.endsWith('.claude-plugin/plugin.json')
-      ? { value: JSON.stringify({ version: '8.0.0' }) } : { deny: 'missing' }))
+    on('fs.read', (_$, e) => {
+      if (e.path.endsWith('.claude-plugin/plugin.json') && opts.manifest !== false) {
+        return { value: JSON.stringify({ version: '8.0.0' }) }
+      }
+      if (e.path === '/repo/.agent/.nav-config.json' && opts.config) {
+        return { value: JSON.stringify(opts.config) }
+      }
+      return { deny: 'missing' }
+    })
     on('http.fetch', (_$, e) => {
       opts.fetches.push(e.url)
+      if (opts.offline) return { deny: 'offline' }
       return { value: { status: 200, ok: true, headers: {}, text: releases({ tag_name: `v${opts.latest ?? '8.0.0'}` }) } }
     })
     on('ui.toast', (_$, e) => { opts.toasts.push(e.text); return { value: undefined } })
     on('env.set', () => ({ value: undefined }))
     on('command.register', (_$, e) => ({ value: { command: e.name } }))
-    on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+    on('process.run', (_$, e) => {
+      opts.runs?.push(e.argv)
+      return { value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    })
     on('fs.list', () => ({ value: [] }))
     on('session.start', (_$, e) => ({ cwd: e.cwd }))
   }
@@ -81,5 +95,38 @@ describe('session.start update check', () => {
     await start($)
     expect(fetches).toHaveLength(0)
     expect(toasts).toHaveLength(0)
+  })
+  test('fetch failure → no notice, nothing recorded, so the next start retries', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    world(on, { offline: true, fetches, toasts })
+    await start($)
+    await start($)
+    // two fetches: a failed check writes no update_checked_at, so nothing throttles the retry
+    expect(fetches).toHaveLength(2)
+    expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
+  })
+  test('manifest unreadable → no notice even when a newer release exists', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    world(on, { manifest: false, latest: '9.0.0', fetches, toasts })
+    await start($)
+    expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
+  })
+  test('auto_update.enabled false → no fetch and no notice', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    world(on, { config: { auto_update: { enabled: false } }, latest: '9.0.0', fetches, toasts })
+    await start($)
+    expect(fetches).toHaveLength(0)
+    expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
+  })
+  test('session start never runs the Claude CLI (no `claude plugin list` from a hook)', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    const runs: (readonly string[])[] = []
+    world(on, { latest: '8.0.1', fetches, toasts, runs })
+    await start($)
+    expect(runs.filter(argv => argv[0] === 'claude')).toHaveLength(0)
   })
 })

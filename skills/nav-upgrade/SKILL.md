@@ -731,9 +731,15 @@ User: "Update Navigator"
 
 ---
 
+## Session-start notice (v8)
+
+Since v8.0.0 the Navigator mod checks the latest GitHub release at session start (on by
+default via `auto_update.enabled`, at most every `check_interval_hours`, never under Pilot)
+and shows the update command. It never updates by itself; this skill, nav-start Step 1.5
+and `claude plugin update navigator@navigator-marketplace` do.
+
 ## Future Enhancements
 
-- Auto-update check on `nav-start` (opt-in)
 - Changelog display in CLI
 - Update notifications for major versions
 - Automated migration scripts for breaking changes

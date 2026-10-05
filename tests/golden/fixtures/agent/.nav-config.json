@@ -71,8 +71,7 @@
       "config",
       "graph",
       "profile",
-      "tasks",
-      "auto_update"
+      "tasks"
     ],
     "char_budget": 9500
   },

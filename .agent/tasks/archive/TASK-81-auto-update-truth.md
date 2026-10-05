@@ -1,6 +1,6 @@
 # TASK-81: Auto-update — make the session-start check real, and the docs honest
 
-**Status**: 🚧 In Progress — points 1–2 done on branch v8 (TASK-84, 2026-10-02); point 3 (docs) lands with the v8 docs step
+**Status**: ✅ Implemented — 2026-10-05; ships with the next release (the v8.0.0 notice is already live)
 
 ## Context
 
@@ -62,3 +62,44 @@ Size: ~half a day.
 - Point 2 → done: nav-start Step 1.5 is one `auto_updater.py` call whose JSON fields the model
   reports verbatim; the `$NEW_VERSION` template is gone.
 - Point 3 (docs honesty) → TASK-84 step 9.
+
+## Research + plan (2026-10-05, loop mode)
+
+Research (navigator-research agent + direct reads) found three leftovers:
+
+1. **Point 1 residual.** Both session-start ops run `auto_updater.py --check-drift`, whose
+   `detect_version_drift` called `get_current_version()` → `claude plugin list` (10 s
+   subprocess inside a 4 s hook budget). That is the 2026-09-06/09 wrong-drift-line source,
+   still reachable from the hook on v8.1.1. Fix: `get_running_plugin_version()` (the
+   script's own `.claude-plugin/plugin.json`), then the cache tree; the CLI is only used by
+   the skill-side `auto_update()`.
+2. **Point 3 docs.** Plugin repo: `nav-features` SKILL + `feature_manager.py` ("auto-updates
+   on session start", "updates silently"), `nav-upgrade` SKILL ("opt-in", under Future),
+   `nav-sync-claude` SKILL, `DEVELOPMENT-README` index. Docs site: `configuration/auto-update.mdx`
+   body contradicts its own v8 callout (60 s timeout, reinstall fallback, "Auto-updated"
+   transcript, "disabled still notifies" — false: disabled means no notice); `configuration/
+   index.mdx`, `reference/nav-config-schema.mdx` (`last_check` is the skill's key, the mod
+   stores `update_checked_at` / `update_latest` in `$.store`), `reference/plugin-ops.mdx`,
+   `reference/migration.mdx`, `reference/troubleshooting.mdx`, `skills/nav-start.mdx`.
+   `templates/CLAUDE.md` and `README.md` carry no claim. CLAUDE.md is already right.
+3. **Point 4 tests.** Mod had newer / same / throttled / Pilot. Added: fetch failure leaves no
+   notice and no `update_checked_at` (so the next start retries), manifest absent → no notice,
+   `enabled: false` → no fetch, and no `process.run` of the Claude CLI from session start.
+   Python: drift resolves from the manifest, then the cache, with `subprocess.run` patched to
+   fail — the behavioral form of the "no `claude` from the hook path" guard.
+
+Execution order: code + tests → plugin docs → site docs → `make test` + mod tests → site
+build + deploy → archive + marker. The plugin change ships with the next release.
+
+## Closed 2026-10-05
+
+Shipped in this task: hook-safe drift check (`get_running_plugin_version` first, cache second,
+CLI never), five new mod tests + five Python tests, plugin docs and the docs site rewritten to
+"notifies on session start, never self-updates", golden fixture excludes the version-dependent
+drift section (`tests/golden/README.md`, deviations).
+
+Follow-ups, out of scope here:
+- The mod's release fetch has no `curl` fallback when `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
+  refuses `$.http.fetch` (the judge got one in TASK-84); on such machines the notice never fires.
+- The skill-side `auto_update()` still reads the current version via `claude plugin list`. Fine
+  outside a hook; could reuse the manifest reader for one less subprocess.

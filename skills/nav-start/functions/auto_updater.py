@@ -2,13 +2,17 @@
 """
 Navigator Auto-Updater
 
-Automatically updates Navigator plugin on session start if:
+Updates the Navigator plugin when run from the nav-start skill (Step 1.5) if:
 1. auto_update.enabled is true in .nav-config.json
 2. A newer version is available
 3. Last check was more than check_interval_hours ago
 
+Never runs the update from a hook. The session-start hooks (mod and Python) call
+`--check-drift` only, which is read-only and never spawns the Claude CLI (TASK-81).
+
 Usage:
     python auto_updater.py [--config-path PATH]
+    python auto_updater.py --check-drift [--config-path PATH]
 
 Returns JSON:
     {"status": "updated|up-to-date|failed|disabled|skipped", ...}
@@ -147,6 +151,22 @@ def get_latest_version_from_github() -> Dict:
         'version': None,
         'error': 'No valid release found (all candidates failed plugin.json validation)'
     }
+
+
+def get_running_plugin_version() -> Optional[str]:
+    """Version of the plugin tree this script runs from (its own manifest).
+
+    `<plugin>/skills/nav-start/functions/auto_updater.py` -> `<plugin>/.claude-plugin/
+    plugin.json`. This is the truthful "running version" for a hook: no CLI, no cache
+    guessing. None when the manifest is missing or unreadable (e.g. a copied script).
+    """
+    manifest = Path(__file__).resolve().parents[3] / '.claude-plugin' / 'plugin.json'
+    try:
+        with open(manifest, 'r') as f:
+            version = json.load(f).get('version')
+            return version or None
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return None
 
 
 def get_installed_plugin_version() -> Optional[str]:
@@ -327,8 +347,13 @@ def detect_version_drift(config_path: str = '.agent/.nav-config.json') -> Dict:
         - plugin_version: str
         - project_version: str
         - message: str
+
+    Read-only and hook-safe: the plugin version comes from this script's own manifest,
+    then the plugin cache on disk. It never spawns `claude plugin list` - that call
+    misreported the version from inside a hook on 2026-09-06/09 (TASK-81) and its 10 s
+    timeout does not fit the session-start budget.
     """
-    plugin_version = get_current_version()
+    plugin_version = get_running_plugin_version() or get_installed_plugin_version()
     if not plugin_version:
         return {
             'has_drift': False,

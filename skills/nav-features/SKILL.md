@@ -44,7 +44,7 @@ v<version> Features:
 │ tom_features            │ [x]    │ Verification checkpoints, user profile, di... │
 │ loop_mode               │ [ ]    │ Autonomous loop execution (enable when nee... │
 │ simplification          │ [x]    │ Post-implementation code cleanup with Opus    │
-│ auto_update             │ [x]    │ Auto-updates on session start                 │
+│ auto_update             │ [x]    │ Update notice on session start                │
 │ knowledge_graph         │ [x]    │ Unified project knowledge + experiential m... │
 │ compact_hook            │ [x]    │ Injects rich summary into compacted sessions  │
 │ workflow_enforcer_hook  │ [x]    │ Enforces WORKFLOW CHECK block before task ... │
@@ -99,7 +99,7 @@ Core (config-toggled):
 - `tom_features` - Theory of Mind (verification checkpoints, profile, diagnostics)
 - `loop_mode` - Autonomous loop execution
 - `simplification` - Code cleanup before commit
-- `auto_update` - Auto-update on session start
+- `auto_update` - Update notice on session start; the update is one command
 - `knowledge_graph` - Unified project knowledge + memories (v6.0.0)
 
 Hooks (config-toggled, edit with caution):
@@ -196,10 +196,12 @@ Config: simplification.enabled, trigger, scope
 ```
 Auto-Update (v5.5.0)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Automatic plugin updates on session start:
-- Checks for newer version
-- Updates silently if available
-- Never blocks session start
+Read-only update notice on session start (v8: Navigator never updates itself from a hook):
+- Compares the running version with the latest GitHub release, at most every
+  `check_interval_hours`, never under Pilot
+- Shows `claude plugin update navigator@navigator-marketplace` when one is newer
+- "Start my Navigator session" applies it (nav-start Step 1.5); restart Claude Code after
+- Never blocks session start; disabled means no check and no notice
 
 Config: auto_update.enabled, check_interval_hours (1)
 ```

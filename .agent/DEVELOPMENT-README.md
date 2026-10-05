@@ -221,10 +221,10 @@ Other threads:
   band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
   Released as v8.0.0 after a live dogfood day (`tasks/archive/TASK-84-v8-mod-runtime.md`,
   section "Resume here").
-- **TASK-81** 📐 — auto-update never updates in v7: session_start is read-only
-  (`--check-drift`), the mutating path is nav-start skill prose; Pilot sat on 7.5.0 through
-  three releases. Plan: real release check + one-line notice in session_start, single
-  script call in the skill, honest docs. Not started
+- **TASK-81** ✅ — auto-update truth: read-only release notice from the mod (v8.0.0),
+  nav-start Step 1.5 is one `auto_updater.py` call, the hook drift check reads the plugin
+  manifest instead of `claude plugin list`, docs and site say "notifies, never self-updates"
+  (2026-10-05, `tasks/archive/TASK-81-auto-update-truth.md`)
 - **TASK-80** 🚧 — judge phase 2: override telemetry + labeling tooling shipped v7.7.1;
   first live read 92 prompts / 4 overrides; real-set labeling and memory rerank pending
 - **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight

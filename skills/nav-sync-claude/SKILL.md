@@ -306,7 +306,7 @@ python3 config_migrator.py .agent/.nav-config.json --json
 
 **Version-specific configs added**:
 - v5.4.0: `simplification` (code clarity improvements)
-- v5.5.0: `auto_update` (auto-update on session start)
+- v5.5.0: `auto_update` (session-start update notice; v8: never updates from a hook)
 - v5.6.0: `task_mode` (unified workflow orchestration)
 
 **Output example**:

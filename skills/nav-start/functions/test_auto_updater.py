@@ -15,9 +15,11 @@ import auto_updater
 from auto_updater import (
     auto_update,
     compare_versions,
+    detect_version_drift,
     get_current_version,
     get_installed_plugin_version,
     get_latest_version_from_github,
+    get_running_plugin_version,
     reinstall_plugin,
 )
 
@@ -238,6 +240,59 @@ class GetInstalledPluginVersionTest(unittest.TestCase):
                 (plugin_dir / "plugin.json").write_text(json.dumps({"version": v}))
             with patch.object(auto_updater.Path, "home", lambda: home):
                 self.assertEqual(get_installed_plugin_version(), "6.16.0")
+
+
+class DetectVersionDriftTest(unittest.TestCase):
+    """TASK-81: `--check-drift` runs from inside the session-start hooks (mod and Python).
+    It must resolve the plugin version from this script's own manifest, then the plugin
+    cache, and never spawn `claude plugin list` - that call misreported the version from a
+    hook on 2026-09-06/09 and its 10 s timeout does not fit the 4 s hook budget."""
+
+    def _config(self, version):
+        f = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        json.dump({"version": version}, f)
+        f.close()
+        return f.name
+
+    def _no_subprocess(self):
+        def boom(*_a, **_k):
+            raise AssertionError("drift check spawned a subprocess")
+        return patch.object(auto_updater.subprocess, "run", boom)
+
+    def test_running_version_comes_from_own_manifest(self):
+        manifest = Path(auto_updater.__file__).resolve().parents[3] / ".claude-plugin" / "plugin.json"
+        self.assertEqual(
+            get_running_plugin_version(),
+            json.loads(manifest.read_text())["version"],
+        )
+
+    def test_drift_uses_manifest_without_any_subprocess(self):
+        with self._no_subprocess(), \
+                patch.object(auto_updater, "get_running_plugin_version", lambda: "8.2.0"):
+            result = detect_version_drift(self._config("8.1.0"))
+        self.assertTrue(result["has_drift"])
+        self.assertEqual(result["plugin_version"], "8.2.0")
+        self.assertEqual(result["project_version"], "8.1.0")
+
+    def test_drift_falls_back_to_cache_when_manifest_missing(self):
+        with self._no_subprocess(), \
+                patch.object(auto_updater, "get_running_plugin_version", lambda: None), \
+                patch.object(auto_updater, "get_installed_plugin_version", lambda: "8.1.1"):
+            result = detect_version_drift(self._config("8.1.1"))
+        self.assertFalse(result["has_drift"])
+
+    def test_no_version_source_is_not_drift(self):
+        with self._no_subprocess(), \
+                patch.object(auto_updater, "get_running_plugin_version", lambda: None), \
+                patch.object(auto_updater, "get_installed_plugin_version", lambda: None):
+            result = detect_version_drift(self._config("8.1.1"))
+        self.assertFalse(result["has_drift"])
+
+    def test_drift_source_never_references_the_cli_reader(self):
+        """Static guard: a future edit that reintroduces get_current_version() into the
+        drift path fails here, not in a session six releases later."""
+        import inspect
+        self.assertNotIn("get_current_version", inspect.getsource(detect_version_drift))
 
 
 class AutoUpdatePostUpdateVerificationTest(unittest.TestCase):
