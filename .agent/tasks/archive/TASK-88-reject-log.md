@@ -1,6 +1,6 @@
 # TASK-88: Reject log — every refusal the runtime makes, one line, greppable
 
-**Status**: ✅ Implemented — 2026-10-05 (shipped in v8.2.0; pane line shortened in v8.2.1)
+**Status**: ✅ Implemented — 2026-10-05 (shipped in v8.2.0; pane line shortened in v8.2.1, two lines in v8.2.2)
 **Origin**: a comment on the v8 post: "the interception point is worth more as a gate … the
 reject log ends up the useful artifact; that's where your real failure modes show up."
 

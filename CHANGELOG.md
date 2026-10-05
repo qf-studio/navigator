@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.2] — 2026-10-05
+
+The `/nav` next row and the band keep one sentence of a reply's first line, not the whole
+line; the reads card shows rejects on two lines (`2 rejects` over `13:15 stop_completion`) so
+the op name fits at any width (TASK-88 follow-ups).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.2.md)
+
 ## [v8.2.1] — 2026-10-05
 
 The `/nav` reads card's reject line is `1 reject · 12:04 read_guard`: the first live screenshot
