@@ -6,6 +6,12 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.4] — 2026-10-05
+
+In the stacked `/nav` layout (below 72 columns) the context gauge fills the card's width
+instead of staying at the row layout's 10 cells (TASK-88 follow-up).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.4.md)
+
 ## [v8.2.3] — 2026-10-05
 
 `/nav` fits a narrow terminal: below 72 columns the three top cards stack full-width, the
