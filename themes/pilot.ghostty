@@ -1,0 +1,25 @@
+# Pilot — Ghostty theme matching Navigator's Claude Code theme (themes/pilot.json).
+# Install: copy to ~/.config/ghostty/themes/pilot, then `theme = "pilot"` in the Ghostty config.
+# Background sits one step under the Pilot message bubbles (#1c2128) so they stay visible.
+palette = 0=#3d4450
+palette = 1=#d48a8a
+palette = 2=#7ec699
+palette = 3=#d4a054
+palette = 4=#7eb8da
+palette = 5=#b4a0d6
+palette = 6=#7fc7c7
+palette = 7=#c9d1d9
+palette = 8=#8b949e
+palette = 9=#e0a0a0
+palette = 10=#9ad6b0
+palette = 11=#e6bc78
+palette = 12=#a9d4ee
+palette = 13=#c9b8e6
+palette = 14=#a0dcdc
+palette = 15=#e6edf3
+background = #14181f
+foreground = #c9d1d9
+cursor-color = #7eb8da
+cursor-text = #14181f
+selection-background = #262c36
+selection-foreground = #c9d1d9
