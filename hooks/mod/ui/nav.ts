@@ -341,14 +341,22 @@ export type PaneLayout = {
   ctxInner: number
   sessionInner: number
   readsInner: number
+  /** Cells of the context gauge: 10 in the row layout; stacked, the rest of the line after `34% `. */
+  gaugeWidth: number
 }
+const GAUGE_ROW = 10
+const PCT_LABEL = 5 // `100% ` at the widest
 export const paneLayout = (cols: number, details: boolean): PaneLayout => {
   const inner = (percent: number): number => Math.max(8, Math.floor((cols * percent) / 100) - 4)
-  if (cols < NARROW_BELOW) return { narrow: true, ctxInner: inner(100), sessionInner: inner(100), readsInner: inner(100) }
+  if (cols < NARROW_BELOW) {
+    const full = inner(100)
+    return { narrow: true, ctxInner: full, sessionInner: full, readsInner: full, gaugeWidth: Math.max(GAUGE_ROW, full - PCT_LABEL) }
+  }
   return {
     narrow: false,
     ctxInner: inner(details ? 31 : 40),
     sessionInner: inner(details ? 43 : 60),
     readsInner: inner(26),
+    gaugeWidth: GAUGE_ROW,
   }
 }

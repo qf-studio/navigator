@@ -723,7 +723,7 @@ export const register: Register = on => {
       ))
     const cols = typeof e.props.bodyColumns === 'number' && e.props.bodyColumns > 0 ? e.props.bodyColumns : PANE_COLUMNS
     const layout = paneLayout(cols, details)
-    const { narrow, ctxInner, sessionInner } = layout
+    const { narrow, ctxInner, sessionInner, gaugeWidth } = layout
     const cardWidth = (wide: string, withDetails: string) => (narrow ? '100%' : details ? withDetails : wide)
     const title = (text: string, color: string = PALETTE.accent) => (
       <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
@@ -736,7 +736,7 @@ export const register: Register = on => {
           <Box {...panel} flexDirection="column" width={cardWidth('40%', '31%')}>
             {title('context')}
             <Text wrap="truncate-end">
-              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, 10)}</Text>
+              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, gaugeWidth)}</Text>
             </Text>
             <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
               {lowFuel ? 'compact due' : a.lastTurnCommitted ? 'good moment to compact' : 'compact safe'}

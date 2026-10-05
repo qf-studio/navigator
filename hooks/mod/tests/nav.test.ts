@@ -59,9 +59,10 @@ describe('pane model', () => {
     expect(rejectsLine(null)).toBe('no rejects')
   })
   test('pane layout: three cards in a row from 72 columns (the pane default), stacked below', () => {
-    expect(paneLayout(120, true)).toEqual({ narrow: false, ctxInner: 33, sessionInner: 47, readsInner: 27 })
-    expect(paneLayout(72, false)).toEqual({ narrow: false, ctxInner: 24, sessionInner: 39, readsInner: 14 })
-    expect(paneLayout(60, true)).toEqual({ narrow: true, ctxInner: 56, sessionInner: 56, readsInner: 56 })
+    expect(paneLayout(120, true)).toEqual({ narrow: false, ctxInner: 33, sessionInner: 47, readsInner: 27, gaugeWidth: 10 })
+    expect(paneLayout(72, false)).toEqual({ narrow: false, ctxInner: 24, sessionInner: 39, readsInner: 14, gaugeWidth: 10 })
+    expect(paneLayout(60, true)).toEqual({ narrow: true, ctxInner: 56, sessionInner: 56, readsInner: 56, gaugeWidth: 51 })
+    expect(paneLayout(16, true).gaugeWidth).toBe(10) // stacked but tiny: never below the row width
     expect(paneLayout(71, false).narrow).toBe(true)
     expect(paneLayout(72, false).narrow).toBe(false)
     expect(paneLayout(10, true).ctxInner).toBe(8) // never below the floor
