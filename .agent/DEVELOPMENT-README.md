@@ -288,6 +288,7 @@ For shipped scope, query the knowledge graph or browse `CHANGELOG.md` / `release
 **Development**:
 - [Release Workflow](./sops/development/release-workflow.md) — canonical end-to-end release SOP (SSOT, 6-file bump, CI publish, semver)
 - [Autonomous Completion](./sops/development/autonomous-completion.md) — what to do without being asked
+- [Pane Theme Colors](./sops/development/pane-theme-colors.md) — Ghostty bg ↔ `composerSidebarBackground` ↔ pane `PALETTE`; keys list, install, verify (DEV-004)
 
 **Integrations**:
 - [OpenTelemetry Setup](./sops/integrations/opentelemetry-setup.md) — real-time session metrics, ROI measurement
