@@ -91,7 +91,7 @@ This starts:
 ├── prometheus.yml                 # Prometheus config (scrapes localhost:9464)
 ├── grafana-datasource.yml         # Grafana data source (auto-configured)
 ├── grafana-dashboards.yml         # Dashboard provisioning config
-└── navigator-dashboard.json       # Pre-built 10-panel dashboard
+└── navigator-dashboard.json       # Pre-built 13-panel dashboard
 ```
 
 ---
