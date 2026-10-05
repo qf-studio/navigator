@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.3] — 2026-10-05
+
+`/nav` fits a narrow terminal: below 72 columns the three top cards stack full-width, the
+sparklines and the judge trail size to the real pane width, and the button row wraps instead
+of breaking a label letter by letter (TASK-88 follow-up).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.3.md)
+
 ## [v8.2.2] — 2026-10-05
 
 The `/nav` next row and the band keep one sentence of a reply's first line, not the whole
