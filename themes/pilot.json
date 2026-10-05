@@ -21,6 +21,7 @@
     "userMessageBackgroundHover": "#262c36",
     "bashMessageBackgroundColor": "#1c2128",
     "memoryBackgroundColor": "#1c2128",
+    "composerSidebarBackground": "#14181f",
     "selectionBg": "#262c36",
     "diffAdded": "#1f3a2a",
     "diffRemoved": "#3a2224",
