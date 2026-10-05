@@ -10,6 +10,8 @@ const READONLY_BASH_CMDS = new Set([
   'realpath', 'readlink', 'printf', 'read', 'sleep', 'true', 'false',
   'test', '[', '[[',
   'lsof', 'pgrep', 'nproc', 'sw_vers',
+  // TASK-90: `cd` changes the shell's directory, not the tree (2026-10-05).
+  'cd',
 ])
 // curl reads unless it names an output file (TASK-85): a short flag cluster carrying o/O
 // (-o, -O, -sSo) or a long --output*/--remote-name* flag writes.
@@ -64,6 +66,11 @@ export const bashReadonly = (command: unknown): boolean => {
       tokens = rest
       if (tokens.length === 0) continue
       head = tokens[0] as string
+    }
+    if (head.startsWith('/')) {
+      // TASK-90: `/bin/ls` (eza-free listing) is `ls`; the basename must still be a known
+      // read-only head, so `/usr/bin/rm` stays mutating.
+      head = head.slice(head.lastIndexOf('/') + 1)
     }
     if (head === 'git') {
       const sub = tokens.slice(1).find(t => !t.startsWith('-')) ?? ''

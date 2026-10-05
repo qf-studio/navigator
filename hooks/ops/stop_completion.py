@@ -99,6 +99,8 @@ READONLY_BASH_CMDS = frozenset({
     "test", "[", "[[",
     # TASK-85: inspection staples observed false-firing live (2026-10-03).
     "lsof", "pgrep", "nproc", "sw_vers",
+    # TASK-90: `cd` changes the shell's directory, not the tree (2026-10-05).
+    "cd",
 })
 # curl reads unless it names an output file (TASK-85): any short flag cluster
 # carrying o/O (-o, -O, -sSo) or a long --output*/--remote-name* flag writes.
@@ -316,6 +318,10 @@ def _bash_readonly(command) -> bool:
             if not tokens:
                 continue
             head = tokens[0]
+        if head.startswith("/"):
+            # TASK-90: `/bin/ls` (eza-free listing) is `ls`; the basename must
+            # still be a known read-only head, so `/usr/bin/rm` stays mutating.
+            head = head.rsplit("/", 1)[-1]
         if head == "git":
             sub = next((t for t in tokens[1:] if not t.startswith("-")), "")
             if sub not in READONLY_GIT_SUBCMDS:

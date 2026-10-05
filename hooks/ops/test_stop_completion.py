@@ -383,6 +383,13 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "echo hi >/dev/null 2>&1",
         "echo hi >&2",
         "test -f x && cat x",
+        # live false-fire replays (2026-10-05, TASK-90): 3 of 3 stop-gate rejects that
+        # day were Bash-only turns on `cd` and `/bin/ls`.
+        "/bin/ls -t .agent/.context-markers/ | head -3",
+        "cd .agent/tasks; for f in TASK-6*.md; do grep -m1 Status \"$f\"; done",
+        "cd /tmp && /usr/bin/git status --short",
+        "cd",
+        "cd -",
         # live false-fire replays (2026-10-03, TASK-85)
         "lsof -nP -iTCP:9464 -sTCP:LISTEN 2>/dev/null | tail -n +2",
         "curl -sfg --noproxy '*' --max-time 1 http://localhost:9092/api/v1/query",
@@ -409,6 +416,10 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "LOG=$(make build)",                # substitution runs the command
         "for f in a b; do rm \"$f\"; done",
         "sqlite3 db.sqlite 'select 1'",     # unknown head stays mutating
+        "/usr/bin/rm -rf build",            # TASK-90: absolute path, basename unknown
+        "./ls",                             # TASK-90: relative paths never resolve
+        "~/bin/pilot-board",
+        "cd /tmp && make build",            # cd is transparent, make is not
     )
 
     def test_readonly_commands(self):

@@ -99,6 +99,17 @@ describe('TASK-85: read-only evidence', () => {
       expect(bashReadonly(cmd)).toBe(false)
     }
   })
+  test('TASK-90: cd and absolute-path heads read; unknown basenames and relative paths write', () => {
+    for (const cmd of [
+      '/bin/ls -t .agent/.context-markers/ | head -3',
+      'cd .agent/tasks; for f in TASK-6*.md; do grep -m1 Status "$f"; done',
+      'cd /tmp && /usr/bin/git status --short',
+      'cd', 'cd -',
+    ]) expect(bashReadonly(cmd)).toBe(true)
+    for (const cmd of ['/usr/bin/rm -rf build', './ls', '~/bin/pilot-board', 'cd /tmp && make build']) {
+      expect(bashReadonly(cmd)).toBe(false)
+    }
+  })
   test("Claude Code's isReadOnly on every Bash call makes a Bash-only turn non-mutating", () => {
     const evidence = { bash: [['python3 probe.py', false]] as [string, boolean][], file_paths: [] as string[] }
     const tools = new Set(['Bash'])
