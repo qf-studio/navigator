@@ -6,6 +6,12 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.1] — 2026-10-05
+
+The `/nav` reads card's reject line is `1 reject · 12:04 read_guard`: the first live screenshot
+showed the 26%-wide card truncating the op name out of `rejects today 1 · last …` (TASK-88).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.1.md)
+
 ## [v8.2.0] — 2026-10-05 — "Show Me the Refusals"
 
 A reject log: every refusal the runtime makes (read-guard deny, prompt-gate block, stop-gate
