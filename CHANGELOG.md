@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.1] — 2026-10-05
+
+The Stop gate's Bash classifier masks quoted spans before splitting, so `grep "a\|b"`,
+`--jq '.a | .b'` and `printf "%s | %s"` no longer read as mutating; 134 of 522 verdicts in
+a three-day replay flip to read-only, none a real write (TASK-94).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.1.md)
+
 ## [v8.3.0] — 2026-10-05
 
 Reply modes become a table: one `prompt_modes` op serves every row of
