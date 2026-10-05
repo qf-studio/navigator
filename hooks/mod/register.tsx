@@ -791,14 +791,15 @@ export const register: Register = on => {
         {j === null ? null : (
           <Box {...panel} flexDirection="column">
             <Box flexDirection="row" justifyContent="space-between">
-              <Text wrap="truncate-end">
+              <Text wrap={narrow ? 'wrap' : 'truncate-end'}>
                 <Text color={PALETTE.accent}>judge  </Text>
                 <Text color={PALETTE.label} bold>{j.verdict}</Text>
                 <Text color={PALETTE.dim}>  → {j.effect}</Text>
                 {j.override === null ? null : <Text color={PALETTE.warning}>   {j.override}</Text>}
               </Text>
-              <Text color={PALETTE.dim}>{j.model}</Text>
+              {narrow ? null : <Box marginLeft={2} flexShrink={0}><Text color={PALETTE.dim}>{j.model}</Text></Box>}
             </Box>
+            {narrow ? <Text color={PALETTE.dim}>{j.model}</Text> : null}
             {tally.map(line => <Text color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
             {trail.length > 0 ? <Text> </Text> : null}
             {trail.slice(0, JUDGE_TRAIL_LINES).map((d, i) => (
@@ -818,7 +819,7 @@ export const register: Register = on => {
           {dest === null ? (
             <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or mark a task in progress</Text>
           ) : (
-            <Text wrap="truncate-end">
+            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>
               <Text color={PALETTE.accent} bold>{(dest.taskId ?? 'brief').padEnd(TASK_LABEL)}</Text>
               <Text color={PALETTE.label}>{dest.title}</Text>
             </Text>
@@ -839,7 +840,7 @@ export const register: Register = on => {
           ) : arrived(route) ? (
             <Text color={PALETTE.success}>arrived · pick the next destination</Text>
           ) : s?.next ? (
-            <Text wrap="truncate-end">{dimLabel('→ next')}<Text color={PALETTE.label}>{s.next}</Text></Text>
+            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>{dimLabel('→ next')}<Text color={PALETTE.label}>{s.next}</Text></Text>
           ) : null}
           {then === null ? null : (
             <Box flexDirection="row" justifyContent="space-between">
@@ -850,7 +851,7 @@ export const register: Register = on => {
             </Box>
           )}
           {p.marker === null ? null : (
-            <Text wrap="truncate-end">{dimLabel('marker')}<Text color={PALETTE.dim}>{p.marker}</Text></Text>
+            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>{dimLabel('marker')}<Text color={PALETTE.dim}>{p.marker}</Text></Text>
           )}
         </Box>
 

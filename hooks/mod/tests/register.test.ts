@@ -233,14 +233,14 @@ const NAV_CMD = {
   presentation: { isFullscreen: false, columns: 120 },
 }
 
-const navPane = ($: Engine, surface: (typeof SURFACES)[number]) =>
+const navPane = ($: Engine, surface: (typeof SURFACES)[number], bodyColumns = 72) =>
   $.ui.mount({
     plugin: PLUGIN,
     surface,
     component: 'Pane',
     requestId: 'nav',
     props: {
-      title: 'Navigator', isFocused: true, bodyColumns: 72, placement: 'inline', // the pane's own default width
+      title: 'Navigator', isFocused: true, bodyColumns, placement: 'inline', // 72 is the pane's own default width
       scroll: { offset: 0, bodyRows: 20 }, view: {},
     },
   })
@@ -635,6 +635,23 @@ const judged = (on: On, files: Files, caseIndex: number) => {
   const doc = (JUDGE_CASES[caseIndex] as { doc: unknown }).doc
   on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: JSON.stringify(doc) } }))
 }
+
+test('(u4) stacked below 72 columns: the judge version takes its own line, the next card wraps', async ($, on) => {
+  const files: Files = {}
+  judged(on, files, 30)
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  await submit($, 'make the onboarding better')
+  const wide = await navPane($, 'terminal', 72)
+  const wideVersion = (await wide.findAll({ type: 'Text' })).filter(t => t.text === 'jev-1.13.0')
+  expect(wideVersion).toHaveLength(1) // in the row layout the version sits beside the verdict
+  await wide.unmount()
+  const narrow = await navPane($, 'terminal', 46)
+  const lines = (await narrow.findAll({ type: 'Text' })).map(t => t.text)
+  expect(lines.filter(t => t === 'jev-1.13.0')).toHaveLength(1) // its own line
+  expect(lines.join('\n')).toContain('judge  task · substantial · unclear')
+  expect(lines.join('\n')).toContain('TASK-80   Typed judge, phase 2') // not truncated
+})
 
 test('(u) the judge card: verdict in words, the effect, the axes it overrode; j opens the tally', async ($, on) => {
   const files: Files = {}
