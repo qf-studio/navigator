@@ -5,7 +5,7 @@
 Sessions that last. AI that learns. Features that ship.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-8.2.8-blue.svg)](https://github.com/qf-studio/navigator/releases)
+[![Version](https://img.shields.io/badge/version-8.3.0-blue.svg)](https://github.com/qf-studio/navigator/releases)
 
 ---
 
@@ -87,6 +87,39 @@ Same correction twice → Quality check triggered
 → Auto-surfaces relevant context on session start
 ```
 
+**Reply modes** (v7.9): the reply shaped for you, switched by a sentence
+```
+"adhd mode on"
+→ One next action first, bullets over prose, lists capped at five
+→ Follows you across repos; "adhd mode off" ends it
+→ STE mode (one idea per sentence, active voice) ships in v8.3.0
+```
+
+---
+
+## See Where You Are
+
+Since v8 the workflow is enforced by a runtime that runs inside Claude Code, not by prose
+in a config file. It gates task-shaped prompts, guards fan-out reads, records what each
+turn finished, and writes one line to a reject log every time it says no. It also draws.
+
+![The /nav pane](https://navigator-site.vercel.app/nav-pane.png)
+
+Type `/nav` and a pane opens beside your session:
+
+| Card | What it tells you |
+|------|-------------------|
+| context | Fill percentage, trend, and whether this is a good moment to compact |
+| session | Today's cost, tokens, cache hit rate, tokens/min |
+| reads | Fan-out verdict and today's reject count |
+| judge | What the typed judge decided about your last prompt, and what Navigator did |
+| next | The current leg of the active task as a button that submits it, with an ETA |
+| memories | Knowledge-graph memories for the open task; pin one into your next prompt |
+
+A one-line status band above the prompt shows the phase, context fill and next action
+without opening the pane. Requires Claude Code 2.1.287 or newer; older versions run the
+same behaviors through the Python fallback, without the pane.
+
 ---
 
 ## Same Workflows. More Capabilities.
@@ -107,6 +140,10 @@ Navigator is a superset. Everything you'd expect, plus context engineering.
 | TRIZ divergent solving | **✅** | ❌ |
 | Web deep research (cited, gate-checked) | **✅** | ❌ |
 | Loop mode | **✅** | ❌ |
+| Runtime-enforced workflow (in-process mod + Python fallback) | **✅** | ❌ |
+| Live `/nav` pane and status band | **✅** | ❌ |
+| Reject log (every refusal, one JSON line) | **✅** | ❌ |
+| Reply modes (ADHD, STE) | **✅** | ❌ |
 | OpenTelemetry metrics | **✅** | ❌ |
 | Figma MCP integration | **✅** | ❌ |
 
@@ -135,7 +172,7 @@ Context usage:                        35% (excellent)
 Efficiency score:                  94/100 (excellent)
 ```
 
-**Check yours**: Run `/nav:stats` after installing.
+**Check yours**: type `/nav` for the live pane, or say "show my stats".
 
 ---
 
@@ -148,7 +185,7 @@ Efficiency score:                  94/100 (excellent)
 /plugin marketplace add qf-studio/navigator
 /plugin install navigator
 
-# Restart Claude Code
+# Restart Claude Code (2.1.287+ for the in-process runtime and the /nav pane)
 ```
 
 **Code intelligence (optional).** Install a language-server plugin for your stack
@@ -202,6 +239,8 @@ from the plugin root. Setup and tuning: `.agent/sops/integrations/typesafe-judge
 "Run until done: add dark mode"           → Loop mode completion
 "Deep research on WebGPU browser support"  → Cited report + graph memories
 "Enable judge"                             → Typed Jev judgments behind the prompt gates
+"adhd mode on"                             → Replies shaped for you, across repos
+/nav                                       → Live pane: context, cost, rejects, next leg
 ```
 
 **No commands to memorize.** Skills detect intent and execute.
@@ -227,17 +266,18 @@ Navigator fixes this with context engineering—the same principles Anthropic re
 
 ## Troubleshooting
 
-**Skill loads but prints docs instead of executing**
+**Skill loads but prints docs instead of executing, or `/nav` is missing**
 ```bash
-/plugin update navigator
+claude plugin update navigator@navigator-marketplace
 ```
-Then retry. Outdated plugin version.
+Then restart Claude Code. Outdated plugin version, or the pane needs 2.1.287+.
 
 ---
 
 ## Links
 
-- [Documentation](.agent/DEVELOPMENT-README.md)
+- [Docs site](https://navigator-site.vercel.app) — guides, configuration, the `/nav` pane
+- [Documentation index](.agent/DEVELOPMENT-README.md)
 - [Philosophy](.agent/philosophy/CONTEXT-EFFICIENCY.md)
 - [Release Notes](https://github.com/qf-studio/navigator/releases)
 - [GitHub](https://github.com/qf-studio/navigator)
