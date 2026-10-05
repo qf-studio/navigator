@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.1.2] — 2026-10-05
+
+The `/nav` pane follows doc edits made through Bash, `git mv` / commits and subagents, and the
+next card advances mid-turn (TASK-89). The session-start drift check reads the plugin manifest
+instead of running `claude plugin list` from a hook; auto-update docs say "notifies, never
+self-updates" (TASK-81).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.1.2.md)
+
 ## [v8.1.1] — 2026-10-04
 
 The `/nav` reads card counts files read through read-only Bash (`cat`, `sed -n`, `head`,

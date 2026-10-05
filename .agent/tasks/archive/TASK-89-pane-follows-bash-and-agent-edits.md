@@ -1,6 +1,6 @@
 # TASK-89: /nav pane follows Bash edits, git moves, agent runs and mid-turn progress
 
-**Status**: ✅ Implemented — 2026-10-05; ships with the next release
+**Status**: ✅ Released — v8.1.2, 2026-10-05
 **Origin**: dogfood 2026-10-05 — after a whole task closed through Bash heredocs, `git mv` to the
 archive and a commit, the pane still showed the old task and leg until `r` was pressed.
 

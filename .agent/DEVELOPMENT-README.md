@@ -199,7 +199,7 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   Not shipped in the plugin; v8 runtime decision pending (`tasks/TASK-83-mods-spike.md`).
-- **TASK-89** ✅ (2026-10-05, unreleased) — the `/nav` pane follows Bash edits, `git mv` /
+- **TASK-89** ✅ (v8.1.2, 2026-10-05) — the `/nav` pane follows Bash edits, `git mv` /
   commits and subagent runs (not only Edit/Write), and the next card advances mid-turn from the
   active doc's checklist (`tasks/archive/TASK-89-pane-follows-bash-and-agent-edits.md`).
 - **TASK-88** 📋 — reject log: one JSONL line per refusal (read guard deny, gate block, stop

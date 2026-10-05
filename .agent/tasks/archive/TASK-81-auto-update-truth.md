@@ -1,6 +1,6 @@
 # TASK-81: Auto-update — make the session-start check real, and the docs honest
 
-**Status**: ✅ Implemented — 2026-10-05; ships with the next release (the v8.0.0 notice is already live)
+**Status**: ✅ Released — v8.1.2, 2026-10-05 (the read-only notice itself since v8.0.0)
 
 ## Context
 
