@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-04T09:53:30.039052+00:00",
+  "last_updated": "2026-10-05T15:36:03.016341+00:00",
   "stats": {
-    "total_nodes": 213,
+    "total_nodes": 217,
     "total_edges": 843,
-    "memory_count": 81
+    "memory_count": 82
   },
   "nodes": {
     "tasks": {
@@ -1719,6 +1719,21 @@
         "name": "Env-Var",
         "aliases": [],
         "domain": "general"
+      },
+      "theme": {
+        "name": "Theme",
+        "aliases": [],
+        "domain": "general"
+      },
+      "nav-pane": {
+        "name": "Nav-Pane",
+        "aliases": [],
+        "domain": "general"
+      },
+      "ghostty": {
+        "name": "Ghostty",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -2937,6 +2952,19 @@
         ],
         "created": "2026-10-04",
         "last_validated": "2026-10-04"
+      },
+      "mem-090": {
+        "type": "pitfall",
+        "summary": "Claude Code paints the /nav pane with theme key composerSidebarBackground; the dark base defaults it to grey rgb(38,38,38). A custom theme must set it to the terminal background hex (Ghostty background) or the pane and chat differ. SOP: sops/development/pane-theme-colors.md (DEV-004)",
+        "path": "memories/pitfalls/mem-090.md",
+        "confidence": 0.95,
+        "concepts": [
+          "theme",
+          "nav-pane",
+          "ghostty"
+        ],
+        "created": "2026-10-05",
+        "last_validated": "2026-10-05"
       }
     },
     "files": {}
@@ -8796,6 +8824,15 @@
     ],
     "navigation": [
       "mem-084"
+    ],
+    "theme": [
+      "mem-090"
+    ],
+    "nav-pane": [
+      "mem-090"
+    ],
+    "ghostty": [
+      "mem-090"
     ]
   }
 }
