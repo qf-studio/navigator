@@ -543,6 +543,60 @@ test('(t6) a turn that wrote under .agent/ reloads the task list and marker', as
   expect(await texts($)).toContain('marker    fresh-2026-10-03')
 })
 
+test('(t7) a mutating Bash that names .agent/ reloads the pane at turn end like Edit does (TASK-89)', async ($, on) => {
+  const files: Files = {}
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  files[`${AGENT}/.context-markers/fresh-2026-10-05.md`] = '# marker'
+  await $.tool.call({ tool: 'Bash', command: `cat ${AGENT}/tasks/TASK-80.md # ro` } as never) // a read
+  await complete($, 'read only\n')
+  expect(await texts($)).not.toContain('fresh-2026-10-05')
+  await $.tool.call({ tool: 'Bash', command: `cat > ${AGENT}/tasks/TASK-80.md <<'EOF'\nx\nEOF` } as never)
+  await complete($, 'wrote through bash\n')
+  expect(await texts($)).toContain('marker    fresh-2026-10-05')
+})
+
+test('(t8) git mv / git commit reload the pane too; other mutating Bash does not', async ($, on) => {
+  const files: Files = {}
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  files[`${AGENT}/.context-markers/moved-2026-10-05.md`] = '# marker'
+  await $.tool.call({ tool: 'Bash', command: 'npm run build' } as never)
+  await complete($, 'built\n')
+  expect(await texts($)).not.toContain('moved-2026-10-05')
+  await $.tool.call({ tool: 'Bash', command: 'git mv a/TASK-81.md a/archive/TASK-81.md' } as never)
+  await complete($, 'archived\n')
+  expect(await texts($)).toContain('marker    moved-2026-10-05')
+})
+
+test('(t9) editing the active task doc moves the next card before the turn ends (TASK-89)', async ($, on) => {
+  const files: Files = {
+    [`${AGENT}/.nav-config.json`]: '{}',
+    [`${CWD}/.agent/tasks/TASK-80-judge.md`]: '# TASK-80\n- [ ] collect evidence\n- [ ] add surface\n- [ ] ship\n',
+  }
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  expect(await texts($)).toContain('→ then    add surface')
+  files[`${CWD}/.agent/tasks/TASK-80-judge.md`] = '# TASK-80\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n'
+  await $.tool.call({ tool: 'Edit', file_path: `${CWD}/.agent/tasks/TASK-80-judge.md`, old_string: 'a', new_string: 'b' } as never)
+  const mid = await texts($) // no turn.complete yet: the leg already advanced
+  expect(mid).toContain('→ then    ship')
+  expect(mid).not.toContain('collect evidence')
+})
+
+test('(t10) a subagent turn marks docs touched: the parent turn reloads the pane', async ($, on) => {
+  const files: Files = {}
+  world(on, files, 20)
+  await $.command.run(NAV_CMD)
+  files[`${AGENT}/.context-markers/agent-2026-10-05.md`] = '# marker'
+  await $.turn.complete({
+    answer: 'done', durationMs: 1, isAborted: false, turnId: 'a1', reason: 'answer', agentId: 'sub-1',
+    usage: { model: 'm', input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+  } as never)
+  await complete($, 'agent finished\n')
+  expect(await texts($)).toContain('marker    agent-2026-10-05')
+})
+
 test('(t4) a non-loopback prometheus_url is never read', async ($, on) => {
   world(on, {
     [`${AGENT}/.nav-config.json`]: JSON.stringify({ dashboard: { prometheus_url: 'http://prom.example.com:9090' } }),

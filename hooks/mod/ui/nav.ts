@@ -273,3 +273,12 @@ export const etaText = (legsLeft: number, pace: NavPace): string => {
   if (legsLeft <= 0 || turnsPerLeg === null || msPerTurn === null) return legs
   return `eta ~${minutes(legsLeft * turnsPerLeg * msPerTurn)} · ${legs}`
 }
+
+/**
+ * A mutating Bash command that can change what the pane shows: it names `.agent/`, or it is a
+ * git command that moves, commits or rewrites files (a task doc archived with `git mv`, a
+ * checkout that swaps the task list). Read-only commands never reach here.
+ */
+export const bashTouchesDocs = (command: string): boolean =>
+  /\.agent\b/.test(command)
+  || /\bgit\s+(?:mv|commit|checkout|switch|stash|pull|merge|rebase|reset|restore|cherry-pick)\b/.test(command)

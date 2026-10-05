@@ -26,7 +26,7 @@ import { announce } from './owns'
 import { runEvent } from './runner'
 import type { Judgment } from './lib/scoring'
 import {
-  JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, countRead, endTurnReads, etaText,
+  JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, bashTouchesDocs, countRead, endTurnReads, etaText,
   fanOutText, isDocPath, judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories,
   parseTasks, rateKind, recordPace, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
@@ -194,6 +194,31 @@ const refreshPane = async ($: EngineInterface): Promise<void> => {
     docsTreeBytes: treeBytes,
     memories: parseMemories(memories),
   }))
+}
+
+/**
+ * TASK-89: the cheap half of a refresh — re-parse the active task's steps so the next card
+ * moves while the turn is still running. One fs.read, no subprocess; the full refreshPane
+ * (task list, marker, memories) waits for the turn to end.
+ */
+const refreshSteps = async ($: EngineInterface, root: string): Promise<void> => {
+  const p = await readPane($)
+  const active = p.tasks[p.tasks.length - 1]
+  if (!active?.path) return
+  let steps: Step[]
+  try {
+    steps = parseSteps(String(await $.fs.read(`${root}/${active.path}`)))
+  } catch {
+    return
+  }
+  await update($, pane, prev => ({ ...EMPTY_NAV, ...prev, steps }))
+}
+
+/** A doc changed under .agent/: steps now, the rest of the pane at turn end. */
+const docsTouched = async ($: EngineInterface): Promise<void> => {
+  await update($, activity, a => ({ ...NO_ACTIVITY, ...a, docsTouched: true }))
+  const root = await projectRoot(ioOf($))
+  if (root !== null) await refreshSteps($, root)
 }
 
 /** TASK-86: `y` / `x` on the latest decision → the personal label file judge_label.py reads. */
@@ -468,9 +493,7 @@ export const register: Register = on => {
     if (ran.deny !== undefined || ran.isError === true) return ran
     const target = String((e as { file_path?: string; notebook_path?: string }).file_path
       ?? (e as { notebook_path?: string }).notebook_path ?? '')
-    if (target.includes('/.agent/')) {
-      await update($, activity, a => ({ ...NO_ACTIVITY, ...a, docsTouched: true }))
-    }
+    if (target.includes('/.agent/')) await docsTouched($)
     const post = await runFor($, 'PostToolUse', toolPayload(e as unknown as Record<string, unknown>))
     return post?.context ? { ...ran, context: [...(ran.context ?? []), post.context] } : ran
   })
@@ -516,6 +539,11 @@ export const register: Register = on => {
         ...NO_ACTIVITY, ...a, bashCalls: (a?.bashCalls ?? 0) + 1,
         bashMutating: (a?.bashMutating ?? false) || !readOnly,
       }))
+      // TASK-89: a heredoc, `sed -i`, `git mv` or a commit can change the task list and the
+      // active doc as surely as Edit; the pane followed only Edit/Write before.
+      if (!readOnly && ran.isError !== true && !bashReadonly(e.command) && bashTouchesDocs(e.command)) {
+        await docsTouched($)
+      }
     }
     if (/\bgit\s+commit\b/.test(e.command) && ran.deny === undefined && ran.isError !== true) {
       await update($, activity, a => ({ ...NO_ACTIVITY, ...a, committed: true }))
@@ -566,7 +594,9 @@ export const register: Register = on => {
           + used.output_tokens
       await update($, activity, a => {
         const x = { ...NO_ACTIVITY, ...a }
-        return { ...x, agentRuns: x.agentRuns + 1, agentTokens: x.agentTokens + tokens }
+        // TASK-89: an agent's edits do not pass through this module's tool.call; assume it
+        // may have written under .agent/ and reload the pane when the parent turn ends.
+        return { ...x, agentRuns: x.agentRuns + 1, agentTokens: x.agentTokens + tokens, docsTouched: true }
       })
       return next(e)
     }
