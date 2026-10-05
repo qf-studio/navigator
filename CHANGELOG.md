@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.2.5] — 2026-10-05
+
+Stacked `/nav` (below 72 columns): the judge row puts the model version on its own line so
+the verdict keeps the width, and the next card wraps its task title, next action and marker
+name instead of truncating them (TASK-88 follow-up).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.2.5.md)
+
 ## [v8.2.4] — 2026-10-05
 
 In the stacked `/nav` layout (below 72 columns) the context gauge fills the card's width
