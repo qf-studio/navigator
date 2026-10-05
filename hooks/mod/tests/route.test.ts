@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
+import { firstLine, parseNextAction } from '../ui/status'
+
 import {
   bandText, buildRoute, captureGoal, contentWords, isOffRoute, nextTaskNumber, parseChecklist, parseSteps,
   routeView, waypointText,
@@ -24,6 +26,17 @@ const PLAN_DOC = [
   '### Steps 1 + 5a — moved and ported ✅ (parallel forks)',
   '### Step 10 (automated part) — verification matrix ✅',
 ].join('\n')
+
+describe('next action from a reply', () => {
+  test('the first sentence of the first line, not the whole line', () => {
+    expect(firstLine('**Done.** Committed as `ad0c80b`, unreleased. Site is live.')).toBe('Done.')
+    expect(firstLine('No files changed by me this turn. The working-tree change in x is not mine.'))
+      .toBe('No files changed by me this turn.')
+    expect(firstLine('v8.2.1 is out, e.g. the fix shipped')).toBe('v8.2.1 is out, e.g. the fix shipped')
+    expect(firstLine('- open `/nav`, press `d` then `l`')).toBe('open `/nav`, press `d` then `l`')
+    expect(parseNextAction('Phase: IMPL\nNext Action: run tests. then commit')).toBe('run tests. then commit')
+  })
+})
 
 describe('route model', () => {
   test('goal capture: table row, bold, plain; separators ignored', () => {

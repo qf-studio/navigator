@@ -15,13 +15,23 @@ export const parsePhase = (answer: string): NavPhase | null => {
   return m ? (m[1] as NavPhase) : null
 }
 
-/** The first non-empty line, stripped of list/heading markup and bold markers. */
+// A sentence ends at `.`, `!` or `?` followed by whitespace and a capital, digit or markup
+// (a backtick, bracket, quote or star); `v8.2.1` and `e.g. the` stay whole.
+const SENTENCE_END_RE = /[.!?](?=\s+[A-Z0-9`*_(\["'])/
+
+/**
+ * The first sentence of the first non-empty line, stripped of list/heading markup and bold
+ * markers. One sentence, not one line: the band and the next card show this as the next
+ * action, and a reply whose first line runs on would show a paragraph there.
+ */
 export const firstLine = (answer: string): string | null => {
   const line = answer.split('\n').map(l => l.trim())
     .find(l => l.length > 0 && !STATUS_LINE_RE.test(l))
   if (!line) return null
   const bare = line.replace(LEAD_MARKUP_RE, '').replace(BOLD_RE, '').trim()
-  return bare.length > 0 ? bare : null
+  const end = SENTENCE_END_RE.exec(bare)
+  const sentence = end === null ? bare : bare.slice(0, end.index + 1)
+  return sentence.length > 0 ? sentence : null
 }
 
 /** `Next Action:` (NAVIGATOR_STATUS) or a `Next:` line, else the reply's first line. */

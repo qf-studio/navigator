@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   NO_PACE, bashReadFiles, etaText, fanOutText, isDocPath, judgeEffect, judgeTally, labelEntry, labelFromVerdict,
-  parseRejects, recordPace, rejectsLine, trailLine, withLabel,
+  parseRejects, recordPace, rejectsLast, rejectsLine, trailLine, withLabel,
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
 import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
@@ -51,9 +51,11 @@ describe('pane model', () => {
     expect(r.last?.op).toBe('stop_completion')
     expect(r.tail.length).toBe(2)
     expect(r.tail[1]).toContain('stop_completion · mutating turn, 1/6 indicators met')
-    expect(rejectsLine(r)).toMatch(/^1 reject · \d\d:\d\d stop_completion$/)
-    expect(rejectsLine({ ...r, today: 3 })).toMatch(/^3 rejects · /)
+    expect(rejectsLine(r)).toBe('1 reject')
+    expect(rejectsLine({ ...r, today: 3 })).toBe('3 rejects')
+    expect(rejectsLast(r)).toMatch(/^\d\d:\d\d stop_completion$/)
     expect(rejectsLine(parseRejects('', now))).toBe('no rejects')
+    expect(rejectsLast(parseRejects('', now))).toBeNull()
     expect(rejectsLine(null)).toBe('no rejects')
   })
   test('fan-out verdict follows the turn in progress, else the last one', () => {

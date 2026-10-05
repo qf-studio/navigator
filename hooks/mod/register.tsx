@@ -28,7 +28,7 @@ import type { Judgment } from './lib/scoring'
 import {
   JUDGE_LABELS_FILE, JUDGE_TRAIL_MAX, NO_PACE, NO_READS, bashReadFiles, bashTouchesDocs, countRead, endTurnReads, etaText,
   fanOutText, isDocPath, judgeTally, judgeView, labelEntry, latestMarker, parseGraphStats, parseMemories,
-  parseRejects, parseTasks, rateKind, recordPace, rejectsLine, tokensOf, trailLine, turnsTo, withLabel,
+  parseRejects, parseTasks, rateKind, recordPace, rejectsLast, rejectsLine, tokensOf, trailLine, turnsTo, withLabel,
 } from './ui/nav'
 import { REJECTS_PATH } from './lib/rejects'
 import { bashReadonly } from './lib/stop-bash'
@@ -774,6 +774,7 @@ export const register: Register = on => {
               </Text>
               <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
               <Text color={(rj?.today ?? 0) > 0 ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">{rejectsLine(rj)}</Text>
+              {rejectsLast(rj) === null ? null : <Text color={PALETTE.dim} wrap="truncate-end">{rejectsLast(rj)}</Text>}
             </Box>
           ) : null}
         </Box>

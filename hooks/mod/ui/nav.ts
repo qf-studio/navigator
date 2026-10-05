@@ -317,11 +317,16 @@ export const parseRejects = (text: string, nowMs: number): NavRejects => {
 }
 
 /**
- * The one-line summary under the reads card: `3 rejects · 14:03 stop_completion`. The card is
- * narrow (26%), so the op name — the useful part — must fit before any truncation.
+ * The reads card's two reject lines: `3 rejects` and `14:03 stop_completion`. Two lines, not
+ * one: the card is 26% wide and at ordinary terminal widths a clock plus an op name does not
+ * fit on one, and the op name is the part worth reading.
  */
 export const rejectsLine = (r: NavRejects | null): string => {
   if (r === null || r.last === null) return 'no rejects'
   const n = r.today
-  return `${n} reject${n === 1 ? '' : 's'} · ${r.last.clock} ${r.last.op}`
+  return `${n} reject${n === 1 ? '' : 's'}`
 }
+
+/** `14:03 stop_completion`, or null when the log is empty. */
+export const rejectsLast = (r: NavRejects | null): string | null =>
+  r === null || r.last === null ? null : `${r.last.clock} ${r.last.op}`
