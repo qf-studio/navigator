@@ -230,8 +230,10 @@ Other threads:
   nav-start Step 1.5 is one `auto_updater.py` call, the hook drift check reads the plugin
   manifest instead of `claude plugin list`, docs and site say "notifies, never self-updates"
   (2026-10-05, `tasks/archive/TASK-81-auto-update-truth.md`)
-- **TASK-80** 🚧 — judge phase 2: override telemetry + labeling tooling shipped v7.7.1;
-  first live read 92 prompts / 4 overrides; real-set labeling and memory rerank pending
+- **TASK-80** ✅ closed 2026-10-05 — judge phase 2: override telemetry + labeling tooling
+  shipped v7.7.1; 286 judged prompts in this repo (task overridden 39, ambiguity 20); real-set
+  labeling not pursued (0/365), memory rerank rejected without an eval
+  (`tasks/archive/TASK-80-judge-phase2-plan.md`).
 - **TASK-79** ✅ — typed prompt judge: `nav_hook_lib/judge.py` asks Jev (TypeSafe) eight
   typed questions per prompt; decisive axes override the loop-trigger / complexity /
   ambiguity keyword scorers in prompt_gate + prompt_brief, everything else falls back.

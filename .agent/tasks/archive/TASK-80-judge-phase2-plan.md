@@ -1,6 +1,6 @@
 # TASK-80: Typed judge, phase 2 — evidence first, then one more surface
 
-**Status**: 🚧 In Progress — B + A tooling released v7.7.1 (2026-09-23); A labeling pending (user), C pending
+**Status**: ✅ Closed — 2026-10-05. B shipped (v7.7.1); A's labeling not pursued; C rejected without an eval (see Closure).
 
 ## Framing constraint
 
@@ -139,3 +139,43 @@ honest; C is the only new surface and only ships if its own eval wins.
 
 Exit for the whole task: real-session numbers in the task doc, `nav stats` showing judge
 counters, and a rerank decision (shipped or explicitly rejected with the eval attached).
+
+## Closure — 2026-10-05
+
+Closed by decision, not by completing the plan. What exists and what does not:
+
+### Real-session numbers (this repo, telemetry since v7.7.1)
+
+286 judged prompts, 13 failed calls, latency last 303 ms / max 865 ms (jev-1.13.0).
+
+| Axis | Agreed | Overridden | Undecided |
+|---|---|---|---|
+| loop | 264 | 7 | 2 |
+| complexity | 220 | 11 | 42 |
+| task | 213 | 39 | 21 |
+| ambiguity | 24 | 20 | 13 |
+
+Reading: on loop and complexity the keyword heuristics and the judge agree almost always
+(overrides 7 and 11 of 286); the judge changes about one task-shapedness decision in
+eight and two ambiguity decisions in five. Whether those overrides are right is unknown — that
+is what Workstream A's labels were for.
+
+### Workstream A — not pursued
+
+`scripts/judge_label.py` extracted 365 real prompts on 2026-09-19; 0 were labeled. The pane's
+`y`/`x` labeling (TASK-86, v8.1.0) has 0 entries. The independence argument (labels from the
+user, not the question author) still holds; the time was not spent, and the 60-prompt invented
+set stays the regression fixture. Thresholds unchanged.
+
+### Workstream C — rejected
+
+No eval was run, so this is a rejection on grounds, not on data: the judge already touches
+one in eight task decisions and two in five ambiguity decisions with no verified accuracy; a
+rerank surface would add a second unverified influence on what the user sees. Revisit only
+after a labeled set exists. The qualifying-conditions analysis above stays valid.
+
+### Exit criteria
+
+- Real-session numbers in the task doc: this section.
+- `nav stats` judge counters: shipped (nav-stats SKILL.md, "Typed judge" row).
+- Rerank decision: rejected, reason above.
