@@ -186,13 +186,15 @@ Other threads:
   removal); v7.8.0 2026-09-28 (`releases/RELEASE-NOTES-v7.8.0.md`); docs site synced incl.
   a new `/skills/nav-features` page. First release whose specs live only in issues — the
   precedent for `task_id_source: github` in this repo, not yet switched on here
-- **TASK-93** ✅ — Reply modes: `nav_hook_lib/reply_modes.py` holds the `MODES` table (ADHD, STE)
-  and `ops/prompt_modes.py` replaces `prompt_adhd`; `hooks/mod/lib/reply_modes.ts` +
-  `ops/prompt_modes.ts` mirror it. STE = ASD-STE100 Part 1 sentence rules, `use ste` /
-  `ste mode off`, own file `~/.config/navigator/ste-mode.json`, own block `ste_mode`.
-  Blocks stack in table order (shape before sentences); `MAX_TOTAL_BLOCK_CHARS` asserted.
-  Adding a mode = one row per runtime + a config block. Ships v8.3.0 (2026-10-05)
-- **TASK-82** ✅ — ADHD mode (now row 1 of `reply_modes.MODES`; files below are historical):
+- **TASK-93** ✅ (v8.3.0, 2026-10-05) — Reply modes: `nav_hook_lib/reply_modes.py` holds the
+  `MODES` table (ADHD, STE) and `ops/prompt_modes.py` replaces `prompt_adhd`;
+  `hooks/mod/lib/reply_modes.ts` + `ops/prompt_modes.ts` mirror it. STE = ASD-STE100 Part 1
+  sentence rules, `use ste` / `ste mode off`, own file `~/.config/navigator/ste-mode.json`,
+  own block `ste_mode`. Blocks stack in table order (shape before sentences);
+  `MAX_TOTAL_BLOCK_CHARS` asserted. Adding a mode = one row per runtime + a config block
+  (recipe in `tasks/archive/TASK-93-reply-modes-ste.md`). Docs site synced with v8.3.1
+- **TASK-82** ✅ — ADHD mode, now row 1 of `reply_modes.MODES` (TASK-93); the files named
+  below were deleted in v8.3.0 and are listed for history only:
   `ops/prompt_adhd.py` + `nav_hook_lib/adhd.py` + `personal.py`.
   Exact phrases `adhd mode on|off|status` answer via decision:block (zero model turn) and
   write the person's switch (`~/.config/navigator/adhd-mode.json`); while on, the reply-shape
