@@ -210,17 +210,17 @@ Other threads:
 - **TASK-94** ✅ (v8.3.1, 2026-10-05) — the Bash read-only classifier masks quoted spans before
   the redirect and segment scans, so `grep "a\|b"`, `--jq '.a | .b'` and `printf "%s | %s"`
   no longer read as mutating; 134 of 522 verdicts in a three-day replay flip, zero real
-  writes (`tasks/TASK-94-bash-classifier-quote-aware.md`).
+  writes (`tasks/archive/TASK-94-bash-classifier-quote-aware.md`).
 - **TASK-92** ✅ (v8.2.8, 2026-10-05) — stop gate no longer fires on turns whose only action is
   a read-only subagent (Explore, Plan, claude-code-guide, navigator-research, task-planner);
-  unknown agent types still count as mutating (`tasks/TASK-92-readonly-agents-not-task-actions.md`).
+  unknown agent types still count as mutating (`tasks/archive/TASK-92-readonly-agents-not-task-actions.md`).
 - **TASK-91** ✅ (v8.2.7, 2026-10-05) — in-progress task detection (the `/nav` next card and
   the compact marker's task list) reads the `**Status**` line only; a finished doc that quotes
   "in progress" in prose no longer surfaces as the destination
-  (`tasks/TASK-91-in-progress-status-line.md`).
+  (`tasks/archive/TASK-91-in-progress-status-line.md`).
 - **TASK-90** ✅ (v8.2.6, 2026-10-05) — stop gate no longer fires on Bash-only turns that
   `cd` or call `/bin/ls`: `cd` is read-only, absolute-path heads resolve to their basename
-  before the allowlist lookup (`tasks/TASK-90-stop-gate-cd-and-path-heads.md`).
+  before the allowlist lookup (`tasks/archive/TASK-90-stop-gate-cd-and-path-heads.md`).
 - **TASK-89** ✅ (v8.1.2, 2026-10-05) — the `/nav` pane follows Bash edits, `git mv` /
   commits and subagent runs (not only Edit/Write), and the next card advances mid-turn from the
   active doc's checklist (`tasks/archive/TASK-89-pane-follows-bash-and-agent-edits.md`).
