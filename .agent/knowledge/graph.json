@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-06T07:33:18.366781+00:00",
+  "last_updated": "2026-10-06T09:32:02.280621+00:00",
   "stats": {
-    "total_nodes": 232,
-    "total_edges": 851,
+    "total_nodes": 233,
+    "total_edges": 855,
     "memory_count": 88
   },
   "nodes": {
@@ -930,6 +930,17 @@
           "deployment",
           "testing",
           "context"
+        ]
+      },
+      "TASK-95": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-95-stop-gate-untracked-files-heredoc-retired.md",
+        "title": "Stop gate \u2014 `code_committed` ignores untracked files; heredoc bucket retired",
+        "status": "research",
+        "concepts": [
+          "deployment",
+          "knowledge",
+          "testing",
+          "skills"
         ]
       }
     },
@@ -7699,6 +7710,26 @@
       "from": "mem-091",
       "to": "TASK-93",
       "type": "learned-from"
+    },
+    {
+      "from": "TASK-95",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-95",
+      "to": "knowledge",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-95",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-95",
+      "to": "skills",
+      "type": "implements"
     }
   ],
   "concept_index": {
@@ -7880,7 +7911,8 @@
       "TASK-74",
       "mem-076",
       "TASK-83",
-      "TASK-93"
+      "TASK-93",
+      "TASK-95"
     ],
     "context": [
       "TASK-32",
@@ -8125,7 +8157,8 @@
       "mem-073",
       "TASK-74",
       "TASK-83",
-      "TASK-93"
+      "TASK-93",
+      "TASK-95"
     ],
     "session": [
       "TASK-32",
@@ -8574,7 +8607,8 @@
       "mem-073",
       "TASK-74",
       "TASK-83",
-      "TASK-93"
+      "TASK-93",
+      "TASK-95"
     ],
     "code quality": [
       "TASK-19",
@@ -8650,7 +8684,8 @@
       "mem-074",
       "TASK-74",
       "TASK-83",
-      "TASK-93"
+      "TASK-93",
+      "TASK-95"
     ],
     "theory of mind": [
       "TASK-19",
