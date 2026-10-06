@@ -1,6 +1,6 @@
 # TASK-95: Stop gate — `code_committed` ignores untracked files; heredoc bucket retired
 
-**Status**: ✅ Implemented — 2026-10-06 (ships in v8.3.2)
+**Status**: ✅ Released — v8.3.2, 2026-10-06
 
 ## Origin
 
