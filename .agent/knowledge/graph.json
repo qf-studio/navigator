@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-05T18:00:03.129001+00:00",
+  "last_updated": "2026-10-06T07:33:18.366781+00:00",
   "stats": {
-    "total_nodes": 223,
+    "total_nodes": 232,
     "total_edges": 851,
-    "memory_count": 83
+    "memory_count": 88
   },
   "nodes": {
     "tasks": {
@@ -1768,6 +1768,26 @@
         "name": "Ste",
         "aliases": [],
         "domain": "general"
+      },
+      "tasks": {
+        "name": "Tasks",
+        "aliases": [],
+        "domain": "general"
+      },
+      "pane": {
+        "name": "Pane",
+        "aliases": [],
+        "domain": "general"
+      },
+      "stop-gate": {
+        "name": "Stop-Gate",
+        "aliases": [],
+        "domain": "general"
+      },
+      "reject-log": {
+        "name": "Reject-Log",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3017,6 +3037,66 @@
         "contradiction": "more reply modes vs per-prompt token cost and rule conflicts",
         "separation": "level",
         "principle": "segmentation: one row per mode, fixed merge order, static cost cap"
+      },
+      "mem-092": {
+        "type": "pitfall",
+        "summary": "Three parsers decide 'in progress' (pane grep, compact-marker hint on both runtimes); only the Status line is the contract, prose mentions must not count (TASK-91)",
+        "path": "memories/pitfalls/mem-092.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks",
+          "tasks"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
+      },
+      "mem-093": {
+        "type": "pitfall",
+        "summary": "The /nav next card counts every '- [ ]' in the active task doc; retired or archived plans inside a doc must use plain bullets, not checkbox syntax",
+        "path": "memories/pitfalls/mem-093.md",
+        "confidence": 0.9,
+        "concepts": [
+          "tasks",
+          "pane"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
+      },
+      "mem-094": {
+        "type": "learning",
+        "summary": "Bash read-only classifier never parsed quotes until TASK-94; masking quoted spans flipped 134/522 replay verdicts with zero real writes; heredoc bodies are the next over-fire bucket",
+        "path": "memories/learnings/mem-094.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks",
+          "stop-gate"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
+      },
+      "mem-095": {
+        "type": "learning",
+        "summary": "Reject log is write-once (ts, session, event, op, reason, evidence); nothing records what the model did after a deny; decided 2026-10-05 not to build an outcome field at one-user volume",
+        "path": "memories/learnings/mem-095.md",
+        "confidence": 0.9,
+        "concepts": [
+          "stop-gate",
+          "reject-log"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
+      },
+      "mem-096": {
+        "type": "decision",
+        "summary": "Over-fire fixes follow the workflow: navigator-research replay of real transcripts, then a plan doc with numbers, then code; skipping research cost a wrong size estimate on TASK-94",
+        "path": "memories/decisions/mem-096.md",
+        "confidence": 0.9,
+        "concepts": [
+          "workflow",
+          "stop-gate"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
       }
     },
     "files": {}
@@ -8225,7 +8305,8 @@
       "mem-074",
       "mem-077",
       "TASK-83",
-      "TASK-93"
+      "TASK-93",
+      "mem-096"
     ],
     "backend": [
       "TASK-16",
@@ -8694,7 +8775,9 @@
       "mem-076",
       "mem-077",
       "mem-082",
-      "mem-088"
+      "mem-088",
+      "mem-092",
+      "mem-094"
     ],
     "session-lifecycle": [
       "mem-026",
@@ -8945,6 +9028,21 @@
     ],
     "ste": [
       "mem-091"
+    ],
+    "tasks": [
+      "mem-092",
+      "mem-093"
+    ],
+    "pane": [
+      "mem-093"
+    ],
+    "stop-gate": [
+      "mem-094",
+      "mem-095",
+      "mem-096"
+    ],
+    "reject-log": [
+      "mem-095"
     ]
   }
 }
