@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.2] — 2026-10-06
+
+The Stop gate's `code_committed` indicator skips untracked `??` paths unless the turn touched
+them, so a repo that keeps scratch files untracked can satisfy the gate on a committed turn
+(13 of 13 logged rejects had it unmet). A mutating Bash command naming a `.md` counts as
+`docs_updated`; `make mod-test` counts as a test run. The heredoc bucket is retired after a
+replay measured 0 flips; `scripts/stop_gate_replay.py` keeps the method (TASK-95).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.2.md)
+
 ## [v8.3.1] — 2026-10-05
 
 The Stop gate's Bash classifier masks quoted spans before splitting, so `grep "a\|b"`,

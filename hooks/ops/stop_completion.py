@@ -82,7 +82,11 @@ FILE_PATH_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "NotebookEdit"})
 
 # A turn ran the test suite when a Bash command matches this (mem-034: only
 # fixed patterns, never transcript text, ever reach the reason string).
-TEST_CMD_RE = re.compile(r"\b(make test|pytest|(python3?\s+-m\s+)?unittest)\b")
+TEST_CMD_RE = re.compile(r"\b(make (?:mod-)?test|pytest|(python3?\s+-m\s+)?unittest)\b")
+# TASK-95: a mutating Bash command that names a Markdown file is a docs edit
+# (sed -i on a .md, a python heredoc writing one); Edit/Write paths are seen
+# through file_paths already. Indicators only relax the gate.
+_MD_PATH_RE = re.compile(r"\S+\.md\b")
 
 # Read-only Bash classification (TASK-70): TASK_ACTION_TOOLS counts Bash
 # wholesale, so pure-inspection turns (grep/ls/git status) false-fired the
@@ -489,11 +493,15 @@ def _turn_mutating(tools: set, evidence: dict, prev_digest=None,
     return True
 
 
-def _git_clean(root) -> bool:
+def _git_clean(root, touched=()) -> bool:
     """True when the git working tree at ``root`` is clean.
 
-    ``git status --porcelain`` with a ~2s timeout: empty stdout AND
-    returncode 0 → clean. ANY failure/timeout/non-repo → False (mem-034:
+    ``git status --porcelain`` with a ~2s timeout: returncode 0 AND no
+    tracked change → clean. Untracked ``??`` lines are ignored unless the
+    turn touched that path (TASK-95: a repo that keeps scratch files untracked
+    on purpose could never satisfy ``code_committed``, but a file this turn
+    created and left untracked is still uncommitted work). ANY
+    failure/timeout/non-repo → False (mem-034:
     subprocess output never touches stderr or the reason string).
     """
     try:
@@ -503,7 +511,25 @@ def _git_clean(root) -> bool:
         )
     except Exception:
         return False
-    return result.returncode == 0 and not result.stdout.strip()
+    return result.returncode == 0 and not _tracked_dirty(result.stdout, touched)
+
+
+def _tracked_dirty(porcelain: str, touched=()) -> bool:
+    """True when porcelain output names a tracked change, or an untracked path the
+    turn touched (``touched``: file paths from the turn's evidence). Other ``??``
+    lines do not count."""
+    paths = [p for p in touched if isinstance(p, str)]
+    for line in porcelain.splitlines():
+        if not line.strip():
+            continue
+        if not line.startswith("??"):
+            return True
+        untracked = line[2:].strip().rstrip("/")
+        if untracked and any(p.rstrip("/") == untracked or p.rstrip("/").endswith("/" + untracked)
+                             or p.startswith(untracked + "/") or ("/" + untracked + "/") in p
+                             for p in paths):
+            return True
+    return False
 
 
 def _tree_digest(root):
@@ -535,7 +561,8 @@ def _derive_indicators(evidence: dict, cfg, payload: dict) -> dict:
 
       code_committed   git working tree clean at the project root.
       tests_passing    a turn Bash command ran the suite and did NOT error.
-      docs_updated     a turn touched a ``*.md`` file.
+      docs_updated     a turn touched a ``*.md`` file (Edit/Write path, or a
+                       mutating Bash command that names one — TASK-95).
       marker_created   a turn touched a path under ``/.context-markers/``.
       ticket_closed    True only when no PM tool is configured
                        (project_management == 'none' → nothing to close). With
@@ -545,7 +572,7 @@ def _derive_indicators(evidence: dict, cfg, payload: dict) -> dict:
                        "code was simplified" from transcript/disk evidence.
     """
     indicators = {}
-    if _git_clean(hio.project_root(payload)):
+    if _git_clean(hio.project_root(payload), evidence.get("file_paths", ())):
         indicators["code_committed"] = True
     for command, is_error in evidence.get("bash", ()):
         if not is_error and TEST_CMD_RE.search(command or ""):
@@ -553,6 +580,10 @@ def _derive_indicators(evidence: dict, cfg, payload: dict) -> dict:
             break
     paths = evidence.get("file_paths", ())
     if any(isinstance(p, str) and p.endswith(".md") for p in paths):
+        indicators["docs_updated"] = True
+    elif any(not is_error and _MD_PATH_RE.search(command or "")
+             and not _bash_readonly(command or "")
+             for command, is_error in evidence.get("bash", ())):
         indicators["docs_updated"] = True
     if any(isinstance(p, str) and "/.context-markers/" in p for p in paths):
         indicators["marker_created"] = True

@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-06T09:32:02.280621+00:00",
+  "last_updated": "2026-10-06T09:48:50.551393+00:00",
   "stats": {
-    "total_nodes": 233,
-    "total_edges": 855,
-    "memory_count": 88
+    "total_nodes": 238,
+    "total_edges": 856,
+    "memory_count": 89
   },
   "nodes": {
     "tasks": {
@@ -1799,6 +1799,26 @@
         "name": "Reject-Log",
         "aliases": [],
         "domain": "general"
+      },
+      "stop_completion": {
+        "name": "Stop_Completion",
+        "aliases": [],
+        "domain": "general"
+      },
+      "replay": {
+        "name": "Replay",
+        "aliases": [],
+        "domain": "general"
+      },
+      "bash-classifier": {
+        "name": "Bash-Classifier",
+        "aliases": [],
+        "domain": "general"
+      },
+      "heredoc": {
+        "name": "Heredoc",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3105,6 +3125,21 @@
         "concepts": [
           "workflow",
           "stop-gate"
+        ],
+        "created": "2026-10-06",
+        "last_validated": "2026-10-06"
+      },
+      "mem-097": {
+        "type": "learning",
+        "summary": "Stop-gate over-fire buckets: count by blame head with heredoc bodies stripped (scripts/stop_gate_replay.py), not by keyword among mutating calls - TASK-95: TASK-94's '178 heredocs' bucket measured 0 flips; every heredoc fed python3 - (a real write) or followed a > redirect. The real defect was code_committed: git status --porcelain treated untracked ?? lines as dirty, so a repo with a deliberate untracked dir never met it",
+        "path": "memories/learnings/mem-097.md",
+        "confidence": 0.9,
+        "concepts": [
+          "reject-log",
+          "stop_completion",
+          "replay",
+          "bash-classifier",
+          "heredoc"
         ],
         "created": "2026-10-06",
         "last_validated": "2026-10-06"
@@ -7730,6 +7765,11 @@
       "from": "TASK-95",
       "to": "skills",
       "type": "implements"
+    },
+    {
+      "from": "mem-097",
+      "to": "TASK-95",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -9077,7 +9117,20 @@
       "mem-096"
     ],
     "reject-log": [
-      "mem-095"
+      "mem-095",
+      "mem-097"
+    ],
+    "stop_completion": [
+      "mem-097"
+    ],
+    "replay": [
+      "mem-097"
+    ],
+    "bash-classifier": [
+      "mem-097"
+    ],
+    "heredoc": [
+      "mem-097"
     ]
   }
 }

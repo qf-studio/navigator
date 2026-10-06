@@ -634,6 +634,28 @@ class DerivedIndicatorTest(StopCompletionTestBase):
         reason = self._block(entries)
         self.assertIn("tests_passing", unmet_names(reason))
 
+    def test_kit_test_target_counts_as_tests_passing(self):
+        entries = turn_with_tools(
+            [{"name": "Bash", "input": {"command": "make mod-test 2>&1 | tail -3"},
+              "is_error": False}])
+        reason = self._block(entries)
+        self.assertNotIn("tests_passing", unmet_names(reason))
+
+    def test_mutating_bash_naming_md_counts_as_docs_updated(self):
+        entries = turn_with_tools(
+            [{"name": "Bash", "input": {"command": "sed -i '' 's/a/b/' docs/README.md"},
+              "is_error": False}])
+        reason = self._block(entries)
+        self.assertNotIn("docs_updated", unmet_names(reason))
+
+    def test_readonly_bash_naming_md_is_not_a_docs_update(self):
+        entries = turn_with_tools(
+            [{"name": "Bash", "input": {"command": "grep -n foo README.md | head"},
+              "is_error": False},
+             {"name": "Edit", "input": {"file_path": "a.py"}}])
+        reason = self._block(entries)
+        self.assertIn("docs_updated", unmet_names(reason))
+
     def test_docs_updated_when_md_touched(self):
         entries = turn_with_tools(
             [{"name": "Edit", "input": {"file_path": "docs/README.md"}}])
@@ -707,6 +729,39 @@ class DerivedIndicatorTest(StopCompletionTestBase):
         # A read-only turn never continues even if it touched a .md path.
         entries = turn_with_tools([{"name": "Read", "input": {"file_path": "a.md"}}])
         self.assertIsNone(stop_completion.run(self.make_ctx(entries, cfg=pm_cfg())))
+
+
+class GitCleanTest(unittest.TestCase):
+    """TASK-95: untracked paths never dirty the tree for code_committed."""
+
+    def _clean(self, stdout, returncode=0, touched=()):
+        done = subprocess.CompletedProcess(["git"], returncode, stdout, "")
+        with mock.patch.object(stop_completion.subprocess, "run", return_value=done):
+            return stop_completion._git_clean("/r", touched)
+
+    def test_empty_output_is_clean(self):
+        self.assertTrue(self._clean(""))
+
+    def test_untracked_only_is_clean(self):
+        self.assertTrue(self._clean("?? scratch/\n?? notes.md\n"))
+
+    def test_untracked_path_the_turn_touched_is_dirty(self):
+        out = "?? scratch/\n?? notes.md\n"
+        self.assertFalse(self._clean(out, touched=("/r/notes.md",)))
+        self.assertFalse(self._clean(out, touched=("scratch/new.py",)))
+        self.assertFalse(self._clean(out, touched=("/r/scratch/a/b.py",)))
+        self.assertTrue(self._clean(out, touched=("/r/other.md", "/r/src/notes.md.bak")))
+
+    def test_tracked_change_is_dirty(self):
+        self.assertFalse(self._clean(" M a.py\n"))
+        self.assertFalse(self._clean("?? x\n M a.py\n"))
+        self.assertFalse(self._clean("A  new.py\n"))
+
+    def test_non_repo_or_failure_is_dirty(self):
+        self.assertFalse(self._clean("", returncode=128))
+        with mock.patch.object(stop_completion.subprocess, "run",
+                               side_effect=subprocess.TimeoutExpired("git", 2)):
+            self.assertFalse(stop_completion._git_clean("/r"))
 
 
 class KillSwitchTest(StopCompletionTestBase):
@@ -865,7 +920,13 @@ class DispatchCompositionTest(StopCompletionTestBase):
         # re-arms; stop 3 — same unknown-command turn, tree untouched — is
         # silent on EVIDENCE, where pre-TASK-71 it blocked every turn.
         project = self.make_project()
+        git = ["git", "-c", "user.name=n", "-c", "user.email=e@x", "-c", "commit.gpgsign=false"]
         subprocess.run(["git", "init", "-q"], cwd=project, check=True)
+        subprocess.run(["git", "add", "-A"], cwd=project, check=True)
+        subprocess.run(git + ["commit", "-q", "-m", "init"], cwd=project, check=True)
+        # TASK-95: untracked-only trees read as committed, so dirty a TRACKED file.
+        (project / ".agent" / ".nav-config.json").write_text(
+            (project / ".agent" / ".nav-config.json").read_text() + "\n", encoding="utf-8")
         entries = turn_with_tools(
             [{"name": "Bash", "input": {"command": "sqlite3 db 'select 1'"}}])
         tpath = write_transcript(self.tmp, entries)

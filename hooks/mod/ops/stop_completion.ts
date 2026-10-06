@@ -5,7 +5,7 @@
 import { getPath } from '../lib/config'
 import { stripAll } from '../lib/sentinels'
 import { bashReadonly } from '../lib/stop-bash'
-import { B, WS, isDict, pyInt, pyStrip, pyTruthy } from '../lib/stop-py'
+import { B, NWS, WS, isDict, pyInt, pyStrip, pyTruthy } from '../lib/stop-py'
 import { sha256Hex } from '../lib/stop-sha256'
 import { parseSignals } from '../lib/stop-signals'
 import { type Evidence, turnScan } from '../lib/stop-transcript'
@@ -19,7 +19,9 @@ export const INDICATOR_VOCABULARY = [
 const MIN_HEURISTICS = 2
 const DEFAULT_MAX_CONTINUES = 2
 const GIT_TIMEOUT_MS = 2000
-const TEST_CMD_RE = new RegExp(`${B}(make test|pytest|(python3?${WS}+-m${WS}+)?unittest)${B}`, 'u')
+const TEST_CMD_RE = new RegExp(`${B}(make (?:mod-)?test|pytest|(python3?${WS}+-m${WS}+)?unittest)${B}`, 'u')
+// TASK-95: a mutating Bash command that names a Markdown file is a docs edit.
+const MD_PATH_RE = new RegExp(`${NWS}+\\.md${B}`, 'u')
 
 /** `git status --porcelain` at root: {exitCode, stdout}, or null when the call failed. */
 const gitStatus = async (ctx: OpCtx): Promise<{ exitCode: number; stdout: string } | null> => {
@@ -30,9 +32,27 @@ const gitStatus = async (ctx: OpCtx): Promise<{ exitCode: number; stdout: string
   }
 }
 
-const gitClean = async (ctx: OpCtx): Promise<boolean> => {
+// Untracked `??` lines do not count unless the turn touched that path (TASK-95);
+// mirrors stop_completion._tracked_dirty.
+const trackedDirty = (porcelain: string, touched: readonly string[]): boolean => {
+  for (const line of porcelain.split(/\r?\n/u)) {
+    if (pyStrip(line) === '') continue
+    if (!line.startsWith('??')) return true
+    const untracked = pyStrip(line.slice(2)).replace(/\/+$/u, '')
+    if (untracked === '') continue
+    const hit = touched.some(p => {
+      const q = p.replace(/\/+$/u, '')
+      return q === untracked || q.endsWith(`/${untracked}`)
+        || p.startsWith(`${untracked}/`) || p.includes(`/${untracked}/`)
+    })
+    if (hit) return true
+  }
+  return false
+}
+
+const gitClean = async (ctx: OpCtx, touched: readonly string[]): Promise<boolean> => {
   const r = await gitStatus(ctx)
-  return r !== null && r.exitCode === 0 && !pyStrip(r.stdout)
+  return r !== null && r.exitCode === 0 && !trackedDirty(r.stdout, touched)
 }
 
 const treeDigest = async (ctx: OpCtx): Promise<string | null> => {
@@ -103,7 +123,7 @@ const recordDigest = (ctx: OpCtx, digest: string): void => {
 
 const deriveIndicators = async (ctx: OpCtx, evidence: Evidence): Promise<Record<string, boolean>> => {
   const ind: Record<string, boolean> = {}
-  if (await gitClean(ctx)) ind.code_committed = true
+  if (await gitClean(ctx, evidence.file_paths)) ind.code_committed = true
   for (const [command, isError] of evidence.bash) {
     if (!isError && TEST_CMD_RE.test(command || '')) {
       ind.tests_passing = true
@@ -111,6 +131,8 @@ const deriveIndicators = async (ctx: OpCtx, evidence: Evidence): Promise<Record<
     }
   }
   if (evidence.file_paths.some(p => p.endsWith('.md'))) ind.docs_updated = true
+  else if (evidence.bash.some(([command, isError]) =>
+    !isError && MD_PATH_RE.test(command || '') && !bashReadonly(command || ''))) ind.docs_updated = true
   if (evidence.file_paths.some(p => p.includes('/.context-markers/'))) ind.marker_created = true
   if (getPath(ctx.config, 'project_management', 'none') === 'none') ind.ticket_closed = true
   return ind

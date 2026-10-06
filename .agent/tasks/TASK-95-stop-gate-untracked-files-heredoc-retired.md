@@ -1,6 +1,6 @@
 # TASK-95: Stop gate — `code_committed` ignores untracked files; heredoc bucket retired
 
-**Status**: 📐 Plan — 2026-10-06 (research done, awaiting confirmation)
+**Status**: ✅ Implemented — 2026-10-06 (ships in v8.3.2)
 
 ## Origin
 
@@ -35,11 +35,13 @@ each committed turn.
 
 ## Change
 
-**A. `code_committed` ignores untracked files** (both runtimes). `git status --porcelain
---untracked-files=no`: a tree whose only noise is untracked paths counts as committed. An
-untracked file the turn itself created still shows up through the `file_paths` /
-mutating-Bash evidence, and a modified tracked file still dirties the tree. Parity fixture:
-`git_untracked_only` → clean; `git_modified` → dirty.
+**A. `code_committed` ignores untracked files** (both runtimes). Same `git status
+--porcelain` call (the digest shares it); `??` lines are skipped unless the turn's
+`file_paths` evidence names that path — a file this turn created and left untracked is
+still uncommitted work (found by the TASK-71 digest test: a fresh `git init` tree would
+have read as committed). A modified tracked file still dirties the tree. Parity: git mode
+`untracked` across every transcript; `edit_untracked` (writes `/r/scratch/new.py` under an
+untracked `scratch/`) blocks, `edit` (tracked path) is silent.
 
 **B. Bash-driven `.md` edits count as `docs_updated`.** `file_paths` only sees Edit/Write
 inputs. A mutating Bash command whose text names a `*.md` path (`sed -i … X.md`,
@@ -56,6 +58,15 @@ stripped before naming a next target."
 
 **E. Keep the replay script.** Move `/tmp/measure.py` into `scripts/stop_gate_replay.py`
 with the blame-head bucketing above, so the next bucket claim comes with the same table.
+
+## Result
+
+Python 76 tests (+8: `GitCleanTest` ×5, derived indicators ×3), kit 157 (+1 git mode,
++4 transcripts, all parity cases regenerated), `make test` / `mod-gen-check` / `mod-test` /
+`mod-typecheck` green. `scripts/stop_gate_replay.py` reproduces the table above
+(`--days 3`: 702 calls, 436 mutating, 203 heredocs, 0 flips). The 13 logged rejects carry no
+command text, so they cannot be replayed; by construction every one of them that ended in a
+commit now passes on `code_committed` + `ticket_closed`.
 
 ## Won't do
 

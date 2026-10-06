@@ -106,6 +106,14 @@ def _transcripts() -> dict:
         "bash_quoted_ro": _bash_turn('grep -n "a\\|b" f | head -3', "gh pr view 1 --jq '.a | .b'",
                                      'printf "%s | %s\\n" a b', "grep '>' f"),
         "bash_quoted_mut": _bash_turn('echo "x" > "$F"', 'sh -c "ls"'),
+        # TASK-95: a mutating Bash command naming a .md is a docs edit; a read-only one is not;
+        # `make mod-test` is a test run.
+        "bash_md_edit": _bash_turn("sed -i '' 's/a/b/' docs/README.md"),
+        # TASK-95: an untracked path the turn itself wrote keeps the tree dirty (git "untracked").
+        "edit_untracked": [_user("scratch"), _asst([_tool("u1", "Write", {"file_path": "/r/scratch/new.py"})]),
+                           _asst([_text("drafted; more to do")])],
+        "bash_md_read": _bash_turn("grep -n foo README.md | head"),
+        "bash_kit_tests": _bash_turn("make mod-test"),
         "agent": [_user("research"), _asst([_tool("a1", "Agent", {"prompt": "look"})]),
                   _user_blocks([_result("a1")]), _asst([_text("Agent finished.")])],
         # TASK-92: read-only subagents are not task actions; unknown types still are.
@@ -211,6 +219,8 @@ STATE_PRIORS = {
 GITS = {
     "clean": {"exitCode": 0, "stdout": ""},
     "dirty": {"exitCode": 0, "stdout": DIRTY},
+    # TASK-95: only untracked paths → counts as clean for code_committed.
+    "untracked": {"exitCode": 0, "stdout": "?? scratch/\n?? notes.md\n"},
     "nonrepo": {"exitCode": 128, "stdout": ""},
     "raise": None,
 }
@@ -315,7 +325,7 @@ def _build() -> dict:
 
         names = list(transcripts) + ["__missing__", None]
         for name in names:
-            for git in ("clean", "dirty", "nonrepo", "raise", "real-clean", "real-dirty"):
+            for git in ("clean", "dirty", "untracked", "nonrepo", "raise", "real-clean", "real-dirty"):
                 case("completion_a", name, "transcript", "on", "none", {}, git, op=stop_completion)
             case("completion_a", name, "transcript", "on", "none", {}, "dirty", pilot=True, op=stop_completion)
             for pname, prior in priors.items():
