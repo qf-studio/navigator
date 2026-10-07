@@ -453,4 +453,4 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
 **For complete Navigator documentation**: See `.agent/DEVELOPMENT-README.md`
 
 **Last Updated**: 2026-10-07
-**Navigator Version**: 8.3.3
+**Navigator Version**: 8.3.4

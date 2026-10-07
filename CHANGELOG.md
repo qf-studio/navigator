@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.4] — 2026-10-07
+
+`auto_update.curl_fallback` (default `false`): a session with
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` refuses every plugin `$.http.fetch`, so the
+session-start update notice never fired there; with the key on, a refused fetch repeats the
+same GET through `curl`, a non-2xx answer never falls back, and a failed curl leaves the next
+start to retry. Off, the behaviour is unchanged (TASK-98, closes the TASK-81 follow-up).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.4.md)
+
 ## [v8.3.3] — 2026-10-07
 
 Skills resolve the plugin root from `~/.config/navigator/plugin-root`, a one-line file the

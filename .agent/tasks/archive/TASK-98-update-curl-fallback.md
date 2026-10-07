@@ -1,6 +1,6 @@
 # TASK-98: Update notice curl fallback under nonessential-traffic-off
 
-**Status**: ✅ Implemented — 2026-10-07 (unreleased)
+**Status**: ✅ Released — v8.3.4, 2026-10-07
 
 ## Origin
 
