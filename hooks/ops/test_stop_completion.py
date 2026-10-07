@@ -432,6 +432,27 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "pgrep -f 'claude --plugin-dir' | head -1",
         "sed -n '1,40p' hooks/mod/register.tsx | head -20",
         "sed -e 's/a/b/' notes.md",
+        # TASK-96: redirect targets end at an operator; structure openers are transparent.
+        "ls 2>/dev/null; echo ok",
+        "echo hi >&2; ls",
+        "(cd hooks/ops && git status)",
+        "(cd hooks/ops && ls) 2>/dev/null; gh run view 1",
+        "{ ls; cat x; }",
+        "q() { git log -1; }",
+        "cd .agent; (ls)",
+        # TASK-96: read-only heads and pairs among the unknown heads.
+        "gh run watch 123 --exit-status",
+        "claude plugin list",
+        "claude plugin validate .claude-plugin/plugin.json",
+        "claude plugin test .",
+        "claude plugin update navigator@navigator-marketplace",
+        "tail -1 .agent/.nav-rejects.jsonl | python3 -m json.tool | head -40",
+        "awk '/Resume here/{f=1} f' .agent/tasks/TASK-80.md",
+        "awk -F: '{print $1}' /etc/passwd | head",
+        "make test",
+        "make mod-gen-check mod-test",
+        "make -j4 typecheck validate",
+        "cd /tmp && make check 2>&1 | tail -5",
     )
     MUTATING = (
         # TASK-94: quoting never hides a write.
@@ -462,6 +483,28 @@ class ReadonlyBashParserTest(unittest.TestCase):
         "./ls",                             # TASK-90: relative paths never resolve
         "~/bin/pilot-board",
         "cd /tmp && make build",            # cd is transparent, make is not
+        # TASK-96: the body of a subshell/group/function still decides.
+        "(rm x)",
+        "(cd x && rm y)",
+        "{ rm x; }",
+        "q() { rm x; }",
+        "ls > out;",                        # a real target before the operator
+        "echo x 2>/dev/null; rm y",
+        # TASK-96: unlisted pairs, build-shaped targets and other python forms.
+        "claude plugin install navigator@m",
+        "claude plugin uninstall navigator --scope project",
+        "claude plugin enable navigator",
+        "gh run cancel 1",
+        "make",
+        "make build",
+        "make test build",
+        "make lint-check",
+        "make test VAR=1 install",
+        "python3 -c 'print(1)'",
+        "python3 -m unittest discover",
+        "python3 -m json.tool > out.json",
+        "awk '{print > \"f\"}' x",
+        "awk '$1 > 3' x",                   # a comparison reads as a write: over-fire only
     )
 
     def test_readonly_commands(self):
@@ -608,10 +651,18 @@ class DerivedIndicatorTest(StopCompletionTestBase):
         self.assertIn("code_committed", unmet_names(reason))
 
     def test_tests_passing_when_test_command_not_errored(self):
+        # TASK-96: `make test` alone is read-only, so an Edit makes the turn a task.
         entries = turn_with_tools(
-            [{"name": "Bash", "input": {"command": "make test"}, "is_error": False}])
+            [{"name": "Edit", "input": {"file_path": "a.py"}},
+             {"name": "Bash", "input": {"command": "make test"}, "is_error": False}])
         reason = self._block(entries)
         self.assertNotIn("tests_passing", unmet_names(reason))
+
+    def test_test_only_turn_is_not_a_task_action(self):
+        # TASK-96: running the suite writes nothing; the gate stays silent.
+        entries = turn_with_tools(
+            [{"name": "Bash", "input": {"command": "make test"}, "is_error": False}])
+        self.assertIsNone(stop_completion.run(self.make_ctx(entries, cfg=pm_cfg())))
 
     def test_unittest_module_command_counts_as_tests_passing(self):
         entries = turn_with_tools(
@@ -635,8 +686,10 @@ class DerivedIndicatorTest(StopCompletionTestBase):
         self.assertIn("tests_passing", unmet_names(reason))
 
     def test_kit_test_target_counts_as_tests_passing(self):
+        # TASK-96: the kit run alone is read-only; the Edit makes the turn a task.
         entries = turn_with_tools(
-            [{"name": "Bash", "input": {"command": "make mod-test 2>&1 | tail -3"},
+            [{"name": "Edit", "input": {"file_path": "a.py"}},
+             {"name": "Bash", "input": {"command": "make mod-test 2>&1 | tail -3"},
               "is_error": False}])
         reason = self._block(entries)
         self.assertNotIn("tests_passing", unmet_names(reason))

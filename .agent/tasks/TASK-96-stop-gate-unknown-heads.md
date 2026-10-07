@@ -1,6 +1,6 @@
 # TASK-96: Stop gate — read-only shapes among the unknown heads
 
-**Status**: 📐 Plan — 2026-10-07 (research done, awaiting confirmation)
+**Status**: ✅ Implemented — 2026-10-07 (A+B+C+D, both runtimes; released in v8.3.3)
 
 ## Origin
 
@@ -49,6 +49,21 @@ read-only. Fixtures `bash_subshell_ro`, `bash_group_mut`, `bash_func_ro`.
 format files. This is the first relax-direction rule for the mutating verdict since TASK-71
 set "over-fire only". If accepted: pattern-gated, never `lint|format|build|install`, and the
 tree digest still catches a real write on the next Stop.
+
+## Result (2026-10-07)
+
+All four changes shipped, D included (the go came without the `make` exclusion). Replay of
+the same four-day window: mutating 474 of 760 calls before, 419 of 776 after (the window
+grew by this session's own calls); none of the flipped calls writes the tree. Shapes now
+read-only: `2>/dev/null;`, `(cd x && git status)`, `{ ls; }`, `q() { ls; }`, `gh run
+watch`, `claude plugin list|validate|test|update`, `python3 -m json.tool`, `awk` without
+`>`, `make` with only test/check/typecheck/validate targets. A test-only turn (`make test`)
+is no longer a task action, so two derived-indicator tests pair the run with an Edit and
+one new test pins the silence. `make` targets skip `VAR=x` and redirect words; the `$1 > 3`
+comparison inside an awk program still reads as a write (over-fire only).
+
+Tests: Python +22 read-only / +22 mutating parser cases, +1 op test; kit +2 direct tests and
++8 transcripts with every stop-op parity case regenerated (159 kit tests).
 
 ## Expected effect
 

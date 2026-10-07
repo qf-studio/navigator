@@ -122,10 +122,26 @@ READONLY_GH_SUBCMDS = frozenset({
     "pr view", "pr list", "pr checks", "pr diff", "pr status",
     "issue view", "issue list", "issue status",
     "run view", "run list", "workflow view", "workflow list",
+    # TASK-96: `gh run watch` polls a run; it writes nothing.
+    "run watch",
     "release view", "release list", "repo view", "label list",
     "search prs", "search issues", "search code", "search repos",
 })
+# claude resolved by subcommand pair like gh (TASK-96). `plugin update` writes the
+# plugin cache, never the tree; install/uninstall/enable/disable can rewrite a project
+# `.claude/settings.json` (seen on 2026-10-07) and stay mutating.
+READONLY_CLAUDE_SUBCMDS = frozenset({
+    "plugin list", "plugin validate", "plugin test", "plugin update",
+})
+# make resolved by target (TASK-96): every target must look like a test or check and
+# none like a build; `make` with no target stays mutating. A `make check` that formats
+# files is caught by the tree digest on the next Stop (TASK-71), so this relax-direction
+# rule under-fires at most one Stop.
+_MAKE_READONLY_RE = re.compile(r"test|check|typecheck|validate")
+_MAKE_WRITE_RE = re.compile(r"lint|format|build|install")
 _BASH_SEGMENT_SPLIT = re.compile(r"\|\||&&|;|\||\n")
+# A function definition opens a body on the same segment (TASK-96): `q() { ls; }`.
+_FUNC_DEF_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\(\)\{?$")
 # Innermost $(...) / `...` command substitutions (TASK-71): their content is
 # validated as a command in its own right, then removed so the outer text's
 # heads and assignments tokenize cleanly (`LOG=$(ls)` -> `LOG=`).
@@ -134,8 +150,10 @@ _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # Output redirects: any target other than /dev/null or a file descriptor
 # (&1, &2) makes the segment mutating — closes the `echo x > file` hole that
 # allowlisted heads opened (TASK-71). Quoted spans are masked first (TASK-94),
-# so a '>' or '|' inside an argument no longer splits or redirects.
+# so a '>' or '|' inside an argument no longer splits or redirects. The target ends
+# at a `;`, `&` or `|` operator (TASK-96: `2>/dev/null;` is /dev/null, not `/dev/null;`).
 _REDIRECT_RE = re.compile(r"[0-9]*>>?\s*(\S+)")
+_REDIRECT_TRAIL = ";&|"
 
 
 def _mask_quotes(text: str) -> str:
@@ -189,6 +207,33 @@ _TRANSPARENT_HEADS = frozenset({
     "if", "elif", "then", "else", "do", "while", "until", "!", "time",
 })
 _STANDALONE_HEADS = frozenset({"for", "done", "fi", "esac", "case"})
+_OPENERS = "({"
+_CLOSERS = ")}"
+
+
+def _strip_structure(tokens: list) -> list:
+    """TASK-96: a subshell, group or function body is classified by what runs inside.
+
+    `(cd x`, `{ ls`, `q() { ls` open on the first word(s); the closing `)` / `}` rides
+    the last word of a later segment (`git status)`, `}`). Openers are peeled from the
+    head, closers from every word, and empty words dropped, so `(cd x && git status)`
+    reads as read-only while `(rm x)` stays mutating.
+    """
+    while tokens:
+        head = tokens[0]
+        if _FUNC_DEF_RE.match(head):
+            tokens = tokens[1:]
+            continue
+        peeled = head.lstrip(_OPENERS)
+        if peeled == head:
+            break
+        tokens = ([peeled] if peeled else []) + tokens[1:]
+    out = []
+    for token in tokens:
+        token = token.rstrip(_CLOSERS)
+        if token:
+            out.append(token)
+    return out
 
 
 def _load_exit_gate():
@@ -366,13 +411,14 @@ def _bash_readonly(command) -> bool:
             if not _bash_readonly(match.group(1) or match.group(2) or ""):
                 return False
         text = _SUBSTITUTION_RE.sub("", text)
+    raw = text  # TASK-96: awk programs are judged unmasked (`print > "f"` writes)
     text = _mask_quotes(text)  # TASK-94: quoted | > ; never split or redirect
     for match in _REDIRECT_RE.finditer(text):
-        target = match.group(1)
+        target = match.group(1).rstrip(_REDIRECT_TRAIL)
         if target != "/dev/null" and not target.startswith("&"):
             return False
-    for segment in _BASH_SEGMENT_SPLIT.split(text):
-        tokens = segment.strip().split()
+    for segment, raw_segment in _segments(text, raw):
+        tokens = _strip_structure(segment.strip().split())
         while tokens and (
             tokens[0] in _TRANSPARENT_HEADS or _ASSIGNMENT_RE.match(tokens[0])
         ):
@@ -402,6 +448,27 @@ def _bash_readonly(command) -> bool:
             pair = [t for t in tokens[1:] if not t.startswith("-")][:2]
             if " ".join(pair) not in READONLY_GH_SUBCMDS:
                 return False
+        elif head == "claude":
+            # TASK-96: plugin list/validate/test/update never touch the tree.
+            pair = [t for t in tokens[1:] if not t.startswith("-")][:2]
+            if " ".join(pair) not in READONLY_CLAUDE_SUBCMDS:
+                return False
+        elif head == "make":
+            # TASK-96: test-shaped targets only; `make` alone or a build stays mutating.
+            targets = [t for t in tokens[1:]
+                       if not t.startswith("-") and not any(c in t for c in "=<>")]
+            if not targets or any(_MAKE_WRITE_RE.search(t) for t in targets) \
+                    or not all(_MAKE_READONLY_RE.search(t) for t in targets):
+                return False
+        elif head in ("python3", "python"):
+            # TASK-96: `python3 -m json.tool` is the one python form that only reads.
+            if tokens[1:3] != ["-m", "json.tool"]:
+                return False
+        elif head == "awk":
+            # TASK-96: an awk program writes only through `>`; the raw (unmasked)
+            # segment is checked because the program is a quoted argument.
+            if ">" in raw_segment:
+                return False
         elif head == "curl":
             if any(_curl_writes(t) for t in tokens[1:]):
                 return False
@@ -414,6 +481,18 @@ def _bash_readonly(command) -> bool:
         elif head not in READONLY_BASH_CMDS:
             return False
     return True
+
+
+def _segments(masked: str, raw: str):
+    """Yield (masked, raw) segment pairs split at the masked text's operators (TASK-96).
+
+    The quote mask keeps length, so the same offsets slice both strings.
+    """
+    pos = 0
+    for match in _BASH_SEGMENT_SPLIT.finditer(masked):
+        yield masked[pos:match.start()], raw[pos:match.start()]
+        pos = match.end()
+    yield masked[pos:], raw[pos:]
 
 
 def _curl_writes(token: str) -> bool:

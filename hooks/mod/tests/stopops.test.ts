@@ -110,6 +110,31 @@ describe('TASK-85: read-only evidence', () => {
       expect(bashReadonly(cmd)).toBe(false)
     }
   })
+  test('TASK-96: redirect targets end at an operator; subshells, groups and functions are transparent', () => {
+    for (const cmd of [
+      'ls 2>/dev/null; echo ok', 'echo hi >&2; ls',
+      '(cd hooks/ops && git status)', '(cd hooks/ops && ls) 2>/dev/null; gh run view 1',
+      '{ ls; cat x; }', 'q() { git log -1; }', 'cd .agent; (ls)',
+    ]) expect(bashReadonly(cmd)).toBe(true)
+    for (const cmd of ['(rm x)', '(cd x && rm y)', '{ rm x; }', 'q() { rm x; }', 'ls > out;', 'echo x 2>/dev/null; rm y']) {
+      expect(bashReadonly(cmd)).toBe(false)
+    }
+  })
+  test('TASK-96: gh run watch, claude plugin pairs, json.tool, awk without > and test-shaped make targets read', () => {
+    for (const cmd of [
+      'gh run watch 123 --exit-status', 'claude plugin list', 'claude plugin validate .claude-plugin/plugin.json',
+      'claude plugin test .', 'claude plugin update navigator@navigator-marketplace',
+      'tail -1 .agent/.nav-rejects.jsonl | python3 -m json.tool | head -40',
+      "awk '/Resume here/{f=1} f' .agent/tasks/TASK-80.md", "awk -F: '{print $1}' /etc/passwd | head",
+      'make test', 'make mod-gen-check mod-test', 'make -j4 typecheck validate', 'cd /tmp && make check 2>&1 | tail -5',
+    ]) expect(bashReadonly(cmd)).toBe(true)
+    for (const cmd of [
+      'claude plugin install navigator@m', 'claude plugin uninstall navigator --scope project', 'claude plugin enable navigator',
+      'gh run cancel 1', 'make', 'make build', 'make test build', 'make lint-check', 'make test VAR=1 install',
+      "python3 -c 'print(1)'", 'python3 -m unittest discover', 'python3 -m json.tool > out.json',
+      'awk \'{print > "f"}\' x', "awk '$1 > 3' x",
+    ]) expect(bashReadonly(cmd)).toBe(false)
+  })
   test('TASK-94: quoted | > ; are arguments; quoting never hides a write', () => {
     expect(maskQuotes('grep "a|b" f > "o"')).toBe('grep "xxx" f > "x"')
     expect(maskQuotes("echo 'it''s' \\| x")).toBe("echo 'xx''x' \\x x")

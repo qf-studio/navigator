@@ -114,6 +114,20 @@ def _transcripts() -> dict:
                            _asst([_text("drafted; more to do")])],
         "bash_md_read": _bash_turn("grep -n foo README.md | head"),
         "bash_kit_tests": _bash_turn("make mod-test"),
+        # TASK-96: a redirect target ends at `;`; structure openers are transparent; test
+        # targets, claude plugin pairs, json.tool and awk without `>` read.
+        "bash_devnull_semicolon": _bash_turn("ls 2>/dev/null; echo ok", "echo hi >&2; ls"),
+        "bash_subshell_ro": _bash_turn("(cd hooks/ops && git status)", "(ls) 2>/dev/null; gh run view 1",
+                                       "cd .agent; (ls)"),
+        "bash_group_mut": _bash_turn("{ rm x; }", "(cd x && rm y)"),
+        "bash_func_ro": _bash_turn("q() { git log -1; }", "{ ls; cat x; }"),
+        "bash_heads_ro": _bash_turn("gh run watch 1 --exit-status", "claude plugin list",
+                                    "claude plugin update navigator@m",
+                                    "tail -1 f | python3 -m json.tool | head", "awk '/x/{f=1} f' file"),
+        "bash_heads_mut": _bash_turn("claude plugin install x", "awk '{print > \"f\"}' x",
+                                     "python3 -c 'print(1)'"),
+        "bash_make_ro": _bash_turn("make test", "make mod-gen-check mod-test", "cd /tmp && make check"),
+        "bash_make_mut": _bash_turn("make", "make build", "make test build", "make lint-check"),
         "agent": [_user("research"), _asst([_tool("a1", "Agent", {"prompt": "look"})]),
                   _user_blocks([_result("a1")]), _asst([_text("Agent finished.")])],
         # TASK-92: read-only subagents are not task actions; unknown types still are.
