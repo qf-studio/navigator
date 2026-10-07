@@ -209,6 +209,16 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-97** 📐 plan (2026-10-07) — one plugin-root resolver for skills. `CLAUDE_PLUGIN_ROOT` is
+  unset in the Bash tool; the fallback on 60 `SKILL.md` lines names the versioned cache dir
+  without its version segment (broken since the cache became versioned). Plan: session_start
+  writes the real root to `~/.config/navigator/plugin-root`, every skill reads it with one
+  two-line snippet, a lint test pins the snippet (`tasks/TASK-97-plugin-root-resolver.md`).
+- **TASK-96** 📐 plan (2026-10-07) — stop gate read-only shapes among unknown heads, from the
+  4-day replay (745 calls, 467 mutating): `2>/dev/null;` captured as a write (bug, 14 calls),
+  `(`/`{`/`name() {` openers, `gh run watch|view|list`, `claude plugin list|validate|test|update`,
+  `python3 -m json.tool`, `sed` without `-i`, `awk` without `>` (~45 flips); `make` test-like
+  targets (26) is the open relax-direction question (`tasks/TASK-96-stop-gate-unknown-heads.md`).
 - **TASK-95** ✅ (v8.3.2, 2026-10-06) — stop gate `code_committed` no longer fails on untracked
   paths (`??` lines skipped unless the turn touched them), a mutating Bash command that names a
   `.md` counts as `docs_updated`, `make mod-test` counts as a test run. The heredoc bucket
@@ -484,5 +494,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-06 (v8.3.2 — TASK-95 stop gate ignores untracked paths, heredoc bucket retired; v8.3.1 — TASK-94 quote-aware Bash classifier; v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-07 (TASK-96/97 plans; v8.3.2 — TASK-95 stop gate ignores untracked paths, heredoc bucket retired; v8.3.1 — TASK-94 quote-aware Bash classifier; v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)
