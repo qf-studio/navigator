@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-06T09:48:50.551393+00:00",
+  "last_updated": "2026-10-07T09:08:58.445601+00:00",
   "stats": {
-    "total_nodes": 238,
-    "total_edges": 856,
+    "total_nodes": 240,
+    "total_edges": 864,
     "memory_count": 89
   },
   "nodes": {
@@ -941,6 +941,28 @@
           "knowledge",
           "testing",
           "skills"
+        ]
+      },
+      "TASK-96": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-96-stop-gate-unknown-heads.md",
+        "title": "Stop gate \u2014 read-only shapes among the unknown heads",
+        "status": "research",
+        "concepts": [
+          "deployment",
+          "skills",
+          "testing"
+        ]
+      },
+      "TASK-97": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-97-plugin-root-resolver.md",
+        "title": "One plugin-root resolver for skills",
+        "status": "research",
+        "concepts": [
+          "theory of mind",
+          "skills",
+          "authentication",
+          "deployment",
+          "testing"
         ]
       }
     },
@@ -7770,6 +7792,46 @@
       "from": "mem-097",
       "to": "TASK-95",
       "type": "learned-from"
+    },
+    {
+      "from": "TASK-96",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-96",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-96",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-97",
+      "to": "theory of mind",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-97",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-97",
+      "to": "authentication",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-97",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-97",
+      "to": "testing",
+      "type": "implements"
     }
   ],
   "concept_index": {
@@ -7952,7 +8014,9 @@
       "mem-076",
       "TASK-83",
       "TASK-93",
-      "TASK-95"
+      "TASK-95",
+      "TASK-96",
+      "TASK-97"
     ],
     "context": [
       "TASK-32",
@@ -8198,7 +8262,9 @@
       "TASK-74",
       "TASK-83",
       "TASK-93",
-      "TASK-95"
+      "TASK-95",
+      "TASK-96",
+      "TASK-97"
     ],
     "session": [
       "TASK-32",
@@ -8286,7 +8352,8 @@
       "mem-065",
       "mem-066",
       "mem-067",
-      "mem-068"
+      "mem-068",
+      "TASK-97"
     ],
     "workflow": [
       "TASK-33",
@@ -8648,7 +8715,9 @@
       "TASK-74",
       "TASK-83",
       "TASK-93",
-      "TASK-95"
+      "TASK-95",
+      "TASK-96",
+      "TASK-97"
     ],
     "code quality": [
       "TASK-19",
@@ -8759,7 +8828,8 @@
       "TASK-66",
       "TASK-69",
       "TASK-74",
-      "TASK-83"
+      "TASK-83",
+      "TASK-97"
     ],
     "simplification": [
       "TASK-02",
