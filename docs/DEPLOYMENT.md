@@ -67,6 +67,13 @@ fallback runs the hook whether or not `CLAUDE_PLUGIN_ROOT` is set; a bare `if [ 
 silently no-ops the hook when the var is unset (the v6.14.0 silent-fail class). The release validator's
 `--verify-hooks` smoke test guards this.
 
+**Skill command pattern:** `CLAUDE_PLUGIN_ROOT` is set for hook commands only; the Bash tool
+runs skill commands without it. The session_start op therefore writes the root it resolved to
+`~/.config/navigator/plugin-root` on every start, and every `SKILL.md` resolves
+`PLUGIN_DIR` as env var → that file → the marketplace clone (`tests/test_skill_plugin_root.py`
+pins the snippet). The plugin cache is versioned (`.../navigator/<version>/`), so a flat
+cache path is never a valid root.
+
 ## Marketplace manifest (`.claude-plugin/marketplace.json`)
 
 Thin by design — it names the marketplace and points at the plugin:

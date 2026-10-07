@@ -34,8 +34,8 @@ Auto-invoke when user mentions:
 Before gathering requirements, query the knowledge graph for what we already know about frontend/component work in this project. This mirrors `navigator-research`'s Phase 0 and prevents re-deriving patterns we've already decided on.
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" \
   --action query --concept frontend \
   --graph-path .agent/knowledge/graph.json 2>/dev/null | head -40
@@ -349,8 +349,8 @@ After Step 7, emit an `execution_summary` JSON block that captures patterns/deci
 **Ingestion** (run from project root):
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 echo '<execution_summary JSON>' | python3 "$PLUGIN_DIR/skills/nav-graph/functions/execution_to_graph.py" -
 ```
 

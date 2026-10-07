@@ -50,8 +50,8 @@ repo**, stored under `~/.config/navigator/onboarding/<repo-id>/` (or
 the same repo each get their own run; nothing lands in tracked paths (GH-31).
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 NAV_ONBOARD_DIR=$(python3 "$PLUGIN_DIR/skills/nav-onboard/functions/onboarding_paths.py" .)
 if [ -f "$NAV_ONBOARD_DIR/.completed" ]; then
   echo "COMPLETED"
@@ -75,8 +75,8 @@ gitignores it now). Do not read `.completed` from there.
 Run project analyzer to detect tech stack:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/project_analyzer.py"
 ```
 
@@ -98,8 +98,8 @@ python3 "$PLUGIN_DIR/skills/nav-onboard/functions/project_analyzer.py"
 Run skill recommender based on project analysis:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/skill_recommender.py"
 ```
 
@@ -163,8 +163,8 @@ mkdir -p "$NAV_ONBOARD_DIR"
 ```
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 # Run progress_tracker.py init
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/progress_tracker.py" init [flow_type] [project_type]
 ```
@@ -247,8 +247,8 @@ User says "done" or similar when ready to continue.
 Run task validator:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/task_validator.py" [skill_name]
 ```
 
@@ -262,8 +262,8 @@ python3 "$PLUGIN_DIR/skills/nav-onboard/functions/task_validator.py" [skill_name
 #### 6.4: Update Progress
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/progress_tracker.py" update [skill_name] completed "[notes]"
 ```
 
@@ -290,8 +290,8 @@ Continue? [Y/n]
 After all tasks complete, generate workflow guide:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-onboard/functions/workflow_generator.py"
 ```
 

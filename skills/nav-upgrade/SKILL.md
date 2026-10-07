@@ -332,10 +332,8 @@ with the plugin from v6.13.0 onwards.
 `.claude/settings.json` and must be removed to prevent double-firing:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-if [ ! -d "$PLUGIN_DIR" ]; then
-  PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
-fi
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 
 python3 "$PLUGIN_DIR/skills/nav-upgrade/functions/migrate_hooks_out_of_settings.py" \
     .claude/settings.json
@@ -402,7 +400,9 @@ The product-design skill (v3.4.0+) requires Python dependencies:
 
 **One-time setup** (30 seconds):
 ```bash
-cd ~/.claude/plugins/marketplaces/navigator-marketplace/skills/product-design
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+cd "$PLUGIN_DIR/skills/product-design"
 ./setup.sh
 ```
 

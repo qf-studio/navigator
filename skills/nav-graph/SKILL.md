@@ -82,8 +82,8 @@ fi
 
 **Initialize if not exists**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_builder.py" \
   --agent-dir .agent \
   --output .agent/knowledge/graph.json
@@ -102,8 +102,8 @@ User: "Any pitfalls for auth?"
 
 **Run query**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" \
   --action query \
   --concept "testing" \
@@ -159,8 +159,8 @@ User: "Remember we decided to use JWT over sessions for scaling"
 
 **Create memory**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" \
   --action add-memory \
   --memory-type pitfall \
@@ -254,8 +254,8 @@ This will be surfaced when working on auth or testing topics.
 
 **Build from existing docs**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_builder.py" \
   --agent-dir .agent \
   --output .agent/knowledge/graph.json
@@ -290,8 +290,8 @@ rebuild.
 
 **Display graph statistics**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" \
   --action stats \
   --graph-path .agent/knowledge/graph.json
@@ -324,8 +324,8 @@ User: "What's related to TASK-29?"
 
 **Run traversal**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" \
   --action related \
   --node-id "TASK-29" \
@@ -401,8 +401,8 @@ Added to graph.
 ### nav-profile (Corrections)
 Corrections auto-create memories via `correction_to_memory.py`:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 # When correction detected in nav-profile:
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/correction_to_memory.py" \
   --action convert-one \
@@ -418,8 +418,8 @@ python3 "$PLUGIN_DIR/skills/nav-graph/functions/correction_to_memory.py" \
 
 **Sync all corrections**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/correction_to_memory.py" \
   --action sync \
   --profile-path .agent/.user-profile.json \
@@ -439,8 +439,8 @@ Markers reference graph state:
 The `navigator-research` agent emits a structured `research_findings` JSON block alongside its markdown summary. After the agent returns, ingest those findings as graph memories via `research_to_graph.py`:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 # Save the JSON block from the agent output to a file (or pipe via stdin)
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/research_to_graph.py" findings.json
 
@@ -503,8 +503,8 @@ decay/staleness manually when curating the graph.
 
 ### Health Check
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action health
 ```
 
@@ -553,8 +553,8 @@ field removed on disk, never re-syncs `summary`). Broken-link nodes are
 never auto-deleted and concept refs are never rewritten — those two are
 report-and-hint only:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 # Dry-run report
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action reconcile
 # Register unindexed files + apply TRIZ field updates
@@ -597,8 +597,8 @@ Idempotently dedupe `(from, to, type)` edge rows, drop edges that reference a
 missing node id, and normalize out-of-range memory confidences (a value like
 `90.0` is treated as `90%` → `0.9`). Safe to re-run:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action repair
 ```
 
@@ -606,24 +606,24 @@ python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action r
 Find memories that may contradict each other. **Advisory only** — a
 high-false-positive keyword heuristic that does **not** affect the health score:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action conflicts
 ```
 
 ### Stale Memory Detection
 Find memories not validated in 90+ days:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action stale --stale-days 90
 ```
 
 ### Low Confidence Pruning
 Find and optionally remove low-confidence memories:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 # Preview what would be removed
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action prune --threshold 0.3 --dry-run
 
@@ -637,8 +637,8 @@ running it twice on the same day is a no-op (each memory tracks `last_decayed`).
 The rate defaults to `knowledge_graph.confidence_decay_rate` when `--decay-rate`
 is omitted. This is **not** wired to any hook; run it manually when curating:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_maintenance.py" --action decay
 ```
 

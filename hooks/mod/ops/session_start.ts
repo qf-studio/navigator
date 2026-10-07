@@ -2,7 +2,7 @@
 // SessionStart: archive the v6 state files once, then inject the Navigator session block
 // (config, drift, graph stats, memories, profile, open tasks, marker, navigator index).
 import { getPath } from '../lib/config'
-import { MODES, modeEnabled, personalPath, resolve, statusLine } from '../lib/reply_modes'
+import { MODES, modeEnabled, personalDir, personalPath, resolve, statusLine } from '../lib/reply_modes'
 import { pyInt } from '../lib/life-budget'
 import {
   type PyDict, type PyValue, cpLen, cpSlice, dumps, fromJs, get, isDict, isFile, loads,
@@ -261,10 +261,26 @@ export const buildBody = async (ctx: OpCtx): Promise<string> => {
   return body
 }
 
+export const PLUGIN_ROOT_FILE = 'plugin-root'
+
+/**
+ * session_start._publish_plugin_root (TASK-97): the Bash tool never sees CLAUDE_PLUGIN_ROOT,
+ * so skills read the root from `<config home>/plugin-root`, rewritten on every session start.
+ * Best-effort: a failure must never cost the user their context injection.
+ */
+export const publishPluginRoot = async (io: Io): Promise<void> => {
+  try {
+    await io.write(`${personalDir(await io.env())}/${PLUGIN_ROOT_FILE}`, `${io.pluginRoot}\n`)
+  } catch {
+    // best-effort
+  }
+}
+
 const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   const agent = `${ctx.root}/.agent`
   if ((await statOf(ctx.io, agent))?.kind !== 'dir') return null
   await archiveLegacyState(ctx.io, agent)
+  await publishPluginRoot(ctx.io)
   const body = await buildBody(ctx)
   return body ? { additional_context: body } : null
 }

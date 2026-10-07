@@ -33,8 +33,8 @@ Invoke this skill when the user:
 `.agent/.nav-config.json` (default `local`):
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-task/functions/task_id_generator.py" \
   --title "{feature name}" --body "{one-line summary}" --json
 ```
@@ -74,8 +74,8 @@ Before writing the plan, query the knowledge graph for memories relevant
 to this feature — pitfalls and patterns the project has already paid for:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 
 if [ -f ".agent/knowledge/graph.json" ]; then
   python3 "$PLUGIN_DIR/skills/nav-graph/functions/memory_recall.py" \
@@ -419,8 +419,8 @@ Keep index organized (active tasks first, completed below).
 **If knowledge graph exists**, sync task to graph:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 if [ -f ".agent/knowledge/graph.json" ]; then
   python3 "$PLUGIN_DIR/skills/nav-graph/functions/task_to_graph.py" \
     --action add \

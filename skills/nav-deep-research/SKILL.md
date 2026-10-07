@@ -36,10 +36,10 @@ Resolve the functions directory once and reuse the absolute path in every comman
 every spawn prompt:
 
 ```bash
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 NDR=""
-for cand in "${CLAUDE_PLUGIN_ROOT:-/nonexistent}/skills/nav-deep-research/functions" \
-            "$PWD/skills/nav-deep-research/functions" \
-            $(find "$HOME/.claude/plugins/cache/navigator-marketplace/navigator" -maxdepth 4 -type d -path "*/skills/nav-deep-research/functions" 2>/dev/null | sort -V | tail -1); do
+for cand in "$PLUGIN_DIR/skills/nav-deep-research/functions" "$PWD/skills/nav-deep-research/functions"; do
   [ -f "$cand/research_run.py" ] && NDR="$cand" && break
 done
 echo "NDR_FUNCTIONS=$NDR"

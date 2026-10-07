@@ -336,8 +336,14 @@ hardcodes an install path:
   `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/navigator-marketplace}` and
   append `/hooks/nav_dispatch.py`, guarded by `if [ -f "$f" ]` so a missing file is a
   silent no-op, never an error
-- Skills that shell out (`skills/nav-stats/SKILL.md`) resolve
-  `PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-...}"` before calling their functions
+- Skills that shell out resolve the root in three steps (TASK-97): `CLAUDE_PLUGIN_ROOT`
+  (hooks, tests), then `~/.config/navigator/plugin-root` (one line the session_start op
+  writes on every start from the root it knows, `NAVIGATOR_CONFIG_HOME` overrides), then
+  the marketplace clone for a GitHub install that never ran a session start. The Bash tool
+  never sees `CLAUDE_PLUGIN_ROOT`, so the file is the path every skill command takes. The
+  snippet is identical in every `SKILL.md` and pinned by `tests/test_skill_plugin_root.py`;
+  the flat cache path (`plugins/cache/navigator-marketplace/navigator`) is never a root —
+  the cache is versioned (`.../navigator/<version>/`)
 - `hooks/nav_hook_lib/memory.py` reads `CLAUDE_PLUGIN_ROOT` first and the legacy
   `CLAUDE_PLUGIN_DIR` only as a fallback (the latter was never set by the host; the switch
   shipped in v6.15.7)
@@ -345,6 +351,7 @@ hardcodes an install path:
   per host version
 
 **Rule**: `CLAUDE_PLUGIN_ROOT` with a documented fallback, and the file-exists guard.
+Skills use the two-line resolver, never a hand-written fallback.
 Project files are always relative to the project root (`.agent/...`), never to the plugin.
 
 ### Pattern: Reject Log

@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 # The dispatcher shim puts hooks/ on sys.path; colocated tests pin it too.
-from nav_hook_lib import config, hio
+from nav_hook_lib import config, hio, personal
 
 SENTINEL = "<!-- nav-session-start-injected:v1 -->"
 CHAR_BUDGET = 9500  # v6 default; leaves headroom under Claude Code's 10k cap
@@ -420,12 +420,33 @@ def _build_body(ctx, root: Path):
     return body
 
 
+PLUGIN_ROOT_FILE = "plugin-root"
+
+
+def _publish_plugin_root(plugin_dir) -> None:
+    """Write the resolved plugin root to ``<config home>/plugin-root`` (TASK-97).
+
+    ``CLAUDE_PLUGIN_ROOT`` is set for hook commands and unset in the Bash tool, so
+    every skill command resolves the root from this file (one line, no trailing
+    space) and falls back to the marketplace clone only when it is missing.
+    Rewritten on every session start so an update is reflected on the next start.
+    Best-effort: a failure must never cost the user their context injection.
+    """
+    if plugin_dir is None:
+        return
+    try:
+        hio.atomic_write_text(personal.config_home() / PLUGIN_ROOT_FILE, f"{plugin_dir}\n")
+    except Exception:
+        pass
+
+
 def run(ctx):
     root = hio.project_root(ctx.payload)
     agent_dir = root / ".agent"
     if not agent_dir.is_dir():
         return None
     _archive_legacy_state(agent_dir)
+    _publish_plugin_root(_resolve_plugin_dir())
     body = _build_body(ctx, root)
     if not body:
         return None

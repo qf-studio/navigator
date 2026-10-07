@@ -34,8 +34,8 @@ mem-074 — new blocking behaviour ships opt-in, by condition.)
 3. **Reuse inventory**: what already does ≥80% of this? `path:line` or `none found`.
 4. **Prior resolutions + principle prompts**:
    ```bash
-   PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-   [ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+   PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+   [ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
    python3 "$PLUGIN_DIR/skills/nav-triz/functions/triz_suggest.py" \
      --contradiction "<improving A> vs <worsening B>"
    ```

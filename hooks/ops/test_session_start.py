@@ -24,6 +24,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))          # this dir
@@ -195,6 +196,36 @@ class InjectionBodyTest(SessionStartOpTestBase):
             ctx = self.make_ctx(root=other_root)
             self.assertIsNone(session_start.run(ctx))
             self.assertEqual(list(other_root.iterdir()), [])
+        # TASK-97: no plugin-root file either; the write follows the .agent guard.
+        self.assertFalse((self.root / "cfg-home" / "plugin-root").exists())
+
+
+class PluginRootPublishTest(SessionStartOpTestBase):
+    """TASK-97: every session start writes the resolved plugin root for skills."""
+
+    def plugin_root_file(self) -> Path:
+        return self.root / "cfg-home" / "plugin-root"
+
+    def test_env_root_is_published_one_line(self):
+        plugin = self.root / "plugin"
+        (plugin / "skills" / "nav-start").mkdir(parents=True)
+        os.environ["CLAUDE_PLUGIN_ROOT"] = str(plugin)
+        self.addCleanup(os.environ.pop, "CLAUDE_PLUGIN_ROOT", None)
+        self.run_op()
+        self.assertEqual(self.plugin_root_file().read_text(encoding="utf-8"), f"{plugin}\n")
+
+    def test_rewritten_on_every_start(self):
+        self.plugin_root_file().parent.mkdir(parents=True)
+        self.plugin_root_file().write_text("/stale\n", encoding="utf-8")
+        self.run_op()
+        repo = Path(session_start.__file__).resolve().parent.parent.parent
+        self.assertEqual(self.plugin_root_file().read_text(encoding="utf-8"), f"{repo}\n")
+
+    def test_write_failure_keeps_the_injection(self):
+        with mock.patch.object(session_start.hio, "atomic_write_text",
+                               side_effect=OSError("disk full")):
+            result = self.run_op()
+        self.assertIn(session_start.SENTINEL, result["additional_context"])
 
 
 class LegacyStateArchivalTest(SessionStartOpTestBase):

@@ -20,6 +20,7 @@ build:
 # discovery.)
 TEST_DIRS := \
 	hooks \
+	tests \
 	hooks/nav_hook_lib \
 	tests/golden \
 	tests/harness-conformance \

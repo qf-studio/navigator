@@ -1,6 +1,6 @@
 # TASK-97: One plugin-root resolver for skills
 
-**Status**: 📐 Plan — 2026-10-07 (research done, awaiting confirmation)
+**Status**: ✅ Implemented — 2026-10-07 (option A, hook-written file + two-line snippet; released in v8.3.3)
 
 ## Origin
 
@@ -46,6 +46,24 @@ var; the fallback is documentation).
 
 **D. Docs.** `.agent/system/plugin-patterns.md` and `docs/DEPLOYMENT.md` describe the three-step
 order; `tests/golden/README.md` keeps its note.
+
+## Result (2026-10-07)
+
+Option A shipped. `session_start` (Python `_publish_plugin_root`, mod `publishPluginRoot`)
+writes `<config home>/plugin-root` after the `.agent` guard on every start; a write failure
+never costs the injection. The snippet honours `XDG_CONFIG_HOME` like `personal.config_home()`:
+
+```bash
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+```
+
+60 cache-fallback pairs across 18 skills replaced, plus the four odd forms (nav-init's bare
+marketplaces path, nav-start's auto_updater line, nav-upgrade's product-design `cd`,
+nav-deep-research's `find` over the cache). `tests/test_skill_plugin_root.py` (new `tests`
+entry in `TEST_DIRS`) pins the snippet, the guard and the shared indent, and forbids the flat
+cache path. Verified with `CLAUDE_PLUGIN_ROOT` unset on this machine: the snippet resolves
+the repo and lists `skills/`. Parity: lifeops case `plugin-root-published` records the write.
 
 ## Won't do
 

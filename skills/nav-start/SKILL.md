@@ -65,8 +65,8 @@ Check if user is running latest Navigator version:
 
 ```bash
 # Run version checker (optional - doesn't block session start)
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 if [ -f "$PLUGIN_DIR/scripts/check-version.sh" ]; then
   bash "$PLUGIN_DIR/scripts/check-version.sh"
 
@@ -89,7 +89,9 @@ Run exactly this one command. It reads `auto_update` from the project config, ch
 latest release, and updates the plugin only when one is available. It prints one JSON object.
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/navigator-marketplace}/skills/nav-start/functions/auto_updater.py"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+python3 "$PLUGIN_DIR/skills/nav-start/functions/auto_updater.py"
 ```
 
 Report **only** what that JSON says. Never write an update line from memory or a template:
@@ -183,8 +185,8 @@ Parse:
 **Check if project config version matches plugin version**:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 DRIFT_RESULT=$(python3 "$PLUGIN_DIR/skills/nav-start/functions/auto_updater.py" --check-drift 2>/dev/null || echo '{"has_drift": false}')
 HAS_DRIFT=$(echo "$DRIFT_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('has_drift', False))" 2>/dev/null)
 
@@ -216,8 +218,8 @@ This helps users understand why skills may behave unexpectedly.
 ```bash
 if [ -f ".agent/knowledge/graph.json" ]; then
   # Get graph stats
-  PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-  [ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+  PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+  [ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
   GRAPH_STATS=$(python3 "$PLUGIN_DIR/skills/nav-graph/functions/graph_manager.py" --action stats --graph-path .agent/knowledge/graph.json 2>/dev/null)
   echo "$GRAPH_STATS"
 fi
@@ -332,8 +334,8 @@ Run the OpenTelemetry session statistics script:
 
 ```bash
 # Resolve the installed plugin directory
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-start/scripts/otel_session_stats.py"
 ```
 
@@ -455,8 +457,8 @@ Skipping this check = WORKFLOW VIOLATION
 Check if this is first session after install/update:
 
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 FIRST_SESSION_MARKER=".agent/.features-shown-$(cat .agent/.nav-config.json | python3 -c "import sys,json; print(json.load(sys.stdin).get('version',''))" 2>/dev/null)"
 
 if [ ! -f "$FIRST_SESSION_MARKER" ]; then
@@ -499,8 +501,8 @@ No active tasks found. What would you like to work on?
 
 **Execution**:
 ```bash
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/navigator-marketplace/navigator}"
-[ -d "$PLUGIN_DIR" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 python3 "$PLUGIN_DIR/skills/nav-start/scripts/otel_session_stats.py"
 ```
 
