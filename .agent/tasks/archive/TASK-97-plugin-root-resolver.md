@@ -1,6 +1,6 @@
 # TASK-97: One plugin-root resolver for skills
 
-**Status**: ✅ Implemented — 2026-10-07 (option A, hook-written file + two-line snippet; released in v8.3.3)
+**Status**: ✅ Released — v8.3.3, 2026-10-07 (option A, hook-written file + two-line snippet)
 
 ## Origin
 

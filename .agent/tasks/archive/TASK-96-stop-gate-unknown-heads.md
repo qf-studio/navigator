@@ -1,6 +1,6 @@
 # TASK-96: Stop gate — read-only shapes among the unknown heads
 
-**Status**: ✅ Implemented — 2026-10-07 (A+B+C+D, both runtimes; released in v8.3.3)
+**Status**: ✅ Released — v8.3.3, 2026-10-07 (A+B+C+D, both runtimes)
 
 ## Origin
 
