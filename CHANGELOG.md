@@ -6,6 +6,17 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.3] — 2026-10-07
+
+Skills resolve the plugin root from `~/.config/navigator/plugin-root`, a one-line file the
+session_start op writes on every start, because `CLAUDE_PLUGIN_ROOT` is unset in the Bash
+tool and the old cache fallback lacked the version segment (TASK-97). The Stop gate's Bash
+classifier ends a redirect target at `;`, classifies subshells, groups and function bodies by
+what runs inside, and reads `gh run watch`, `claude plugin list|validate|test|update`,
+`python3 -m json.tool`, `awk` without `>` and test-shaped `make` targets as read-only; a
+four-day replay drops mutating verdicts from 474 to 419 with no real write flipped (TASK-96).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.3.md)
+
 ## [v8.3.2] — 2026-10-06
 
 The Stop gate's `code_committed` indicator skips untracked `??` paths unless the turn touched
