@@ -209,6 +209,11 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-98** ✅ (2026-10-07, unreleased) — update notice curl fallback: a session with
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` refuses every plugin `$.http.fetch`, so the
+  release check repeats the same GET through curl when `auto_update.curl_fallback: true`
+  (ships off; a non-2xx answer never falls back, three mod tests)
+  (`tasks/TASK-98-update-curl-fallback.md`).
 - **TASK-97** ✅ (v8.3.3, 2026-10-07) — one plugin-root resolver for skills. `CLAUDE_PLUGIN_ROOT`
   is unset in the Bash tool and the old cache fallback lacked the version segment, so
   session_start now writes the real root to `~/.config/navigator/plugin-root` on every start

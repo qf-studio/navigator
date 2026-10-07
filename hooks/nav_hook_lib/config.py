@@ -92,6 +92,7 @@ DEFAULTS = {
     "auto_update": {
         "enabled": True,
         "check_interval_hours": 1,
+        "curl_fallback": False,
     },
     "pilot": {
         "enabled": True,

@@ -212,8 +212,10 @@ Read-only update notice on session start (v8: Navigator never updates itself fro
 - Shows `claude plugin update navigator@navigator-marketplace` when one is newer
 - "Start my Navigator session" applies it (nav-start Step 1.5); restart Claude Code after
 - Never blocks session start; disabled means no check and no notice
+- Under `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` the engine refuses the fetch; opt in with
+  `curl_fallback: true` to repeat the same GET through curl (ships off)
 
-Config: auto_update.enabled, check_interval_hours (1)
+Config: auto_update.enabled, check_interval_hours (1), curl_fallback (false)
 ```
 
 ## Predefined Functions

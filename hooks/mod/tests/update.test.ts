@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { dueForCheck, latestStable, updateNotice, updateSettings } from '../lib/update'
+import { RELEASES_URL, curlArgv, dueForCheck, latestStable, updateNotice, updateSettings } from '../lib/update'
 
 const releases = (...items: Record<string, unknown>[]): string => JSON.stringify(items)
 
@@ -22,9 +22,20 @@ describe('update notice logic (TASK-81)', () => {
     expect(updateNotice('8.0.0', null)).toBeNull()
   })
   test('settings accept the boolean and the block form', () => {
-    expect(updateSettings({ auto_update: true })).toEqual({ enabled: true, intervalHours: 1 })
+    expect(updateSettings({ auto_update: true })).toEqual({ enabled: true, intervalHours: 1, curlFallback: false })
     expect(updateSettings({ auto_update: false }).enabled).toBe(false)
     expect(updateSettings({ auto_update: { enabled: true, check_interval_hours: 6 } }).intervalHours).toBe(6)
+  })
+  test('curl fallback seeds off and needs an explicit true', () => {
+    expect(updateSettings({}).curlFallback).toBe(false)
+    expect(updateSettings({ auto_update: { curl_fallback: 'yes' } }).curlFallback).toBe(false)
+    expect(updateSettings({ auto_update: { curl_fallback: true } }).curlFallback).toBe(true)
+  })
+  test('curl argv is the same GET: no shell, the releases URL last', () => {
+    const argv = curlArgv(RELEASES_URL)
+    expect(argv[0]).toBe('curl')
+    expect(argv[argv.length - 1]).toBe(RELEASES_URL)
+    expect(argv.join(' ')).not.toContain('sh -c')
   })
   test('interval gate', () => {
     expect(dueForCheck(undefined, 0, 1)).toBe(true)
@@ -37,6 +48,7 @@ describe('session.start update check', () => {
   type World = {
     pilot?: string; latest?: string; fetches: string[]; toasts: string[]
     config?: Record<string, unknown>; manifest?: false; offline?: true; runs?: (readonly string[])[]
+    curl?: string
   }
   const world = (on: On, opts: World) => {
     mock.env(on, { HOME: '/h', ...(opts.pilot ? { PILOT_EXECUTOR: opts.pilot } : {}) })
@@ -64,7 +76,9 @@ describe('session.start update check', () => {
     on('command.register', (_$, e) => ({ value: { command: e.name } }))
     on('process.run', (_$, e) => {
       opts.runs?.push(e.argv)
-      return { value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+      const stdout = e.argv[0] === 'curl' && opts.curl ? releases({ tag_name: `v${opts.curl}` }) : ''
+      const exitCode = stdout === '' ? 1 : 0
+      return { value: { exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     })
     on('fs.list', () => ({ value: [] }))
     on('session.start', (_$, e) => ({ cwd: e.cwd }))
@@ -104,6 +118,38 @@ describe('session.start update check', () => {
     await start($)
     // two fetches: a failed check writes no update_checked_at, so nothing throttles the retry
     expect(fetches).toHaveLength(2)
+    expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
+  })
+  test('refused fetch + curl_fallback → the same GET via curl, one notice, check recorded', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    const runs: (readonly string[])[] = []
+    world(on, { offline: true, curl: '8.0.1', config: { auto_update: { curl_fallback: true } }, fetches, toasts, runs })
+    await start($)
+    await start($)
+    const curls = runs.filter(argv => argv[0] === 'curl')
+    expect(curls).toHaveLength(1)
+    expect(curls[0]![curls[0]!.length - 1]).toBe(RELEASES_URL)
+    expect(fetches).toHaveLength(1)
+    expect(toasts.filter(t => t.includes('8.0.1 available'))).toHaveLength(2)
+  })
+  test('refused fetch without the opt-in → no curl, no notice', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    const runs: (readonly string[])[] = []
+    world(on, { offline: true, curl: '8.0.1', fetches, toasts, runs })
+    await start($)
+    expect(runs.filter(argv => argv[0] === 'curl')).toHaveLength(0)
+    expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
+  })
+  test('curl fails too → nothing recorded, the next start retries', async ($, on) => {
+    const fetches: string[] = []
+    const toasts: string[] = []
+    const runs: (readonly string[])[] = []
+    world(on, { offline: true, config: { auto_update: { curl_fallback: true } }, fetches, toasts, runs })
+    await start($)
+    await start($)
+    expect(runs.filter(argv => argv[0] === 'curl')).toHaveLength(2)
     expect(toasts.filter(t => t.includes('available'))).toHaveLength(0)
   })
   test('manifest unreadable → no notice even when a newer release exists', async ($, on) => {

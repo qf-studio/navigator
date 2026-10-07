@@ -510,7 +510,9 @@ missing key or any error. The mod's breaker hands a crashing op back to Python.
 
 **Updates**:
 - Navigator never updates itself from a hook; the mod shows a read-only notice when a newer
-  release exists (`hooks/mod/lib/update.ts`, `auto_update.check_interval_hours`)
+  release exists (`hooks/mod/lib/update.ts`, `auto_update.check_interval_hours`); when the
+  engine refuses the fetch (`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`) the same GET goes
+  through curl only with `auto_update.curl_fallback: true` (off by default, TASK-98)
 - Users run `claude plugin update navigator@navigator-marketplace` and restart the host
 - GitHub CDN caches for 1-2 hours; `file://` bypasses the cache
 

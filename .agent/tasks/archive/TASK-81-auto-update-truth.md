@@ -99,7 +99,8 @@ CLI never), five new mod tests + five Python tests, plugin docs and the docs sit
 drift section (`tests/golden/README.md`, deviations).
 
 Follow-ups, out of scope here:
-- The mod's release fetch has no `curl` fallback when `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
-  refuses `$.http.fetch` (the judge got one in TASK-84); on such machines the notice never fires.
+- ~~The mod's release fetch has no `curl` fallback when `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
+  refuses `$.http.fetch` (the judge got one in TASK-84); on such machines the notice never fires.~~
+  Done in TASK-98 (2026-10-07): opt-in `auto_update.curl_fallback`.
 - The skill-side `auto_update()` still reads the current version via `claude plugin list`. Fine
   outside a hook; could reuse the manifest reader for one less subprocess.

@@ -18,7 +18,7 @@ import { readJson } from './lib/config'
 import { makeCtx } from './lib/context'
 import { surfaceHealth } from './lib/life-health'
 import { getPath, isPilotExecutor, loadConfig } from './lib/config'
-import { RELEASES_URL, dueForCheck, latestStable, updateNotice, updateSettings } from './lib/update'
+import { RELEASES_URL, dueForCheck, latestStable, releasesViaCurl, updateNotice, updateSettings } from './lib/update'
 import type { Io, OpCtx } from './lib/types'
 import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
@@ -413,17 +413,18 @@ const checkForUpdate = async ($: EngineInterface): Promise<void> => {
   if (await isPilotExecutor(io)) return
   const root = await projectRoot(io)
   if (root === null) return
-  const { enabled, intervalHours } = updateSettings(await loadConfig(io, root))
+  const { enabled, intervalHours, curlFallback } = updateSettings(await loadConfig(io, root))
   if (!enabled) return
   const now = await $.clock.now()
   let latest = (await $.store.get('update_latest')) as string | null | undefined
   if (dueForCheck(await $.store.get('update_checked_at'), now, intervalHours)) {
-    const response = await Promise.race([
-      $.http.fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } }),
-      $.clock.sleep(4000).then(() => null),
-    ]).catch(() => null)
-    if (response !== null && response.ok) {
-      latest = latestStable(response.text)
+    // A refused fetch (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC refuses every plugin fetch)
+    // repeats the same GET through curl when the user opted in; a non-2xx answer does not.
+    const fetched = $.http.fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } })
+      .then(r => (r.ok ? r.text : null), () => (curlFallback ? releasesViaCurl(io, root) : null))
+    const text = await Promise.race([fetched, $.clock.sleep(4500).then(() => null)]).catch(() => null)
+    if (text !== null) {
+      latest = latestStable(text)
       await $.store.set('update_latest', latest ?? null)
       await $.store.set('update_checked_at', now)
     }

@@ -114,7 +114,8 @@ Copy from plugin's `templates/` directory to `.agent/`:
   "compact_strategy": "conservative",
   "auto_update": {
     "enabled": true,
-    "check_interval_hours": 1
+    "check_interval_hours": 1,
+    "curl_fallback": false
   }
 }
 ```

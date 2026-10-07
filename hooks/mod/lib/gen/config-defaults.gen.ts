@@ -58,7 +58,8 @@ export const CONFIG_DEFAULTS = {
   },
   "auto_update": {
     "enabled": true,
-    "check_interval_hours": 1
+    "check_interval_hours": 1,
+    "curl_fallback": false
   },
   "pilot": {
     "enabled": true,

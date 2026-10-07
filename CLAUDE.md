@@ -180,7 +180,10 @@ start the mod compares its own version with the latest GitHub release (at most e
 `auto_update.check_interval_hours`, never under Pilot) and shows a notice with the command:
 `claude plugin update navigator@navigator-marketplace`. "Start my Navigator session" runs the
 nav-start skill, whose Step 1.5 calls `auto_updater.py` once and reports its JSON. Restart
-Claude Code after an update; it caches skill paths at session start.
+Claude Code after an update; it caches skill paths at session start. A session with
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` refuses every plugin fetch, so the notice never
+fires there unless `auto_update.curl_fallback: true` repeats the same GET through `curl`
+(TASK-98; ships off, usually set in `.nav-config.local.json`).
 
 ### Task Mode (v5.6.0)
 
@@ -424,7 +427,7 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
   "auto_load_navigator": true,
   "compact_strategy": "conservative",
   "simplification": { "enabled": true, "trigger": "post-implementation", "scope": "modified" },
-  "auto_update": { "enabled": true, "check_interval_hours": 1 },
+  "auto_update": { "enabled": true, "check_interval_hours": 1, "curl_fallback": false },
   "dispatcher": { "enabled": true },
   "tier1": { "enabled": false, "rules": {} },
   "stop_completion": { "enabled": false, "continue_enabled": false, "max_continues": 2 },
