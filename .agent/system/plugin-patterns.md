@@ -703,5 +703,5 @@ templates/
 
 ---
 
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-07 (TASK-97 plugin-root resolver)
 **Pattern Version**: 2.0

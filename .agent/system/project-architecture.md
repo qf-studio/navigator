@@ -357,6 +357,29 @@ order. The mirror table is `hooks/mod/lib/reply_modes.ts`; the rule blocks are b
 across runtimes, and `MAX_TOTAL_BLOCK_CHARS = 1600` is asserted by tests over their sum.
 Adding a mode: `.agent/tasks/TASK-93-reply-modes-ste.md` "Adding a mode".
 
+**Plugin root for skills** (v8.3.3 TASK-97): `CLAUDE_PLUGIN_ROOT` is set for hook commands
+only; the Bash tool runs skill commands without it. The session_start op (Python
+`_publish_plugin_root`, mod `publishPluginRoot`) writes the root it runs from to
+`~/.config/navigator/plugin-root` (one line, atomic, after the `.agent` guard, best-effort)
+on every start. Every `SKILL.md` resolves `PLUGIN_DIR` with the same two lines: env var →
+that file → `~/.claude/plugins/marketplaces/navigator-marketplace`;
+`tests/test_skill_plugin_root.py` pins the snippet. The flat cache path is never a root (the
+cache is versioned, `.../navigator/<version>/`). On a directory-source marketplace the root
+is the repo itself; on a GitHub install it is the versioned cache dir.
+
+**Stop gate Bash classifier** (`hooks/ops/stop_completion.py` `_bash_readonly`, mirror
+`hooks/mod/lib/stop-bash.ts` `bashReadonly`): a Bash-only turn is a task action only when some
+command is not provably read-only, so the gate may over-fire but never under-fire. Quoted spans
+are masked (TASK-94); `$(…)` substitutions are classified recursively; a redirect to anything
+but `/dev/null` or a descriptor writes (the target ends at `;&|`, TASK-96); subshell, group
+and function bodies are classified by what runs inside (TASK-96); heads resolve by allowlist,
+by subcommand pair for `git`, `gh` and `claude plugin`, by flag for `curl`/`sed`, by target
+for `make` (test-shaped only, the one relax-direction rule), by program text for `awk`, and
+`python3 -m json.tool` is the only python form that reads. Unknown heads (`python3 -c`,
+scripts) stay mutating by design; the tree digest catches a wrong read-only verdict on the
+next Stop. `scripts/stop_gate_replay.py --days N` buckets recent calls by blame head so every
+new rule comes with a measured flip count (TASK-95/96).
+
 **Not committed to plugin repo**: Generated per-project
 
 ---
@@ -450,7 +473,8 @@ Adding a mode: `.agent/tasks/TASK-93-reply-modes-ste.md` "Adding a mode".
 
 ---
 
-**Last Updated**: 2026-10-05 (v8 runtime: mod + Python fallback, ownership, shared state,
+**Last Updated**: 2026-10-07 (v8 runtime: mod + Python fallback, ownership, shared state,
 parity fixtures, reject log; skills replace the commands directory; release via tag push;
-config layering and reply-modes table TASK-93)
-**Version**: 8.2.8 (8.3.0 reply modes implemented, unreleased)
+config layering and reply-modes table TASK-93; plugin-root file TASK-97; stop gate Bash
+classifier summary TASK-96)
+**Version**: 8.3.3

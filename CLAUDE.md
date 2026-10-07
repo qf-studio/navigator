@@ -87,7 +87,9 @@ This text is documentation, not the mechanism.
 "Start my Navigator session" remains the friendly way to begin: it loads
 `.agent/DEVELOPMENT-README.md` (docs index, ~2k tokens) and current task context (~3k).
 Session context is injected at session start — enforced by session_start (hook runtime);
-this text is documentation, not the mechanism.
+this text is documentation, not the mechanism. The same op writes the plugin root to
+`~/.config/navigator/plugin-root`, which every skill reads because the Bash tool never sees
+`CLAUDE_PLUGIN_ROOT` (TASK-97, v8.3.3).
 
 ### Workflow Gating
 
@@ -447,5 +449,5 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
 
 **For complete Navigator documentation**: See `.agent/DEVELOPMENT-README.md`
 
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-07
 **Navigator Version**: 8.3.3
