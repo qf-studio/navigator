@@ -198,6 +198,16 @@ gh run watch --repo qf-studio/navigator-docs --exit-status \
 curl -s https://navigator.quantflow.studio | grep -o 'v[0-9]\.[0-9]\.[0-9]'
 ```
 
+Pitfalls seen on 2026-10-08 (two releases): (1) a `prod-*` push creates **two** deploy runs,
+one for the `main` build (skipped) and one for the tag, and both list `head_branch: main`
+because they are `workflow_run` events — pick the newest run whose conclusion is not
+`skipped`, or `gh run view <id> --log | grep prod-` to confirm the tag; (2) GitHub queued the
+runs ~5 minutes after the push and the events API lagged as well — poll, do not re-dispatch;
+(3) the tag push prints `Bypassed rule violations … creations being restricted` from the org
+tag ruleset and still succeeds; (4) a cancelled "Deploy service" job mid-wait was Nelya's
+infra "all" deploy replacing the runner (mem-098) — wait for `UPDATE_COMPLETE`, then
+`gh run rerun --failed`.
+
 Link previews: `metadataBase` derives from `NEXT_PUBLIC_SITE_URL`; the Dockerfile bakes
 `https://navigator.quantflow.studio` and the code falls back to the same host. The old
 Vercel project (navigator-site.vercel.app) is retired. Infra (ECR, service template, CDN

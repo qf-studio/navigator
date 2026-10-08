@@ -145,7 +145,7 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
-Current active threads (as of 2026-09-28; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28, v7.9.0 ADHD mode + multi-Claude removal 2026-10-01 — docs site synced through v7.8.0):
+Current active threads (as of 2026-10-08; v8.3.5 release-CI gates TASK-99 2026-10-08, v8.0.0–v8.3.4 per the stamp at the end of this file; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28, v7.9.0 ADHD mode + multi-Claude removal 2026-10-01 — docs site synced through v7.8.0):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
 day; local testing phase, no release tagged; critical path 57→59→60→61→62→64 all landed, 58/63
@@ -159,8 +159,8 @@ parallel both landed):
   config_guard, setup, graph_sync lifecycle events (13 manifest events, all validated)
 - **TASK-63** ✅ — VERSION_CONFIGS["7.0.0"] additive migrator, template 47 lines, root CLAUDE.md
   annotated (mandates → hook enforcement), nav-sync-claude liveness guard
-- **TASK-64** — release gate NOT run (alpha is local-only by decision 2026-07-10); RC soak,
-  Pilot sign-off, and rollback doc remain before any v7.0.0 tag
+- **TASK-64** ✅ — gate ran in modified form 2026-09-01 (conformance passed on CC 2.1.241; RC soak +
+  Pilot sign-off waived on 7-week dogfood); the unbuilt Phase 1 validators shipped as TASK-99 in v8.3.5
 
 **Dogfood hardening** (live use of the alpha, 2026-07-10/11):
 - **TASK-65** ✅ — stop_completion indicators derived from observable turn evidence
@@ -507,5 +507,5 @@ cd ~/Projects/tmp/nav-test
 
 ---
 
-**Last Updated**: 2026-10-08 (docs site moved to AWS at navigator.quantflow.studio, TASK-55 closed, release procedure = `prod-*` tag; v8.3.4 — TASK-98 update notice curl fallback; v8.3.3 — TASK-96 stop gate unknown-head read-only shapes + TASK-97 one plugin-root resolver; v8.3.2 — TASK-95 stop gate ignores untracked paths, heredoc bucket retired; v8.3.1 — TASK-94 quote-aware Bash classifier; v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
+**Last Updated**: 2026-10-08 (v8.3.5 — TASK-99 release-CI gates: `--verify-dispatcher`, `--verify-conformance`, hermetic `--verify-hooks` with `NAVIGATOR_MOD_OWNS` scrubbed; Vercel project deleted; docs site moved to AWS at navigator.quantflow.studio, TASK-55 closed, release procedure = `prod-*` tag; v8.3.4 — TASK-98 update notice curl fallback; v8.3.3 — TASK-96 stop gate unknown-head read-only shapes + TASK-97 one plugin-root resolver; v8.3.2 — TASK-95 stop gate ignores untracked paths, heredoc bucket retired; v8.3.1 — TASK-94 quote-aware Bash classifier; v8.3.0 — TASK-93 reply modes table + STE mode, `prompt_adhd` → `prompt_modes`; v8.2.8 — TASK-92 read-only subagents are not task actions; v8.2.7 — TASK-91 in-progress detection reads the Status line; v8.2.6 — TASK-90 stop-gate over-fire on `cd` / `/bin/ls`; v8.2.0–v8.2.5 — reject log TASK-88 + five `/nav` pane patches: rejects two lines, next row one sentence, narrow layout below 72 columns, stacked gauge/judge/next adapt; TASK-80 closed by decision; v8.1.x — judge trail TASK-86, Bash reads TASK-87, pane follows all doc edits TASK-89, hook-safe drift check TASK-81; v8.0.0 — mod runtime TASK-84; v7.9.0 — ADHD mode TASK-82 + multi-Claude removal; v7.8.0 — team-repo batch GH-30…34: local config override, per-person onboarding, GitHub task IDs, nav-init gitignore, deep-research stub supersede; v7.7.1 — judge override telemetry + real-session eval tooling TASK-80; v7.7.0 typed prompt judge TASK-79; earlier: source lens + `findings-corroborated` gate check TASK-78 v7.6.0)
 **Powered By**: Navigator (Complete Framework)

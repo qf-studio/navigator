@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-08T10:44:50.025627+00:00",
+  "last_updated": "2026-10-08T16:23:04.077695+00:00",
   "stats": {
-    "total_nodes": 243,
-    "total_edges": 864,
-    "memory_count": 92
+    "total_nodes": 246,
+    "total_edges": 867,
+    "memory_count": 95
   },
   "nodes": {
     "tasks": {
@@ -3201,6 +3201,39 @@
         "contradiction": "zero-ops Vercel vs one infra shape with Pilot",
         "separation": "condition",
         "principle": "copying (reuse the pilot-docs template)"
+      },
+      "mem-101": {
+        "type": "pitfall",
+        "summary": "release_validator --verify-hooks run inside a Claude Code session inherited NAVIGATOR_MOD_OWNS, so the Python dispatcher exited silently on every mod-owned op and three payload events showed the v6.14.0 silent-fail signature (20/26); since v8.3.5 the smoke test scrubs NAVIGATOR_MOD_OWNS and PILOT_EXECUTOR and binds the set path to the repo under release, the unset path to a tmp HOME whose marketplace fallback links to the repo (26/26 anywhere)",
+        "path": "memories/pitfalls/mem-101.md",
+        "confidence": 0.95,
+        "concepts": [
+          "deployment"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08"
+      },
+      "mem-102": {
+        "type": "pitfall",
+        "summary": "navigator-docs: a prod-* tag push creates two Deploy QuantFlow AWS runs (main build \u2192 skipped, tag build \u2192 real) and both list head_branch=main because they are workflow_run events; pick the newest non-skipped run or grep its log for the tag. GitHub Actions queued the 8.3.5 runs ~5 min after the push and the events API lagged \u2014 poll, do not re-dispatch",
+        "path": "memories/pitfalls/mem-102.md",
+        "confidence": 0.9,
+        "concepts": [
+          "deployment"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08"
+      },
+      "mem-103": {
+        "type": "learning",
+        "summary": "A release gate that executes manifest hooks must build its own environment: scrub session variables that change hook behaviour (NAVIGATOR_MOD_OWNS, PILOT_EXECUTOR), point the set path at the code under release rather than a cached install, and fake the unset-path fallback with a tmp HOME + symlink so a runner without the real directory tests the plugin, not the machine",
+        "path": "memories/learnings/mem-103.md",
+        "confidence": 0.9,
+        "concepts": [
+          "testing"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08"
       }
     },
     "files": {}
@@ -7868,6 +7901,21 @@
       "from": "TASK-97",
       "to": "testing",
       "type": "implements"
+    },
+    {
+      "from": "mem-101",
+      "to": "TASK-99",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-102",
+      "to": "TASK-55",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-103",
+      "to": "TASK-99",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -8052,7 +8100,8 @@
       "TASK-93",
       "TASK-95",
       "TASK-96",
-      "TASK-97"
+      "TASK-97",
+      "mem-103"
     ],
     "context": [
       "TASK-32",
@@ -8756,7 +8805,9 @@
       "TASK-97",
       "mem-098",
       "mem-099",
-      "mem-100"
+      "mem-100",
+      "mem-101",
+      "mem-102"
     ],
     "code quality": [
       "TASK-19",
