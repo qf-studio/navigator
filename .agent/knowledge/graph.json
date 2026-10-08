@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-07T09:08:58.445601+00:00",
+  "last_updated": "2026-10-08T10:44:50.025627+00:00",
   "stats": {
-    "total_nodes": 240,
+    "total_nodes": 243,
     "total_edges": 864,
-    "memory_count": 89
+    "memory_count": 92
   },
   "nodes": {
     "tasks": {
@@ -3165,6 +3165,42 @@
         ],
         "created": "2026-10-06",
         "last_validated": "2026-10-06"
+      },
+      "mem-098": {
+        "type": "pitfall",
+        "summary": "Deploy QuantFlow AWS job can be cancelled by the runner ~5 min into the CloudFormation wait while the ECS rolling update (~7 min) continues; wait for UPDATE_COMPLETE, then gh run rerun --failed so the CDN invalidation runs",
+        "path": "memories/pitfalls/mem-098.md",
+        "confidence": 0.85,
+        "concepts": [
+          "deployment"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08"
+      },
+      "mem-099": {
+        "type": "pitfall",
+        "summary": "A Nextra site built standalone serves no search unless postbuild writes pagefind to public/_pagefind; a missing favicon.ico fails an ALB health check on that path",
+        "path": "memories/pitfalls/mem-099.md",
+        "confidence": 0.9,
+        "concepts": [
+          "deployment"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08"
+      },
+      "mem-100": {
+        "type": "decision",
+        "summary": "Docs site navigator.quantflow.studio runs on AWS (ECS navigator-docs + CloudFront) like pilot-docs; a docs release is a prod-<version>-<ts> tag on qf-studio/navigator-docs, never vercel --prod",
+        "path": "memories/decisions/mem-100.md",
+        "confidence": 0.95,
+        "concepts": [
+          "deployment"
+        ],
+        "created": "2026-10-08",
+        "last_validated": "2026-10-08",
+        "contradiction": "zero-ops Vercel vs one infra shape with Pilot",
+        "separation": "condition",
+        "principle": "copying (reuse the pilot-docs template)"
       }
     },
     "files": {}
@@ -8717,7 +8753,10 @@
       "TASK-93",
       "TASK-95",
       "TASK-96",
-      "TASK-97"
+      "TASK-97",
+      "mem-098",
+      "mem-099",
+      "mem-100"
     ],
     "code quality": [
       "TASK-19",
