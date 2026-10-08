@@ -188,6 +188,7 @@ The gate ran in a modified form, decided interactively by the user on 2026-09-01
   post-ship follow-up. Partial coverage shipped instead: `--verify-hook-paths`
   (all 13 manifest commands route through `nav_dispatch.py`, ran green) and
   `make conformance-check` (ran green for 2.1.241).
+  **Follow-up opened 2026-10-08: TASK-99** (`tasks/TASK-99-release-validator-dispatcher-conformance.md`).
 - **Phase 2 audit**: still five version-bearing files; no dispatcher
   `__version__` added.
 - **Rollback**: written procedure shipped in `releases/RELEASE-NOTES-v7.0.0.md`
