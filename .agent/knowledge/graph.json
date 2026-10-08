@@ -3168,9 +3168,9 @@
       },
       "mem-098": {
         "type": "pitfall",
-        "summary": "Deploy QuantFlow AWS job can be cancelled by the runner ~5 min into the CloudFormation wait while the ECS rolling update (~7 min) continues; wait for UPDATE_COMPLETE, then gh run rerun --failed so the CDN invalidation runs",
+        "summary": "Deploy QuantFlow AWS job cancelled mid CloudFormation wait = the infra \"all\" deploy replaced the quantflow runner machine (confirmed by Nelya 2026-10-08, not a job limit); wait for UPDATE_COMPLETE, then gh run rerun --failed so the CDN invalidation runs",
         "path": "memories/pitfalls/mem-098.md",
-        "confidence": 0.85,
+        "confidence": 0.95,
         "concepts": [
           "deployment"
         ],
