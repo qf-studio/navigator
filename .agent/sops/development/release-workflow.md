@@ -150,7 +150,10 @@ stable. No manual flag, no marketplace.json field.
 
 The pushed tag triggers `release.yml`:
 1. **validate** — `make test`, then `release_validator.py --check-all` (skills exist + committed + versions
-   consistent), `--verify-hook-paths`, `--check-version <tag>`, `--verify-tag <tag>`.
+   consistent), `--verify-hook-paths`, `--check-version <tag>`, `--verify-tag <tag>`, `--verify-mod`, and since
+   TASK-99 `--verify-dispatcher` (registry ops committed + importable, every hook through `nav_dispatch.py`),
+   `--verify-conformance $CC_MOD_VERSION` (results file for the pinned Claude Code, one `env` at the top of the
+   workflow) and `--verify-hooks` (manifest smoke test, hermetic unset path).
 2. **release** — reads `releases/RELEASE-NOTES-v<version>.md`, marks pre-release from the tag suffix, and creates or
    updates the GitHub release in place (idempotent since `bfe3b26`).
 

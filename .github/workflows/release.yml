@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+env:
+  # Claude Code version the mod is validated against (validate-mod) and whose
+  # harness-conformance results the validate job requires (--verify-conformance).
+  CC_MOD_VERSION: "2.1.287"
+
 jobs:
   validate:
     name: Validate release
@@ -47,6 +52,19 @@ jobs:
       - name: Verify the v8 mod (module declared, owned ops on both sides, generated data fresh)
         run: python3 skills/nav-release/functions/release_validator.py --verify-mod
 
+      - name: Verify the Python fallback runtime (every manifest hook routes through the dispatcher; every registry op committed and importable)
+        # TASK-99 (from TASK-64 Phase 1): the v5.1.0 missing-skill incident generalized to ops.
+        run: python3 skills/nav-release/functions/release_validator.py --verify-dispatcher
+
+      - name: Verify harness-conformance results exist for the pinned Claude Code
+        # TASK-58 gate, in CI: probes are live-driven; this asserts the evidence is checked in.
+        run: python3 skills/nav-release/functions/release_validator.py --verify-conformance "$CC_MOD_VERSION"
+
+      - name: Smoke-test every manifest hook under set and unset CLAUDE_PLUGIN_ROOT
+        # mem-036 class: a manifest guard that silently no-ops when the variable is unbound.
+        # The unset path resolves through a tmp HOME whose marketplace fallback links to the checkout.
+        run: python3 skills/nav-release/functions/release_validator.py --verify-hooks
+
   validate-mod:
     name: Validate mod (Claude Code 2.1.287)
     runs-on: ubuntu-latest
@@ -60,7 +78,7 @@ jobs:
           node-version: '22'
 
       - name: Install Claude Code (pinned minimum for mods)
-        run: npm install -g @anthropic-ai/claude-code@2.1.287
+        run: npm install -g @anthropic-ai/claude-code@${{ env.CC_MOD_VERSION }}
 
       - name: Validate plugin manifest and hooks module
         run: make mod-validate

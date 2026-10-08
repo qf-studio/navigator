@@ -1,6 +1,6 @@
 # TASK-99: Release validator — dispatcher, conformance and live-hook gates in CI
 
-**Status**: 📋 Planned — 2026-10-08
+**Status**: ✅ Implemented — 2026-10-08 (unreleased; ships with the next tag)
 **Origin**: TASK-64 Phase 1, carried forward at v7.0.0 ship (2026-09-01) and never built
 **Effort**: S–M (one validator file, one workflow, one test file)
 **Depends on**: nothing open; `verify_mod` (TASK-84) already covers the mod side
@@ -47,6 +47,22 @@ TASK-64 remain:
 - [ ] `--check-all` is unchanged (it stays the fast local gate); the three new flags are
       separate steps so a CI failure names the gate.
 - [ ] TASK-64 "Gate Outcome" gets one line pointing here; this doc archives on release.
+
+## Outcome (2026-10-08)
+
+- `verify_dispatcher`, `verify_conformance`, `_hook_envs` + `_run_hook_matrix` in
+  `release_validator.py`; `--verify-dispatcher`, `--verify-conformance [CC_VERSION]` flags.
+- `verify_hooks` set path now uses the repo under release (the cached install was the old
+  target, wrong for a release gate); unset path uses a tmp `HOME` with the marketplace symlink.
+  `NAVIGATOR_MOD_OWNS` and `PILOT_EXECUTOR` are scrubbed: inside a Claude Code session the
+  ownership list made the Python dispatcher exit silently, so the set path failed 3 payload
+  events (baseline in-session 20/26 → 26/26; out-of-session 23/26 → 26/26).
+- `release.yml`: `env.CC_MOD_VERSION: "2.1.287"` is the one pin for the `validate-mod` install
+  and `--verify-conformance`; three new validate steps after `--verify-mod`.
+- Tests: 11 new (`VerifyDispatcherTest` ×6 incl. the repo itself, `VerifyConformanceTest` ×4,
+  `HookEnvsTest`), file total 27; `make test` green with `NAVIGATOR_MOD_OWNS` unset.
+- Docs: nav-release SKILL.md (Step 1.5 + functions list), release-workflow SOP, DEPLOYMENT.md.
+- Not done: `make conformance-check` left as is (local form); no CHANGELOG line until the tag.
 
 ## Approach
 

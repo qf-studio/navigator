@@ -21,6 +21,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import sys
 from pathlib import Path
 from typing import List, Tuple, Dict
@@ -310,23 +311,44 @@ HOOK_STDIN_FIXTURES = {
 HOOK_EMITS_PAYLOAD = {"SessionStart", "PreCompact", "PostCompact"}
 
 
-def _resolve_plugin_dir_for_test() -> str:
-    """Find the latest cached plugin install dir for use as CLAUDE_PLUGIN_ROOT in smoke tests."""
-    cache_root = Path.home() / ".claude" / "plugins" / "cache" / "navigator-marketplace" / "navigator"
-    if not cache_root.is_dir():
-        return ""
-    versions = sorted(
-        (p for p in cache_root.iterdir() if (p / "hooks").is_dir()),
-        key=lambda p: [int(x) for x in re.findall(r"\d+", p.name)],
-        reverse=True,
-    )
-    return str(versions[0]) if versions else ""
+# Env vars that change what a manifest hook does and must not leak from the caller's
+# session into the smoke test: the mod's ownership list (inside a Claude Code session the
+# Python dispatcher skips every owned op and exits silently, which looks like the mem-036
+# signature) and the Pilot belt (disables blocking behaviour).
+HOOK_ENV_SCRUB = ("CLAUDE_PLUGIN_ROOT", "NAVIGATOR_MOD_OWNS", "PILOT_EXECUTOR", "HOME")
+
+# The manifest's fallback when CLAUDE_PLUGIN_ROOT is unset (see .claude-plugin/plugin.json).
+MARKETPLACE_FALLBACK = Path(".claude") / "plugins" / "marketplaces" / "navigator-marketplace"
+
+
+def _hook_envs(root: Path, tmp_home: Path) -> Dict[str, Dict[str, str]]:
+    """
+    Build the two environments verify_hooks runs every manifest command under.
+
+    "set":   CLAUDE_PLUGIN_ROOT points at `root` — the code under release, not a cached
+             install — with the real HOME so personal config is visible.
+    "unset": no CLAUDE_PLUGIN_ROOT; HOME is `tmp_home`, inside which the marketplace
+             fallback path is a symlink to `root`. The command must resolve through the
+             fallback (mem-036); a runner or laptop without the real fallback dir would
+             otherwise fail for a reason unrelated to the plugin.
+    """
+    base = {k: v for k, v in os.environ.items() if k not in HOOK_ENV_SCRUB}
+    home = os.environ.get("HOME", str(Path.home()))
+    link = tmp_home / MARKETPLACE_FALLBACK
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if not link.exists():
+        link.symlink_to(root, target_is_directory=True)
+    return {
+        "set": {**base, "HOME": home, "CLAUDE_PLUGIN_ROOT": str(root)},
+        "unset": {**base, "HOME": str(tmp_home)},
+    }
 
 
 def verify_hooks(root: Path, plugin: dict) -> Tuple[List[Dict], List[Dict]]:
     """
     Smoke-test every plugin manifest hook command end-to-end under both
-    set and unset $CLAUDE_PLUGIN_ROOT.
+    set and unset $CLAUDE_PLUGIN_ROOT (environments from _hook_envs: the set path uses the
+    repo under release, the unset path a tmp HOME whose marketplace fallback links to it).
 
     Detects the v6.14.0 class of bug where a manifest shell guard silently
     short-circuits (exit 0, no stdout, no stderr) when the variable is
@@ -338,13 +360,16 @@ def verify_hooks(root: Path, plugin: dict) -> Tuple[List[Dict], List[Dict]]:
         stderr_len, status, and (on failure) reason.
     """
     hooks = plugin.get("hooks", {})
-    plugin_dir = _resolve_plugin_dir_for_test()
     passed: List[Dict] = []
     failed: List[Dict] = []
+    with tempfile.TemporaryDirectory(prefix="nav-verify-hooks-") as tmp_home:
+        envs = _hook_envs(root, Path(tmp_home))
+        _run_hook_matrix(root, hooks, envs, passed, failed)
+    return passed, failed
 
-    base_env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PLUGIN_ROOT"}
-    set_env = {**base_env, "CLAUDE_PLUGIN_ROOT": plugin_dir} if plugin_dir else base_env
 
+def _run_hook_matrix(root: Path, hooks: dict, envs: Dict[str, Dict[str, str]],
+                     passed: List[Dict], failed: List[Dict]) -> None:
     for event, entries in hooks.items():
         fixture = HOOK_STDIN_FIXTURES.get(event, '{"cwd": "."}')
         for entry in entries:
@@ -354,7 +379,7 @@ def verify_hooks(root: Path, plugin: dict) -> Tuple[List[Dict], List[Dict]]:
                     continue
                 summary = cmd[:80] + ("..." if len(cmd) > 80 else "")
 
-                for env_state, env in (("set", set_env), ("unset", base_env)):
+                for env_state, env in envs.items():
                     try:
                         result = subprocess.run(
                             ["bash", "-c", cmd],
@@ -400,8 +425,6 @@ def verify_hooks(root: Path, plugin: dict) -> Tuple[List[Dict], List[Dict]]:
                             "stdout_len": 0, "stderr_len": 0,
                             "status": "fail", "reason": "timeout (>15s)",
                         })
-
-    return passed, failed
 
 
 def verify_hook_paths(root: Path, plugin: dict) -> Tuple[List[str], List[str]]:
@@ -502,6 +525,104 @@ def verify_mod(root: Path, run_generator: bool = True) -> Tuple[bool, List[str]]
     return not problems, problems
 
 
+CONFORMANCE_RESULTS = Path("tests") / "harness-conformance" / "results"
+
+
+def _registry_op_names(root: Path) -> List[str]:
+    text = (root / "hooks" / "nav_hook_lib" / "registry.py").read_text(encoding="utf-8")
+    return sorted(set(_OPSPEC_RE.findall(text)))
+
+
+def verify_dispatcher(root: Path, plugin: dict) -> Tuple[List[str], List[str]]:
+    """
+    Gate for the Python fallback runtime (TASK-99, carried from TASK-64 Phase 1).
+
+    - every manifest hook command routes through hooks/nav_dispatch.py (no hook may bypass
+      the dispatcher's fail-open belt);
+    - every op named by an OpSpec in hooks/nav_hook_lib/registry.py has hooks/ops/<name>.py
+      that exists, is tracked by git, and imports cleanly — the v5.1.0 missing-skill
+      incident generalized to ops (mem-070 class). verify_mod covers the mod side; this
+      covers the side that runs when the mod does not.
+
+    Returns (resolved, problems); resolved lists what passed, one line each.
+    """
+    resolved: List[str] = []
+    problems: List[str] = []
+    for event, entries in plugin.get("hooks", {}).items():
+        for entry in entries:
+            for hook in entry.get("hooks", []):
+                cmd = hook.get("command", "")
+                if not cmd:
+                    continue
+                if "nav_dispatch.py" in cmd:
+                    resolved.append(f"{event}: routes through nav_dispatch.py")
+                else:
+                    problems.append(f"{event}: hook command bypasses nav_dispatch.py — {cmd[:80]}")
+    try:
+        names = _registry_op_names(root)
+    except OSError:
+        return resolved, problems + ["hooks/nav_hook_lib/registry.py: not readable"]
+    env = {k: v for k, v in os.environ.items() if k not in ("NAVIGATOR_MOD_OWNS", "PILOT_EXECUTOR")}
+    hooks_dir = root / "hooks"
+    for name in names:
+        rel = Path("hooks") / "ops" / f"{name}.py"
+        if not (root / rel).is_file():
+            problems.append(f"op '{name}': {rel} does not exist")
+            continue
+        tracked = subprocess.run(["git", "ls-files", "--error-unmatch", str(rel)],
+                                 cwd=root, capture_output=True, text=True)
+        if tracked.returncode != 0:
+            problems.append(f"op '{name}': {rel} is not tracked by git")
+            continue
+        code = f"import sys; sys.path.insert(0, {str(hooks_dir)!r}); import ops.{name}"
+        try:
+            imported = subprocess.run([sys.executable, "-c", code], cwd=root, env=env,
+                                      capture_output=True, text=True, timeout=15)
+        except subprocess.TimeoutExpired:
+            problems.append(f"op '{name}': import timed out (>15s)")
+            continue
+        if imported.returncode != 0:
+            tail = (imported.stderr.strip().splitlines() or ["no stderr"])[-1]
+            problems.append(f"op '{name}': import failed — {tail}")
+            continue
+        resolved.append(f"op '{name}': {rel} exists, tracked, imports")
+    return resolved, problems
+
+
+def _installed_claude_version() -> str:
+    out = subprocess.run(["claude", "--version"], capture_output=True, text=True, timeout=15)
+    return out.stdout.split()[0] if out.returncode == 0 and out.stdout.split() else ""
+
+
+def verify_conformance(root: Path, version: str = "") -> Tuple[bool, List[str]]:
+    """
+    Gate from TASK-58/TASK-64: a harness-conformance results file must exist for the
+    Claude Code version we ship against. `version` empty → `claude --version` (the local
+    form, same as `make conformance-check`); CI passes the pinned version explicitly so the
+    runner never needs the binary. Probes are live-driven and cannot run here; this only
+    asserts the evidence was recorded (tests/harness-conformance/run.md re-drives it).
+    """
+    if not version:
+        try:
+            version = _installed_claude_version()
+        except (OSError, subprocess.TimeoutExpired):
+            version = ""
+        if not version:
+            return False, ["claude --version unavailable; pass the version: --verify-conformance <x.y.z>"]
+    version = version.lstrip("v")
+    results = root / CONFORMANCE_RESULTS / f"cc-{version}.json"
+    rel = results.relative_to(root)
+    if not results.is_file():
+        return False, [f"MISSING conformance results for Claude Code {version}",
+                       f"expected file: {rel}",
+                       "re-drive the suite: tests/harness-conformance/run.md"]
+    try:
+        json.loads(results.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        return False, [f"{rel}: not valid JSON ({exc})"]
+    return True, []
+
+
 def check_version_match(root: Path, expected: str) -> Tuple[Dict[str, str], List[str]]:
     """
     Compare an expected version (e.g. a release tag) against every
@@ -531,6 +652,10 @@ def main():
                         help="Statically assert every plugin.json hook command resolves to an existing hooks/<name>.py file")
     parser.add_argument("--verify-mod", action="store_true",
                         help="Static gate for the v8 mod: hooks module, OWNED ops on both sides, fresh generated data")
+    parser.add_argument("--verify-dispatcher", action="store_true",
+                        help="Every manifest hook routes through nav_dispatch.py; every registry op has a committed, importable hooks/ops/<name>.py")
+    parser.add_argument("--verify-conformance", nargs="?", const="", default=None, metavar="CC_VERSION",
+                        help="A harness-conformance results file exists for this Claude Code version (default: `claude --version`)")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
@@ -557,6 +682,28 @@ def main():
                 print(f"  ✓  {chk['event']:18} [{chk['env_state']:5}] "
                       f"exit={chk['exit_code']} out={chk['stdout_len']}B err={chk['stderr_len']}B")
         return 0 if not failed else 1
+
+    if args.verify_dispatcher:
+        resolved, problems = verify_dispatcher(root, plugin)
+        if args.json:
+            print(json.dumps({"resolved": resolved, "problems": problems}, indent=2))
+        else:
+            print("Dispatcher check (TASK-99): " + ("PASSED ✓" if not problems else f"FAILED ✗ — {len(problems)} problem(s)"))
+            for problem in problems:
+                print(f"  ❌ {problem}")
+            for line in resolved:
+                print(f"  ✓  {line}")
+        return 0 if not problems else 1
+
+    if args.verify_conformance is not None:
+        ok, problems = verify_conformance(root, args.verify_conformance)
+        if args.json:
+            print(json.dumps({"ok": ok, "problems": problems}, indent=2))
+        else:
+            print("Conformance check (TASK-58): " + ("OK ✓" if ok else "FAILED ✗"))
+            for problem in problems:
+                print(f"  ❌ {problem}")
+        return 0 if ok else 1
 
     if args.verify_mod:
         ok, problems = verify_mod(root)

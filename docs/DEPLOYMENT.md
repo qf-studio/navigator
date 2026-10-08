@@ -115,7 +115,10 @@ Two GitHub Actions workflows drive everything:
 - **`release.yml`** — triggers on `v*` tag push. Two jobs:
   1. **validate** — `make test`, then `release_validator.py` with `--check-all` (skills exist + committed + versions
      consistent), `--verify-hook-paths` (every manifest hook path resolves to a file — guards the v6.15.6 regression
-     class), `--check-version <tag>`, and `--verify-tag <tag>`.
+     class), `--check-version <tag>`, `--verify-tag <tag>`, `--verify-mod` (v8 mod: module declared, owned ops on
+     both sides, generated data fresh), `--verify-dispatcher` (every registry op has a committed, importable
+     `hooks/ops/<name>.py`; every hook routes through `nav_dispatch.py`), `--verify-conformance` for the pinned
+     Claude Code version (`CC_MOD_VERSION`, one place for both jobs) and the `--verify-hooks` smoke test.
   2. **release** — locates `releases/RELEASE-NOTES-v<version>.md`, marks pre-release from the tag suffix
      (`alpha`/`beta`/`rc`), and creates (or updates in place) the GitHub release with the notes attached.
 

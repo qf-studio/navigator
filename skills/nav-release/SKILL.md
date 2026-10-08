@@ -55,7 +55,7 @@ This validates:
 python3 functions/release_validator.py --verify-hooks
 ```
 
-This executes every plugin manifest hook command via `bash` twice — once with `$CLAUDE_PLUGIN_ROOT` bound to the latest cache version, once with it explicitly unset (`env -u CLAUDE_PLUGIN_ROOT`). It detects the **v6.14.0 silent-fail signature**: a payload-emitting hook (`SessionStart`, `PreCompact`, `PostCompact`) that exits 0 with no stdout and no stderr.
+This executes every plugin manifest hook command via `bash` twice — once with `$CLAUDE_PLUGIN_ROOT` bound to the repo under release, once with it unset and `HOME` pointed at a tmp dir whose `.claude/plugins/marketplaces/navigator-marketplace` links to the repo, so the manifest fallback path is what resolves (TASK-99). `NAVIGATOR_MOD_OWNS` and `PILOT_EXECUTOR` are scrubbed from both runs; inside a Claude Code session the mod's ownership list would otherwise make the Python dispatcher exit silently and fake the v6.14.0 signature. It detects the **v6.14.0 silent-fail signature**: a payload-emitting hook (`SessionStart`, `PreCompact`, `PostCompact`) that exits 0 with no stdout and no stderr.
 
 Other hook events (`Stop`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`) are silent by design — they're state-writers or blocking-only — so quiet exit 0 there is correct behavior and is not flagged.
 
@@ -79,6 +79,13 @@ Hook smoke-test: 20/20 passed, 0 failed
 ```
 
 **If `--verify-hooks` fails**: STOP. The hook command in plugin.json is broken in the `CLAUDE_PLUGIN_ROOT`-unset case. Fix the command (typically a fallback-path expansion issue) and re-run before proceeding.
+
+**Also run the two static runtime gates** (both are CI steps in `release.yml` since TASK-99):
+
+```bash
+python3 functions/release_validator.py --verify-dispatcher          # every manifest hook routes through nav_dispatch.py; every registry op has a committed, importable hooks/ops/<name>.py
+python3 functions/release_validator.py --verify-conformance           # a harness-conformance results file exists for `claude --version` (CI passes the pinned version)
+```
 
 **Background**: this check was added in v6.15.2 after v6.14.0 shipped a shell guard (`if [ -n "$CLAUDE_PLUGIN_DIR" ]; then ... fi`) that silently no-opped every hook when the variable was unset. The bug masked itself for two releases because the navigator source repo had a project-local `.claude/settings.json` backstop. Other Nav-initialized projects (no backstop) got zero injection with zero error signal. See `mem-036` and `releases/RELEASE-NOTES-v6.15.1.md` / `v6.15.2.md`.
 
@@ -224,6 +231,12 @@ python3 functions/release_validator.py --verify-tag v6.15.2
 
 # Smoke-test plugin manifest hook commands (v6.15.2+)
 python3 functions/release_validator.py --verify-hooks
+
+# Python fallback runtime: dispatcher routing + registry ops exist, committed, import (TASK-99)
+python3 functions/release_validator.py --verify-dispatcher
+
+# Harness-conformance results exist for a Claude Code version (default: `claude --version`)
+python3 functions/release_validator.py --verify-conformance 2.1.287
 ```
 
 ---
