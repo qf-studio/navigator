@@ -172,7 +172,8 @@ beyond the name (shows a `commands` array, v1.0.0, hardcoded 92%/10x metrics) �
   headers, favicon (health), sitemap enumerates every page (69), pagefind index served from
   `public/_pagefind`. The Vercel project `navigator-site` is retired.
 - History: first live on Vercel 2026-06-24 (`navigator-site.vercel.app`); the custom domain waited
-  on DNS until the AWS move replaced the Vercel CNAME plan.
+  on DNS until the AWS move replaced the Vercel CNAME plan. The Vercel project was deleted via
+  CLI on 2026-10-08 (`vercel project rm navigator-site`); the site repo dropped its `.vercel` entries.
 
 ## Open questions (still needed for Phase 1–3)
 1. **Brand identity** (logo/palette, OG image) — none exist yet; navbar uses a text wordmark for now.
