@@ -209,12 +209,12 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
-- **TASK-99** ✅ (implemented 2026-10-08, unreleased) — release validator gates carried from TASK-64 Phase 1:
+- **TASK-99** ✅ (v8.3.5, 2026-10-08) — release validator gates carried from TASK-64 Phase 1:
   `--verify-dispatcher` (every `OpSpec` has a committed, importable `hooks/ops/<name>.py`; every
   manifest command routes through `nav_dispatch.py`), `--verify-conformance <cc-version>` (results
   file present for the CI-pinned Claude Code), and `--verify-hooks` in release.yml with a hermetic
   `HOME` so the unset-root fallback is exercised; `NAVIGATOR_MOD_OWNS` scrubbed from the smoke test (in-session
-  baseline 20/26 → 26/26); 11 tests (`tasks/TASK-99-release-validator-dispatcher-conformance.md`).
+  baseline 20/26 → 26/26); 11 tests (`tasks/archive/TASK-99-release-validator-dispatcher-conformance.md`).
 - **TASK-98** ✅ (v8.3.4, 2026-10-07) — update notice curl fallback: a session with
   `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` refuses every plugin `$.http.fetch`, so the
   release check repeats the same GET through curl when `auto_update.curl_fallback: true`

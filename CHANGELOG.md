@@ -6,6 +6,17 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.3.5] — 2026-10-08
+
+Release CI gains the gates TASK-64 Phase 1 left unbuilt: `--verify-dispatcher` (every manifest
+hook routes through `nav_dispatch.py`; every registry op has a committed, importable
+`hooks/ops/<name>.py` — the v5.1.0 incident generalized to ops) and `--verify-conformance`
+(a harness-conformance results file exists for the pinned Claude Code, one `CC_MOD_VERSION`
+env for both jobs), plus `--verify-hooks` as a CI step. The smoke test is hermetic now: the
+set path tests the repo under release, the unset path a tmp `HOME` whose marketplace fallback
+links to it, and `NAVIGATOR_MOD_OWNS` is scrubbed (in-session 20/26 → 26/26). 11 tests (TASK-99).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.3.5.md)
+
 ## [v8.3.4] — 2026-10-07
 
 `auto_update.curl_fallback` (default `false`): a session with

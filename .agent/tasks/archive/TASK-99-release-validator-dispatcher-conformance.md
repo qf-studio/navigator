@@ -1,6 +1,6 @@
 # TASK-99: Release validator — dispatcher, conformance and live-hook gates in CI
 
-**Status**: ✅ Implemented — 2026-10-08 (unreleased; ships with the next tag)
+**Status**: ✅ Released — v8.3.5, 2026-10-08
 **Origin**: TASK-64 Phase 1, carried forward at v7.0.0 ship (2026-09-01) and never built
 **Effort**: S–M (one validator file, one workflow, one test file)
 **Depends on**: nothing open; `verify_mod` (TASK-84) already covers the mod side
