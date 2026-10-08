@@ -314,7 +314,7 @@ Other threads:
 - **TASK-15** 📋 — marketing strategy & community adoption; postponed 2026-10-05 (owner posts on Threads + LinkedIn directly); refreshed 2026-10-05 against v8.2.7: seven live legs (Threads cut, drafts decision, screen capture, Show HN, CONTRIBUTING, marker-compression re-measure, monthly metrics), 2025 plan retired in an appendix
 - **TASK-35** — project memory (research)
 - **TASK-37** — nav-simplify complexity / cost scoring (design)
-- **TASK-55** — landing + docs site: built + deployed (navigator-site.vercel.app); only DNS cutover left
+- **TASK-55** ✅ — landing + docs site live at navigator.quantflow.studio since 2026-10-08 (AWS ECS + CloudFront, same shape as pilot-docs; repo qf-studio/navigator-docs, release = `prod-*` tag)
 
 Closed 2026-07-09: TASK-05/13 (superseded by TASK-55), TASK-39 (workshop delivered 2026-05-22), TASK-42 (audit roadmap complete incl. wp12 security re-sweep), TASK-56 (nav-brief, shipped v6.18.0).
 

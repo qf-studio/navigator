@@ -1,7 +1,7 @@
 # TASK-05: Landing Page Content
 
 **Created**: 2025-10-13
-**Status**: ✅ Completed — superseded by TASK-55; landing content shipped on the live site (navigator-site.vercel.app, verified 2026-07-09).
+**Status**: ✅ Completed — superseded by TASK-55; landing content shipped on the live site (navigator.quantflow.studio since 2026-10-08; previously navigator-site.vercel.app).
 **Target**: Website/landing page for Navigator plugin
 
 ---

@@ -1,6 +1,6 @@
 # TASK-55: Navigator Landing Page + Documentation Site
 
-**Status**: ✅ Built + deployed — 62 pages live at navigator-site.vercel.app (OG image included); only DNS cutover to the custom domain remains. Status synced 2026-07-09.
+**Status**: ✅ Live at https://navigator.quantflow.studio since 2026-10-08 — hosted on AWS like pilot-docs (ECS service `navigator-docs` on the quantflow cluster behind the ALB + CloudFront, Route 53 alias from `quantflow-domain-config`). Source repo `qf-studio/navigator-docs`; a `prod-<version>-<ts>` tag from `main` builds the image to GHCR and the AWS workflow mirrors it to ECR and deploys `quantflow-svc-navigator-docs`. The Vercel deployment (navigator-site.vercel.app) is retired. Previous status: built + deployed on Vercel 2026-06-24; 2026-07-09 sync.
 **Created**: 2026-06-24
 **Supersedes**: TASK-05 (Landing Page Content) and TASK-13 (Web Documentation Site — stale: VitePress/v3.1.0)
 **Source**: deep-research workflow `wf_0777e387-af9` (9 agents, asset audit + Pilot-stack study + web refs + completeness critic)
@@ -160,7 +160,7 @@ beyond the name (shows a `commands` array, v1.0.0, hardcoded 92%/10x metrics) �
 
 ## Phase 4 — Deployed (2026-06-24)
 Live on Vercel (project `aleksei-petrovs-projects/navigator-site`, Next.js auto-detected, build 58s):
-- **Production**: https://navigator-site.vercel.app (200, hero renders)
+- **Production**: https://navigator.quantflow.studio (AWS since 2026-10-08; previously https://navigator-site.vercel.app)
 - Custom domain `navigator.quantflow.studio` **added to project**, pending DNS.
 
 ⚠️ **DNS step (manual, user)** — `quantflow.studio` nameservers are on **fastdns24** (external, like Pilot), so add

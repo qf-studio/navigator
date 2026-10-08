@@ -103,7 +103,7 @@ Since v8 the workflow is enforced by a runtime that runs inside Claude Code, not
 in a config file. It gates task-shaped prompts, guards fan-out reads, records what each
 turn finished, and writes one line to a reject log every time it says no. It also draws.
 
-![The /nav pane](https://navigator-site.vercel.app/nav-pane.png)
+![The /nav pane](https://navigator.quantflow.studio/nav-pane.png)
 
 Type `/nav` and a pane opens beside your session:
 
@@ -276,7 +276,7 @@ Then restart Claude Code. Outdated plugin version, or the pane needs 2.1.287+.
 
 ## Links
 
-- [Docs site](https://navigator-site.vercel.app) — guides, configuration, the `/nav` pane
+- [Docs site](https://navigator.quantflow.studio) — guides, configuration, the `/nav` pane
 - [Documentation index](.agent/DEVELOPMENT-README.md)
 - [Philosophy](.agent/philosophy/CONTEXT-EFFICIENCY.md)
 - [Release Notes](https://github.com/qf-studio/navigator/releases)

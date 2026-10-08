@@ -1,6 +1,6 @@
 # TASK-13: Web Documentation Site
 
-**Status**: ✅ Completed — superseded by TASK-55; docs site (62 pages) built + deployed at navigator-site.vercel.app. Status synced 2026-07-09.
+**Status**: ✅ Completed — superseded by TASK-55; docs site (62 pages) built + deployed; live at navigator.quantflow.studio since 2026-10-08 (AWS). Status synced 2026-10-08.
 **Priority**: High
 **Estimated Effort**: 2-3 weeks (MVP), 6 weeks (complete)
 **Created**: 2025-10-19
