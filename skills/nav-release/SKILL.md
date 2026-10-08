@@ -197,10 +197,13 @@ If errors occur, see: .agent/sops/deployment/plugin-release.md
 claude plugin update navigator && claude plugin list | grep -A1 navigator@   # then restart
 ```
 
-The docs site is a separate repo with no git remote (`~/Projects/startups/navigator-site`);
+The docs site is a separate repo (`qf-studio/navigator-docs`, local
+`~/Projects/startups/navigator-site`, live at https://navigator.quantflow.studio on AWS);
 it does not update itself. Bump `lib/version.ts`, add/adjust `content/skills/*.mdx` and
-`content/reference/nav-config-schema.mdx` for anything new, then
-`bun run build && vercel --prod --yes` and confirm the live version string. Full procedure:
+`content/reference/nav-config-schema.mdx` for anything new, `bun run build`, commit and push
+`main`, then push a `prod-<VERSION>-$(date +%s)` tag: "Build image" publishes the image to
+GHCR and "Deploy QuantFlow AWS" rolls it to ECS and invalidates CloudFront. Confirm the live
+version string at navigator.quantflow.studio. Full procedure:
 `.agent/sops/development/release-workflow.md` Step 7.
 
 ## Predefined Functions

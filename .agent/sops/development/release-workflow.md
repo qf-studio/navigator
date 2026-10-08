@@ -172,8 +172,10 @@ Then confirm the README badge renders (Shields.io CDN cache is 5–10 min). User
 
 ### Step 7 — Sync the docs site (manual, every release)
 
-The docs site (`~/Projects/startups/navigator-site`, deployed at navigator-site.vercel.app)
-is a separate repo with **no git remote** — nothing about a plugin release touches it.
+The docs site (`~/Projects/startups/navigator-site`, repo `qf-studio/navigator-docs`, live at
+https://navigator.quantflow.studio) is a separate repo — nothing about a plugin release
+touches it. Since 2026-10-08 it runs on AWS like pilot-docs: ECS service `navigator-docs` on
+the quantflow cluster behind the ALB and CloudFront. A docs release is a `prod-*` tag.
 Every release needs:
 
 ```bash
@@ -182,14 +184,21 @@ cd ~/Projects/startups/navigator-site
 sed -i '' 's/CURRENT_VERSION = "v.*"/CURRENT_VERSION = "v<VERSION>"/' lib/version.ts
 # 2. Content: new/changed skills -> content/skills/<name>.mdx (+ content/skills/_meta.js, index.mdx);
 #    new config keys -> content/reference/nav-config-schema.mdx; concepts/workflows as needed
-# 3. Build, commit, deploy
-bun run build && git add -A && git commit -m "docs(v<VERSION>): sync" && vercel --prod --yes
-# 4. Verify
-curl -s https://navigator-site.vercel.app | grep -o 'v[0-9]\.[0-9]\.[0-9]'
+# 3. Build, commit, push main (build.yml publishes ghcr.io/qf-studio/navigator-docs:main)
+bun run build && git add -A && git commit -m "docs(v<VERSION>): sync" && git push origin main
+# 4. Release tag: "Build image" -> "Deploy QuantFlow AWS" (GHCR -> ECR -> CloudFormation
+#    quantflow-svc-navigator-docs -> ECS stable -> CloudFront invalidation)
+TAG="prod-<VERSION>-$(date +%s)" && git tag "$TAG" && git push origin "$TAG"
+gh run watch --repo qf-studio/navigator-docs --exit-status \
+  "$(gh run list --repo qf-studio/navigator-docs --workflow=deploy-quantflow-aws.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+# 5. Verify (allow a minute for the ECS rollout; the deploy invalidates the CDN)
+curl -s https://navigator.quantflow.studio | grep -o 'v[0-9]\.[0-9]\.[0-9]'
 ```
 
-Link previews: `metadataBase` derives from `NEXT_PUBLIC_SITE_URL` (fallback vercel.app host).
-After the DNS cutover to navigator.quantflow.studio set that env var in the Vercel project.
+Link previews: `metadataBase` derives from `NEXT_PUBLIC_SITE_URL`; the Dockerfile bakes
+`https://navigator.quantflow.studio` and the code falls back to the same host. The old
+Vercel project (navigator-site.vercel.app) is retired. Infra (ECR, service template, CDN
+alias, Route 53) lives in `qf-studio/aws-infrastructure-pilot`, owned by Nelya.
 
 ## Pre-release checklist
 

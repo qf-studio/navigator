@@ -17,7 +17,7 @@ under "Retired plan" and in git history (`git show f1c7171:.agent/tasks/TASK-15-
 | Plugin | v8.2.7, mod runtime inside Claude Code 2.1.287+, Python fallback | `CLAUDE.md` Navigator Runtime (v8) |
 | Repo | `qf-studio/navigator` (old `alekspetrov/` path redirects); 351 stars, 18 forks, created 2025-10-10 | `gh repo view` 2026-10-05 |
 | Install | `/plugin marketplace add qf-studio/navigator` then `/plugin install navigator` | `README.md` Quick start |
-| Site | navigator-site.vercel.app, 69 pages, landing with hero → loop → runtime → pane → superset table → CTA; DNS cutover to custom domain pending | TASK-55 |
+| Site | navigator.quantflow.studio (AWS since 2026-10-08), 69 pages, landing with hero → loop → runtime → pane → superset table → CTA | TASK-55 |
 | README | Benefit-led rewrite done ("Finish What You Start", the loop, before/after table); no images | `README.md:1-55` |
 | Skills / agents | 31 skills, 6 agents | `skills/`, `agents/` |
 | Workshop | JSNation Next.js workshop delivered 2026-05-22 (TASK-39); GitNation plan in `pilot-pr/launch/plans/` | TASK-39 |
@@ -126,7 +126,7 @@ Status per item as of 2026-10-05.
 - 2-minute demo, 30-second pitch video, before/after screenshots, Grafana screenshots —
   not done except `.agent/grafana/dashboard-screenshot.jpg`.
 - GitHub README as landing page — superseded by the docs site (TASK-55).
-- docs.navigator.dev — done as navigator-site.vercel.app; DNS pending.
+- docs.navigator.dev — done as navigator.quantflow.studio (live 2026-10-08).
 - Product Hunt draft, Claude Code Discord, r/ClaudeAI, tweet thread, personal network —
   not executed.
 
@@ -154,7 +154,7 @@ and budget notes, and the named-competitor matrix (AI Context Optimizer, Augment
 ## References
 
 - `README.md`, `CLAUDE.md` (Navigator Runtime v8), `.agent/system/project-architecture.md`
-- Docs site: `/Users/aleks.petrov/Projects/startups/navigator-site` (deploy: `vercel --prod`)
+- Docs site: `/Users/aleks.petrov/Projects/startups/navigator-site` (repo `qf-studio/navigator-docs`; deploy: push `main` + `prod-*` tag)
 - Drafts: `.agent/marketing/*.md` (local, untracked by design)
 - Workshop: `.agent/tasks/TASK-39-nextjs-workshop-prep.md`; site: `TASK-55-landing-docs-site.md`
 - Archived launch thinking: `.agent/tasks/archive/TASK-18-*`

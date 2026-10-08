@@ -169,7 +169,7 @@ parallel both landed):
   PreToolUse fires twice per Read)
 - **TASK-67** ✅ — task-status vocabulary: plain-text statuses map to canonicals
 - **TASK-68** ✅ — tier1 near-miss similarity telemetry + subagent_context deterministic top-K
-- **TASK-69** ✅ — use-case content for the landing/docs site (work in navigator-site repo)
+- **TASK-69** ✅ — use-case content for the landing/docs site (work in the navigator-docs repo, local dir navigator-site)
 - **TASK-70** ✅ — exit signals accept HTML-comment wrapping (invisible in assistant output;
   verified live) + read-only Bash classifier kills "mutated the codebase" false-fires
 - Tier-1 answers render as grot-style TUI cards (Pilot design language); sentinel wrapper
@@ -437,9 +437,9 @@ Since v7.8.0 (GH-30) `nav_hook_lib.config.load` reads two files over `DEFAULTS`:
    noise (p95 vs a 200 ms ceiling): `gh run rerun <id> --failed`, then re-verify. Never
    `gh release create` locally. `--verify-hooks` `[unset]` failures on this laptop are the
    missing `~/.claude/plugins/marketplaces/` fallback dir, not a regression
-7. Sync the docs site (`~/Projects/startups/navigator-site`, no git remote): `lib/version.ts`,
-   touched skill/config pages, `bun run build && vercel --prod --yes`, then curl the live
-   version string
+7. Sync the docs site (`~/Projects/startups/navigator-site`, repo `qf-studio/navigator-docs`):
+   `lib/version.ts`, touched skill/config pages, `bun run build`, push `main`, push a
+   `prod-<VERSION>-<ts>` tag (AWS deploy), then curl navigator.quantflow.studio for the version
 
 **Scenario: investigating a session deadlock or unexpected block**
 1. Read `.agent/.nav-runtime-state.json` — the single schema-2 state file every op reads

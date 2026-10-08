@@ -1,12 +1,12 @@
 # TASK-69: Use-case content — landing page + docs site update
 
-**Status**: ✅ Implemented — 2026-07-10 (site commit 8deb8db, local; push/deploy pending
-user confirmation)
+**Status**: ✅ Implemented — 2026-07-10 (site commit 8deb8db); live since the site moved to
+AWS at navigator.quantflow.studio on 2026-10-08 (repo `qf-studio/navigator-docs`)
 
 ## Context
 
 Navigator's feature set has grown (v6.18.1 released; v7 runtime in local alpha) but the
-site (`~/Projects/startups/navigator-site`, deployed at navigator-site.vercel.app) has no
+site (`~/Projects/startups/navigator-site`, deployed at navigator.quantflow.studio) has no
 use-case-oriented content: the landing page (`content/index.mdx`) sells the core loop
 (context engineering, sessions that last) and the docs are organized by feature/skill,
 not by "what problem does this solve for me."
@@ -42,7 +42,7 @@ queryable decisions). Case 5 is the best live demo (deterministic, zero-token).
 ## Decision points (defaults chosen; override before implementation)
 
 1. **v7 content policy** — RESOLVED by user 2026-07-10: the site is not publicly
-   launched yet (DNS pending, no announcement), so there is no released-claims surface
+   launched yet (at the time: no custom domain, no announcement), so there is no released-claims surface
    to protect. v7 capabilities (Tier-1 instant answers, evidence-gated completion,
    dispatcher runtime) are written as first-class, no version badges. The site launches
    with/after v7.
@@ -61,7 +61,7 @@ queryable decisions). Case 5 is the best live demo (deterministic, zero-token).
       callout/component usage before writing).
 - [x] `bun run build` (or the repo's build script) exits clean; both pages visually
       checked in dev server.
-- [x] Deploy: push publishes via Vercel — **confirm with user before pushing**.
+- [x] Deploy: shipped with the AWS move (push `main` + `prod-*` tag in `qf-studio/navigator-docs`).
 
 ## Verify
 

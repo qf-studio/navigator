@@ -68,7 +68,7 @@ Directory: `/site` (excluded from plugin packaging + `.claude-plugin` marketplac
 - **Deliverable**: working search; mobile-responsive, accessible, SEO-complete; passing Lighthouse.
 
 ### Phase 4 — Deploy (0.5–2d)
-- **Recommended (OSS default): Vercel** — `/site` as project root, per-PR previews, free tier, no Dockerfile needed.
+- **Recommended (OSS default): Vercel** — `/site` as project root, per-PR previews, free tier, no Dockerfile needed. _(historical rationale; superseded 2026-10-08 by AWS, see Phase 4)_
 - **Parity alternative**: port Pilot's 3-stage Dockerfile + GitHub Actions `site.yml` → GHCR → self-host on Traefik.
   (Pilot uses GitLab CI — **not** portable; translate to GitHub Actions.)
 - Keep the Dockerfile committed regardless for portability. Add a CI build gate (`bun install && bun run build`) on PRs touching `/site`.
@@ -94,7 +94,7 @@ Directory: `/site` (excluded from plugin packaging + `.claude-plugin` marketplac
 - Content staleness (`jitd` install bug, v5.2.0 PITCH, VitePress TASK-13) — version-correctness pass is mandatory.
 - ASCII diagrams are weak as a marketing hero — may need real SVG/illustration (no brand assets exist yet).
 - Zero real social proof (no testimonials/logos) — v1 ships without; weakens conversion.
-- Deploy infra mismatch (Pilot self-host needs Traefik/registry the OSS repo lacks → Vercel avoids this).
+- Deploy infra mismatch (Pilot self-host needs Traefik/registry the OSS repo lacks → Vercel avoids this). _(historical; the quantflow ECS/CloudFront infra closed this gap in 2026-09)_
 - Repo bloat — `/site` must be excluded from plugin packaging + marketplace manifest.
 - Docs-sync drift — 28 SKILL.md files change fast; prefer auto-generated skill stubs.
 
@@ -103,7 +103,7 @@ Directory: `/site` (excluded from plugin packaging + `.claude-plugin` marketplac
 ## Decisions (locked 2026-06-24)
 1. ✅ **Separate repo** `../navigator-site` (sibling of `navigator/` and `pilot/`) — NOT inside the plugin repo (keeps it clean). Supersedes the earlier "standalone `/site` inside repo" wording.
 2. ✅ **Domain: `navigator.quantflow.studio`** (matches `pilot.quantflow.studio`).
-3. ✅ **Deploy: Vercel** (custom domain via DNS CNAME; Dockerfile kept committed for self-host parity).
+3. ✅ ~~**Deploy: Vercel** (custom domain via DNS CNAME; Dockerfile kept committed for self-host parity).~~ **Superseded 2026-10-08: AWS ECS + CloudFront, same shape as pilot-docs** (the committed Dockerfile is now the production build).
 4. ✅ **Proof framing: softened** — "instrumented with OpenTelemetry, run `/nav:stats`"; efficiency panel labeled "example output".
 
 ## Phase 0 — DONE (2026-06-24)
@@ -146,7 +146,7 @@ green (60 pages, Pagefind 55); all 6 verified 200 on production. **Phase 2 (docs
 ## Phase 3 — OG image + SEO DONE (2026-06-26)
 Added a file-convention social card (`app/opengraph-image.tsx`, next/og 1200x630 wordmark) that cascades og:image + twitter:image to all 62 routes, a matching `twitter-image.tsx`, and a `%s — Navigator` title template (deep pages read e.g. "nav-loop — Navigator"). Verified live: https://navigator-site.vercel.app/opengraph-image returns a valid 1200x630 PNG; meta tags confirmed in built HTML.
 
-**Remaining**: DNS (user) + optional full brand identity (logo mark / palette / typography — site currently uses a text wordmark).
+**Remaining**: optional full brand identity (logo mark / palette / typography — site currently uses a text wordmark).
 
 ## Stale `jitd` plugin name — FIXED (2026-06-25, commit 36b06df)
 Plugin was renamed jitd → navigator ~6 months ago but live install/usage docs still shipped the old name + wrong repo
@@ -158,16 +158,21 @@ validators, CHANGELOG/release/archive history, `mem-036` rename pitfall. The sit
 — Phase 2 authoring applied the correct install command on import. Note: `DEPLOYMENT.md` is still v1.0.x-era stale
 beyond the name (shows a `commands` array, v1.0.0, hardcoded 92%/10x metrics) — separate cleanup if it matters.
 
-## Phase 4 — Deployed (2026-06-24)
-Live on Vercel (project `aleksei-petrovs-projects/navigator-site`, Next.js auto-detected, build 58s):
-- **Production**: https://navigator.quantflow.studio (AWS since 2026-10-08; previously https://navigator-site.vercel.app)
-- Custom domain `navigator.quantflow.studio` **added to project**, pending DNS.
-
-⚠️ **DNS step (manual, user)** — `quantflow.studio` nameservers are on **fastdns24** (external, like Pilot), so add
-at the DNS provider: `A navigator.quantflow.studio → 76.76.21.21` (Vercel-recommended) **or** CNAME →
-`cname.vercel-dns.com`. Vercel auto-verifies + issues TLS after the record propagates.
-
-Future deploys: `vercel deploy --prod` from `navigator-site/` (already linked; `.vercel/` is gitignored).
+## Phase 4 — Deployed (2026-06-24 on Vercel; moved to AWS 2026-10-08)
+- **Production**: https://navigator.quantflow.studio — AWS since 2026-10-08. ECS service
+  `navigator-docs` on the quantflow cluster (2 tasks, ALB host rule priority 40, health
+  `/robots.txt`) behind CloudFront (alias on the shared distribution, wildcard cert); Route 53
+  alias owned by stack `quantflow-domain-config` in `qf-studio/aws-infrastructure-pilot` (Nelya).
+- **Source repo**: `qf-studio/navigator-docs` (private, local `~/Projects/startups/navigator-site`).
+  `build.yml` → `ghcr.io/qf-studio/navigator-docs` on `main` and `prod-*`; `deploy-quantflow-aws.yml`
+  mirrors to ECR `quantflow/navigator-docs` and deploys `quantflow-svc-navigator-docs`.
+- **Future deploys**: push `main`, then `git tag prod-<version>-$(date +%s) && git push origin <tag>`
+  (procedure: `.agent/sops/development/release-workflow.md` Step 7).
+- Container-vs-Vercel parity checked 2026-10-07: standalone output, image optimizer off, CDN cache
+  headers, favicon (health), sitemap enumerates every page (69), pagefind index served from
+  `public/_pagefind`. The Vercel project `navigator-site` is retired.
+- History: first live on Vercel 2026-06-24 (`navigator-site.vercel.app`); the custom domain waited
+  on DNS until the AWS move replaced the Vercel CNAME plan.
 
 ## Open questions (still needed for Phase 1–3)
 1. **Brand identity** (logo/palette, OG image) — none exist yet; navbar uses a text wordmark for now.

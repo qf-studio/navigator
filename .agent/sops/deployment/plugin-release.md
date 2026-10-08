@@ -131,9 +131,9 @@ Restart Claude Code afterwards — skill paths are cached at session start.
 
 ### Sync the docs site
 
-Separate repo, no git remote, manual every release — see
-`.agent/sops/development/release-workflow.md` Step 7 (version chip, skill/config pages,
-`bun run build && vercel --prod --yes`, verify the live version string).
+Separate repo `qf-studio/navigator-docs` (live at navigator.quantflow.studio on AWS), manual
+every release — see `.agent/sops/development/release-workflow.md` Step 7 (version chip,
+skill/config pages, push `main`, push a `prod-<VERSION>-<ts>` tag, verify the live version string).
 
 ### If Errors Occur
 
