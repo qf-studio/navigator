@@ -261,7 +261,8 @@ runs the Python ops as if the mod owned nothing.
    `.github/workflows/release.yml`, which publishes the GitHub release
 6. Never run `gh release create` locally (it races the workflow)
 7. `claude plugin update navigator@navigator-marketplace`, restart the host, sync the
-   docs site
+   docs site (repo `qf-studio/navigator-docs`: push `main`, then a `prod-<version>-<ts>` tag
+   deploys to AWS behind CloudFront — `release-workflow.md` Step 7)
 
 ---
 
