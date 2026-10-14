@@ -440,8 +440,10 @@ Since v7.8.0 (GH-30) `nav_hook_lib.config.load` reads two files over `DEFAULTS`:
 1. `sops/development/release-workflow.md`
 2. Run `release_validator.py --check-all` and `--verify-hooks`
 3. `./scripts/bump-version.sh X.Y.Z` — updates the five canonical version files
-   (marketplace.json, plugin.json, README.md badge, CLAUDE.md, .nav-config.json) and
-   re-validates. Author `releases/RELEASE-NOTES-vX.Y.Z.md` and the CHANGELOG entry by hand
+   (marketplace.json, plugin.json, README.md badge, CLAUDE.md, .nav-config.json), regenerates
+   `hooks/mod/tests/fixtures/tier1.gen.ts` (embeds the version — commit it, or `--verify-mod`
+   fails on the tag, v8.4.0) and re-validates. Author `releases/RELEASE-NOTES-vX.Y.Z.md` and the
+   CHANGELOG entry by hand
 4. Commit both (feature commit, then `chore(release): prepare vX.Y.Z`), push, then tag →
    CI publishes via `release.yml`. Never `gh release create` locally
 5. Verify with `release_validator.py --verify-tag vX.Y.Z`

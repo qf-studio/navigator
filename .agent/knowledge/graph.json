@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-14T14:54:06.135712+00:00",
+  "last_updated": "2026-10-14T15:06:34.371770+00:00",
   "stats": {
-    "total_nodes": 248,
+    "total_nodes": 249,
     "total_edges": 874,
-    "memory_count": 96
+    "memory_count": 97
   },
   "nodes": {
     "tasks": {
@@ -358,7 +358,7 @@
       "TASK-25": {
         "id": "TASK-25",
         "path": ".agent/tasks/TASK-25-fix-multi-claude-reliability.md",
-        "title": "TASK-25: Fix Multi-Claude Workflow Reliability (30% → 90%)",
+        "title": "TASK-25: Fix Multi-Claude Workflow Reliability (30% \u2192 90%)",
         "status": "completed",
         "concepts": [
           "testing",
@@ -491,7 +491,7 @@
       },
       "TASK-38": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-38-hook-migration-roadmap-v6.11.md",
-        "title": "Hook-Migration Roadmap — v6.11 (Umbrella)",
+        "title": "Hook-Migration Roadmap \u2014 v6.11 (Umbrella)",
         "status": "in-progress",
         "concepts": [
           "skills",
@@ -508,7 +508,7 @@
       },
       "TASK-41": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-41-hook-silent-fail-postmortem-v6.15.1.md",
-        "title": "Hook Silent-Fail Postmortem — v6.15.1",
+        "title": "Hook Silent-Fail Postmortem \u2014 v6.15.1",
         "status": "completed",
         "concepts": [
           "api",
@@ -527,7 +527,7 @@
       },
       "TASK-40": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-40-phase-3-hook-migration-v6.12.md",
-        "title": "Phase 3 Hook Migration — v6.12.x",
+        "title": "Phase 3 Hook Migration \u2014 v6.12.x",
         "status": "completed",
         "concepts": [
           "markers",
@@ -652,7 +652,7 @@
       },
       "TASK-54": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-54-nav-pilot-dispatch-skill.md",
-        "title": "nav-pilot — Dispatch Handoff Skill (Navigator → Pilot)",
+        "title": "nav-pilot \u2014 Dispatch Handoff Skill (Navigator \u2192 Pilot)",
         "status": "completed",
         "concepts": [
           "deployment",
@@ -685,7 +685,7 @@
       },
       "TASK-56": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-56-nav-brief.md",
-        "title": "nav-brief — Intent-Brief Enforcement for Ambiguous Prompts",
+        "title": "nav-brief \u2014 Intent-Brief Enforcement for Ambiguous Prompts",
         "status": "completed",
         "concepts": [
           "api",
@@ -698,7 +698,7 @@
       },
       "TASK-57": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-57-v7-hook-channel-spike.md",
-        "title": "v7 Spike — Empirically Verify Unproven Hook Channels",
+        "title": "v7 Spike \u2014 Empirically Verify Unproven Hook Channels",
         "status": "completed",
         "concepts": [
           "workflow",
@@ -711,7 +711,7 @@
       },
       "TASK-58": {
         "path": ".agent/tasks/TASK-58-harness-conformance-suite.md",
-        "title": "Harness-Conformance Suite — Spike Probes Become Regression Checks",
+        "title": "Harness-Conformance Suite \u2014 Spike Probes Become Regression Checks",
         "status": "backlog",
         "concepts": [
           "skills",
@@ -726,7 +726,7 @@
       },
       "TASK-59": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-59-nav-hook-lib.md",
-        "title": "nav_hook_lib — Shared Hook Runtime Library",
+        "title": "nav_hook_lib \u2014 Shared Hook Runtime Library",
         "status": "completed",
         "concepts": [
           "api",
@@ -744,7 +744,7 @@
       },
       "TASK-60": {
         "path": ".agent/tasks/TASK-60-nav-dispatch-runtime.md",
-        "title": "nav_dispatch — Single Dispatcher Entrypoint + Op Registry",
+        "title": "nav_dispatch \u2014 Single Dispatcher Entrypoint + Op Registry",
         "status": "backlog",
         "concepts": [
           "deployment",
@@ -808,7 +808,7 @@
       },
       "TASK-64": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-64-v7-release-gate.md",
-        "title": "v7.0.0 Release Gate — Validation, RC Soak, Rollback",
+        "title": "v7.0.0 Release Gate \u2014 Validation, RC Soak, Rollback",
         "status": "completed",
         "concepts": [
           "deployment",
@@ -861,7 +861,7 @@
       },
       "TASK-69": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-69-use-cases-site-update.md",
-        "title": "Use-case content — landing page + docs site update",
+        "title": "Use-case content \u2014 landing page + docs site update",
         "status": "completed",
         "concepts": [
           "simplification",
@@ -889,7 +889,7 @@
       },
       "TASK-74": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-74-nav-deep-research.md",
-        "title": "nav-deep-research — web deep research for Navigator",
+        "title": "nav-deep-research \u2014 web deep research for Navigator",
         "status": "completed",
         "concepts": [
           "context",
@@ -904,7 +904,7 @@
       },
       "TASK-83": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-83-mods-spike.md",
-        "title": "Claude Code mods spike — `nav-status`",
+        "title": "Claude Code mods spike \u2014 `nav-status`",
         "status": "completed",
         "concepts": [
           "workflow",
@@ -920,7 +920,7 @@
       },
       "TASK-93": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-93-reply-modes-ste.md",
-        "title": "Reply modes — one table, one op; STE mode joins ADHD mode",
+        "title": "Reply modes \u2014 one table, one op; STE mode joins ADHD mode",
         "status": "completed",
         "concepts": [
           "knowledge",
@@ -934,7 +934,7 @@
       },
       "TASK-95": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-95-stop-gate-untracked-files-heredoc-retired.md",
-        "title": "Stop gate — `code_committed` ignores untracked files; heredoc bucket retired",
+        "title": "Stop gate \u2014 `code_committed` ignores untracked files; heredoc bucket retired",
         "status": "research",
         "concepts": [
           "deployment",
@@ -945,7 +945,7 @@
       },
       "TASK-96": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-96-stop-gate-unknown-heads.md",
-        "title": "Stop gate — read-only shapes among the unknown heads",
+        "title": "Stop gate \u2014 read-only shapes among the unknown heads",
         "status": "research",
         "concepts": [
           "deployment",
@@ -967,7 +967,7 @@
       },
       "TASK-100": {
         "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-100-otel-collector-multi-session.md",
-        "title": "Metrics from every session — OTel collector in the stack, pane guard when a session is not scraped",
+        "title": "Metrics from every session \u2014 OTel collector in the stack, pane guard when a session is not scraped",
         "status": "backlog",
         "concepts": [
           "theory of mind",
@@ -1884,7 +1884,7 @@
       },
       "mem-003": {
         "type": "pitfall",
-        "summary": "graph_manager.add_memory() generates IDs by counting existing memory nodes — deleting any memory resets the counter and will silently overwrite the re-generated ID on the next insert [skills/nav-graph/functions/graph_manager.py:272]",
+        "summary": "graph_manager.add_memory() generates IDs by counting existing memory nodes \u2014 deleting any memory resets the counter and will silently overwrite the re-generated ID on the next insert [skills/nav-graph/functions/graph_manager.py:272]",
         "path": "memories/pitfalls/mem-003.md",
         "confidence": 0.95,
         "concepts": [
@@ -1908,7 +1908,7 @@
       },
       "mem-005": {
         "type": "pitfall",
-        "summary": "resolve_concept_alias() in graph_manager.py has no entries for 'performance', 'security', or 'configuration' — memories ingested by research_to_graph.py under those concepts are invisible to graph queries [skills/nav-graph/functions/graph_manager.py:169]",
+        "summary": "resolve_concept_alias() in graph_manager.py has no entries for 'performance', 'security', or 'configuration' \u2014 memories ingested by research_to_graph.py under those concepts are invisible to graph queries [skills/nav-graph/functions/graph_manager.py:169]",
         "path": "memories/pitfalls/mem-005.md",
         "confidence": 0.95,
         "concepts": [
@@ -1932,7 +1932,7 @@
       },
       "mem-007": {
         "type": "decision",
-        "summary": "research_to_graph.py sets DEFAULT_CONFIDENCE=0.7 (vs 0.8 for corrections, 0.95 for task decisions) — intentionally lower because agent inference is less authoritative than user-confirmed corrections [skills/nav-graph/functions/research_to_graph.py:37]",
+        "summary": "research_to_graph.py sets DEFAULT_CONFIDENCE=0.7 (vs 0.8 for corrections, 0.95 for task decisions) \u2014 intentionally lower because agent inference is less authoritative than user-confirmed corrections [skills/nav-graph/functions/research_to_graph.py:37]",
         "path": "memories/decisions/mem-007.md",
         "confidence": 0.9,
         "concepts": [
@@ -1956,7 +1956,7 @@
       },
       "mem-009": {
         "type": "pitfall",
-        "summary": "add_memory() stores a path like 'memories/pitfalls/mem-001.md' in the graph node but does not create the file — memory_writer.py must be called separately; research-ingested and correction-ingested memories will have dangling paths unless the caller explicitly invokes memory_writer.py [skills/nav-graph/functions/graph_manager.py:276]",
+        "summary": "add_memory() stores a path like 'memories/pitfalls/mem-001.md' in the graph node but does not create the file \u2014 memory_writer.py must be called separately; research-ingested and correction-ingested memories will have dangling paths unless the caller explicitly invokes memory_writer.py [skills/nav-graph/functions/graph_manager.py:276]",
         "path": "memories/pitfalls/mem-009.md",
         "confidence": 0.85,
         "concepts": [
@@ -1980,7 +1980,7 @@
       },
       "mem-011": {
         "type": "pitfall",
-        "summary": "backend-test and frontend-test skill triggers ('add test', 'test this', 'test this component') were not matched by skill_detector.py patterns — they fell through to Task Mode with no output. Fixed in v6.4.0 by adding 6 missing patterns. [skills/nav-workflow/functions/skill_detector.py:76-97]",
+        "summary": "backend-test and frontend-test skill triggers ('add test', 'test this', 'test this component') were not matched by skill_detector.py patterns \u2014 they fell through to Task Mode with no output. Fixed in v6.4.0 by adding 6 missing patterns. [skills/nav-workflow/functions/skill_detector.py:76-97]",
         "path": "memories/pitfalls/mem-011.md",
         "confidence": 0.98,
         "concepts": [
@@ -1993,7 +1993,7 @@
       },
       "mem-012": {
         "type": "pitfall",
-        "summary": "database-migration SKILL.md had empty functions/, templates/, examples/ subdirectories inconsistent with peer skills (frontend-component, backend-endpoint). SKILL.md uses inline templates with direct Write() calls — by design. Empty dirs removed in v6.4.0; added clarifying note. [skills/database-migration/SKILL.md:10]",
+        "summary": "database-migration SKILL.md had empty functions/, templates/, examples/ subdirectories inconsistent with peer skills (frontend-component, backend-endpoint). SKILL.md uses inline templates with direct Write() calls \u2014 by design. Empty dirs removed in v6.4.0; added clarifying note. [skills/database-migration/SKILL.md:10]",
         "path": "memories/pitfalls/mem-012.md",
         "confidence": 1.0,
         "concepts": [
@@ -2019,7 +2019,7 @@
       },
       "mem-014": {
         "type": "pitfall",
-        "summary": "workflow_enforcer.py hook was dead code — not registered in .claude/settings.json. The CLAUDE.md 'WORKFLOW CHECK block' had zero runtime enforcement. Wired into UserPromptSubmit in v6.4.0; hook updated to parse stdin JSON. [hooks/workflow_enforcer.py:12]",
+        "summary": "workflow_enforcer.py hook was dead code \u2014 not registered in .claude/settings.json. The CLAUDE.md 'WORKFLOW CHECK block' had zero runtime enforcement. Wired into UserPromptSubmit in v6.4.0; hook updated to parse stdin JSON. [hooks/workflow_enforcer.py:12]",
         "path": "memories/pitfalls/mem-014.md",
         "confidence": 1.0,
         "concepts": [
@@ -2044,7 +2044,7 @@
       },
       "mem-016": {
         "type": "pitfall",
-        "summary": "nav-loop had three inconsistent numbers governing completion: phase_detector COMPLETE_THRESHOLD=4 with reason string '/5 indicators' (wrong — 6 indicators documented), exit_gate min_heuristics=2 default. Aligned in v6.4.0 via shared constants TOTAL_INDICATORS=6 and COMPLETE_THRESHOLD=4. [skills/nav-loop/functions/phase_detector.py:28-32]",
+        "summary": "nav-loop had three inconsistent numbers governing completion: phase_detector COMPLETE_THRESHOLD=4 with reason string '/5 indicators' (wrong \u2014 6 indicators documented), exit_gate min_heuristics=2 default. Aligned in v6.4.0 via shared constants TOTAL_INDICATORS=6 and COMPLETE_THRESHOLD=4. [skills/nav-loop/functions/phase_detector.py:28-32]",
         "path": "memories/pitfalls/mem-016.md",
         "confidence": 0.95,
         "concepts": [
@@ -2056,7 +2056,7 @@
       },
       "mem-017": {
         "type": "pattern",
-        "summary": "nav-task (Step 4.5) is the only execution skill that writes to the knowledge graph via task_to_graph.py. Code-writing skills (frontend-component, backend-endpoint, database-migration) record nothing post-generation. execution_to_graph.py is the parity gap vs research_to_graph.py — planned for v6.5.0. [skills/nav-task/SKILL.md:363-389]",
+        "summary": "nav-task (Step 4.5) is the only execution skill that writes to the knowledge graph via task_to_graph.py. Code-writing skills (frontend-component, backend-endpoint, database-migration) record nothing post-generation. execution_to_graph.py is the parity gap vs research_to_graph.py \u2014 planned for v6.5.0. [skills/nav-task/SKILL.md:363-389]",
         "path": "memories/patterns/mem-017.md",
         "confidence": 0.98,
         "concepts": [
@@ -2154,7 +2154,7 @@
       },
       "mem-026": {
         "type": "pattern",
-        "summary": "Navigator user-facing flows map (v6.8.0): ~28 flows across 8 categories. Canonical path: start→task-mode→impl-skill→simplify→commit→compact",
+        "summary": "Navigator user-facing flows map (v6.8.0): ~28 flows across 8 categories. Canonical path: start\u2192task-mode\u2192impl-skill\u2192simplify\u2192commit\u2192compact",
         "path": "memories/patterns/mem-026.md",
         "confidence": 0.9,
         "concepts": [
@@ -2170,7 +2170,7 @@
       },
       "mem-027": {
         "type": "pattern",
-        "summary": "Three-layer AI tooling architecture: Model (judgment) / Hooks (policy & I/O) / Harness (lifecycle). Claude Code's hook surface enables migrating 'always remember to X' rules from prompts to deterministic Python — auditable, versionable, per-project composable.",
+        "summary": "Three-layer AI tooling architecture: Model (judgment) / Hooks (policy & I/O) / Harness (lifecycle). Claude Code's hook surface enables migrating 'always remember to X' rules from prompts to deterministic Python \u2014 auditable, versionable, per-project composable.",
         "path": "memories/patterns/mem-027.md",
         "confidence": 0.95,
         "concepts": [
@@ -2232,7 +2232,7 @@
       },
       "mem-032": {
         "type": "pitfall",
-        "summary": "Next.js 15+ fetch() is uncached by default — the opposite of v14. Pages re-render on every request unless you opt into caching with { next: { revalidate: N } } or { cache: 'force-cache' }. Most blog posts and muscle memory predate this flip. Lead templates with explicit { cache: 'no-store' } when SSR is the intent. See .agent/philosophy/NEXTJS-PATTERNS.md §D.",
+        "summary": "Next.js 15+ fetch() is uncached by default \u2014 the opposite of v14. Pages re-render on every request unless you opt into caching with { next: { revalidate: N } } or { cache: 'force-cache' }. Most blog posts and muscle memory predate this flip. Lead templates with explicit { cache: 'no-store' } when SSR is the intent. See .agent/philosophy/NEXTJS-PATTERNS.md \u00a7D.",
         "path": "memories/pitfalls/mem-032.md",
         "confidence": 0.95,
         "concepts": [
@@ -2247,7 +2247,7 @@
       },
       "mem-033": {
         "type": "pitfall",
-        "summary": "Next.js 16 renames middleware.ts to proxy.ts at project root. Same matcher API and NextRequest/NextResponse, but middleware.ts is deprecated. Codemod: npx @next/codemod@canary middleware-to-proxy . Also in v15+: params and searchParams are Promises — must await them in pages, layouts, and route handlers. Route Handler context type is inferred from the file path: collection routes get Promise<{}>, dynamic routes get Promise<{id: string}>. Hardcoding the dynamic shape on a collection route fails  type-check. See .agent/philosophy/NEXTJS-PATTERNS.md §A, §E, §H.",
+        "summary": "Next.js 16 renames middleware.ts to proxy.ts at project root. Same matcher API and NextRequest/NextResponse, but middleware.ts is deprecated. Codemod: npx @next/codemod@canary middleware-to-proxy . Also in v15+: params and searchParams are Promises \u2014 must await them in pages, layouts, and route handlers. Route Handler context type is inferred from the file path: collection routes get Promise<{}>, dynamic routes get Promise<{id: string}>. Hardcoding the dynamic shape on a collection route fails  type-check. See .agent/philosophy/NEXTJS-PATTERNS.md \u00a7A, \u00a7E, \u00a7H.",
         "path": "memories/pitfalls/mem-033.md",
         "confidence": 0.95,
         "concepts": [
@@ -2263,7 +2263,7 @@
       "mem-036": {
         "type": "pitfall",
         "title": "Plugin manifest hooks fail silently when $CLAUDE_PLUGIN_DIR unset",
-        "summary": "v6.14.0 shell guard (if [ -n \"$CLAUDE_PLUGIN_DIR\" ]; then ... fi) exits 0 with no output when CC does not bind the variable — every hook becomes invisible no-op. Projects with project-local .claude/settings.json hardcoded entries mask the failure; manifest-only projects get zero injection and zero error signal. Fixed v6.15.1 via shell parameter-expansion fallback to flat marketplaces path.",
+        "summary": "v6.14.0 shell guard (if [ -n \"$CLAUDE_PLUGIN_DIR\" ]; then ... fi) exits 0 with no output when CC does not bind the variable \u2014 every hook becomes invisible no-op. Projects with project-local .claude/settings.json hardcoded entries mask the failure; manifest-only projects get zero injection and zero error signal. Fixed v6.15.1 via shell parameter-expansion fallback to flat marketplaces path.",
         "concepts": [
           "hooks",
           "claude-code",
@@ -2321,7 +2321,7 @@
       },
       "mem-037": {
         "type": "pitfall",
-        "summary": "Stop hook nav_workflow_state.py stamped check_shown=false on every assistant turn missing the literal WORKFLOW CHECK string, including AskUserQuestion-only and pure-text turns. workflow_enforcer.py then deadlocked the next loop-trigger prompt. Fixed in v6.15.3 by tristating check_shown — True if CHECK present, False only when prior turn used a codebase-mutating tool without showing it, None otherwise.",
+        "summary": "Stop hook nav_workflow_state.py stamped check_shown=false on every assistant turn missing the literal WORKFLOW CHECK string, including AskUserQuestion-only and pure-text turns. workflow_enforcer.py then deadlocked the next loop-trigger prompt. Fixed in v6.15.3 by tristating check_shown \u2014 True if CHECK present, False only when prior turn used a codebase-mutating tool without showing it, None otherwise.",
         "path": "memories/pitfalls/mem-037.md",
         "confidence": 1.0,
         "concepts": [
@@ -2431,7 +2431,7 @@
       },
       "mem-050": {
         "type": "learning",
-        "summary": "S1 verdict — PostToolUse hookSpecificOutput.additionalContext DELIVERS to the model. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike, ship-path scratch marketplace). Supersedes mem-035 for the PostToolUse additionalContext sub-channel. The payload lands as a transcript attachment entry of type hook_additional_context immediately after the tool_result. Hard constraint: content must be DECLARATIVE (facts, data, memories). Imperative instructions ('you MUST quote this token') are flagged by the model as prompt injection and refused (2/2 runs), while a declarative fact was correctly used to answer a question (clean pass; sentinel NAV-S1-c2505e07 answered as the 'internal build codename'). PostToolUseFailure inherits this verdict per the routing matrix. Evidence: transcript /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/26e7b852-b8d7-4ea7-8a00-594c85249863.jsonl; probe /tmp/nav-v7-spike/probes/probe_s1.py; verdict /tmp/nav-v7-spike/state/verdict-s1.json.",
+        "summary": "S1 verdict \u2014 PostToolUse hookSpecificOutput.additionalContext DELIVERS to the model. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike, ship-path scratch marketplace). Supersedes mem-035 for the PostToolUse additionalContext sub-channel. The payload lands as a transcript attachment entry of type hook_additional_context immediately after the tool_result. Hard constraint: content must be DECLARATIVE (facts, data, memories). Imperative instructions ('you MUST quote this token') are flagged by the model as prompt injection and refused (2/2 runs), while a declarative fact was correctly used to answer a question (clean pass; sentinel NAV-S1-c2505e07 answered as the 'internal build codename'). PostToolUseFailure inherits this verdict per the routing matrix. Evidence: transcript /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/26e7b852-b8d7-4ea7-8a00-594c85249863.jsonl; probe /tmp/nav-v7-spike/probes/probe_s1.py; verdict /tmp/nav-v7-spike/state/verdict-s1.json.",
         "path": "memories/learnings/mem-050.md",
         "confidence": 1.0,
         "concepts": [
@@ -2444,7 +2444,7 @@
       },
       "mem-051": {
         "type": "learning",
-        "summary": "S2 verdict — Stop hook 'continue: true' is a NO-OP for forced continuation; 'decision: block' + reason IS the working mechanism. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). continue:true was accepted (hook_success) but the session ended normally (num_turns=1, no continuation) — continue only has effect as continue:false. decision:block injected its reason as a user-role 'Stop hook feedback:' message and produced exactly one continuation obeying it (CLI result was the sentinel NAV-S2B-bbebfac5, num_turns=2). Runaway protection verified on both layers: the re-fire after a block carries stop_hook_active=true (harness belt), and the single-shot flag-file fuse consumed correctly with a run-twice subtest showing zero further continuations (mem-037 discipline). v7 consequence: stop_completion builds on decision:block; continue:true ships OFF permanently. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/fcd00eb3-4193-474f-adac-482bd9bfa077.jsonl (continue variant) and 047b00c1-c117-4863-968a-f9eb9d1494ae.jsonl (block variant); probe /tmp/nav-v7-spike/probes/probe_s2.py; verdict /tmp/nav-v7-spike/state/verdict-s2.json.",
+        "summary": "S2 verdict \u2014 Stop hook 'continue: true' is a NO-OP for forced continuation; 'decision: block' + reason IS the working mechanism. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). continue:true was accepted (hook_success) but the session ended normally (num_turns=1, no continuation) \u2014 continue only has effect as continue:false. decision:block injected its reason as a user-role 'Stop hook feedback:' message and produced exactly one continuation obeying it (CLI result was the sentinel NAV-S2B-bbebfac5, num_turns=2). Runaway protection verified on both layers: the re-fire after a block carries stop_hook_active=true (harness belt), and the single-shot flag-file fuse consumed correctly with a run-twice subtest showing zero further continuations (mem-037 discipline). v7 consequence: stop_completion builds on decision:block; continue:true ships OFF permanently. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/fcd00eb3-4193-474f-adac-482bd9bfa077.jsonl (continue variant) and 047b00c1-c117-4863-968a-f9eb9d1494ae.jsonl (block variant); probe /tmp/nav-v7-spike/probes/probe_s2.py; verdict /tmp/nav-v7-spike/state/verdict-s2.json.",
         "path": "memories/learnings/mem-051.md",
         "confidence": 1.0,
         "concepts": [
@@ -2457,7 +2457,7 @@
       },
       "mem-052": {
         "type": "learning",
-        "summary": "S3 verdict — SubagentStart hookSpecificOutput.additionalContext WORKS with both-way main/subagent isolation. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). The event fires for Task-tool subagents, and the injected context lands as a hook_additional_context attachment in the subagent's own transcript; the subagent complied with it (quoted sentinel NAV-S3A-d656b96b in its answer — subagent-start injection is treated as trusted context, unlike tool-adjacent injection). Isolation holds both ways: the injected sentinel reached the main thread only via the expected Task tool_result relay, and a main-thread-only sentinel never appeared in the subagent transcript. Harness facts: subagent transcripts are SEPARATE files at <session-id>/subagents/agent-<id>.jsonl under the project slug dir (not sidechain entries in the main JSONL); hook payload carries agent_type. v7 consequence: subagent_context feature is viable at the 2k-char budget. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/670f5507-8980-4174-99e7-ac7f83c4314f.jsonl and its subagents/agent-afbe4a5fb40770c7f.jsonl; probe /tmp/nav-v7-spike/probes/probe_s3.py; verdict /tmp/nav-v7-spike/state/verdict-s3.json.",
+        "summary": "S3 verdict \u2014 SubagentStart hookSpecificOutput.additionalContext WORKS with both-way main/subagent isolation. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). The event fires for Task-tool subagents, and the injected context lands as a hook_additional_context attachment in the subagent's own transcript; the subagent complied with it (quoted sentinel NAV-S3A-d656b96b in its answer \u2014 subagent-start injection is treated as trusted context, unlike tool-adjacent injection). Isolation holds both ways: the injected sentinel reached the main thread only via the expected Task tool_result relay, and a main-thread-only sentinel never appeared in the subagent transcript. Harness facts: subagent transcripts are SEPARATE files at <session-id>/subagents/agent-<id>.jsonl under the project slug dir (not sidechain entries in the main JSONL); hook payload carries agent_type. v7 consequence: subagent_context feature is viable at the 2k-char budget. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/670f5507-8980-4174-99e7-ac7f83c4314f.jsonl and its subagents/agent-afbe4a5fb40770c7f.jsonl; probe /tmp/nav-v7-spike/probes/probe_s3.py; verdict /tmp/nav-v7-spike/state/verdict-s3.json.",
         "path": "memories/learnings/mem-052.md",
         "confidence": 1.0,
         "concepts": [
@@ -2471,7 +2471,7 @@
       },
       "mem-053": {
         "type": "learning",
-        "summary": "S4 verdict — UserPromptSubmit block-as-answer WORKS with zero model invocation; WINNER: decision:block JSON (over exit-2 stderr). Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). Both variants blocked the trigger turn with num_turns=0, duration_api_ms=0, all-zero usage and modelUsage={} — a genuinely zero-token deterministic answer path for Tier-1. Rendering: decision:block shows 'UserPromptSubmit operation blocked by hook:' plus the reason (clean); exit-2 leaks the raw hook command chrome into the visible answer. Echo hygiene (mem-034): the same-session follow-up prompt passed through without re-trigger and answered normally with no block-text leakage; caution — Claude Code itself appends 'Original prompt: <trigger>' to the block message, so the trigger phrase re-enters the transcript regardless of hook-side hygiene; transcript/context-scanning hooks must tolerate that echo. Scripting note: a blocked turn still returns subtype success, exit 0 — detect blocks via num_turns==0 or the result prefix, never exit codes. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/69c208c3-55b4-4c9b-b607-142af26fddfe.jsonl (decision:block) and 58150d0e-5aa9-4afd-a9b1-76d86accbcc9.jsonl (exit-2); probe /tmp/nav-v7-spike/probes/probe_s4.py; verdict /tmp/nav-v7-spike/state/verdict-s4.json.",
+        "summary": "S4 verdict \u2014 UserPromptSubmit block-as-answer WORKS with zero model invocation; WINNER: decision:block JSON (over exit-2 stderr). Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). Both variants blocked the trigger turn with num_turns=0, duration_api_ms=0, all-zero usage and modelUsage={} \u2014 a genuinely zero-token deterministic answer path for Tier-1. Rendering: decision:block shows 'UserPromptSubmit operation blocked by hook:' plus the reason (clean); exit-2 leaks the raw hook command chrome into the visible answer. Echo hygiene (mem-034): the same-session follow-up prompt passed through without re-trigger and answered normally with no block-text leakage; caution \u2014 Claude Code itself appends 'Original prompt: <trigger>' to the block message, so the trigger phrase re-enters the transcript regardless of hook-side hygiene; transcript/context-scanning hooks must tolerate that echo. Scripting note: a blocked turn still returns subtype success, exit 0 \u2014 detect blocks via num_turns==0 or the result prefix, never exit codes. Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/69c208c3-55b4-4c9b-b607-142af26fddfe.jsonl (decision:block) and 58150d0e-5aa9-4afd-a9b1-76d86accbcc9.jsonl (exit-2); probe /tmp/nav-v7-spike/probes/probe_s4.py; verdict /tmp/nav-v7-spike/state/verdict-s4.json.",
         "path": "memories/learnings/mem-053.md",
         "confidence": 1.0,
         "concepts": [
@@ -2484,7 +2484,7 @@
       },
       "mem-054": {
         "type": "learning",
-        "summary": "S5 verdict — PreToolUse split result: plain stdout is DEAD (reconfirms mem-035 for stdout); hookSpecificOutput.additionalContext DELIVERS (SUPERSEDES mem-035 for that sub-channel). Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike), reproduced across clean runs. Stdout variant: sentinel appears only in a hook_success transcript attachment (hook-output logging, not model-visible); the model explicitly answered 'no codename' — clean negative. Context variant: sentinel lands as a hook_additional_context attachment and the model answered the codename question with it (NAV-S5C-b307f7bf). Same declarative-only constraint as S1: imperative instructions via tool-adjacent additionalContext are flagged as prompt injection and refused. Docs remain untrustworthy for this class of behavior — only version-stamped empirical results count; per plan, read_guard stays deny-only regardless (advisory redesign is a v7.x follow-up, not TASK-61). Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/83ed067c-dd03-479e-8db5-dc111345c3b9.jsonl (stdout) and e0cee530-2e10-457f-8e89-b39330035ea7.jsonl (context); probe /tmp/nav-v7-spike/probes/probe_s5.py; verdict /tmp/nav-v7-spike/state/verdict-s5.json.",
+        "summary": "S5 verdict \u2014 PreToolUse split result: plain stdout is DEAD (reconfirms mem-035 for stdout); hookSpecificOutput.additionalContext DELIVERS (SUPERSEDES mem-035 for that sub-channel). Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike), reproduced across clean runs. Stdout variant: sentinel appears only in a hook_success transcript attachment (hook-output logging, not model-visible); the model explicitly answered 'no codename' \u2014 clean negative. Context variant: sentinel lands as a hook_additional_context attachment and the model answered the codename question with it (NAV-S5C-b307f7bf). Same declarative-only constraint as S1: imperative instructions via tool-adjacent additionalContext are flagged as prompt injection and refused. Docs remain untrustworthy for this class of behavior \u2014 only version-stamped empirical results count; per plan, read_guard stays deny-only regardless (advisory redesign is a v7.x follow-up, not TASK-61). Evidence: transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/83ed067c-dd03-479e-8db5-dc111345c3b9.jsonl (stdout) and e0cee530-2e10-457f-8e89-b39330035ea7.jsonl (context); probe /tmp/nav-v7-spike/probes/probe_s5.py; verdict /tmp/nav-v7-spike/state/verdict-s5.json.",
         "path": "memories/learnings/mem-054.md",
         "confidence": 1.0,
         "concepts": [
@@ -2497,7 +2497,7 @@
       },
       "mem-055": {
         "type": "learning",
-        "summary": "S6 verdict — ${CLAUDE_PLUGIN_ROOT} binds correctly in plugin-manifest hook commands, including headless claude -p sessions. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). For directory-source marketplaces it binds to the marketplace SOURCE path (/tmp/nav-v7-spike/marketplace/nav-spike), not the ~/.claude/plugins/cache copy — source edits take effect in new sessions without reinstall. Unset/empty env is a LOUD failure (exit 2, python cannot open /hooks/...), not mem-036's silent no-op — the :-fallback pattern stays prudent for commands that might run outside plugin context. SessionStart DOES fire in headless -p sessions. Two conformance-relevant harness facts: hooks that print no stdout leave NO transcript attachment (silent hooks are transcript-invisible; suites need side-channel logs), and hook payload cwd arrives realpath'd on macOS (/tmp becomes /private/tmp) while $PWD may stay logical — never gate hooks on raw string-prefix cwd checks; resolve paths first. Evidence: side-channel log /tmp/nav-v7-spike/state/log-s6.txt; transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/4c6781cf-54a1-47db-a47b-76e14b700ef6.jsonl and 4d1391c6-1862-44cf-ba46-baca113d5c85.jsonl; probe /tmp/nav-v7-spike/probes/probe_s6.py; verdict /tmp/nav-v7-spike/state/verdict-s6.json.",
+        "summary": "S6 verdict \u2014 ${CLAUDE_PLUGIN_ROOT} binds correctly in plugin-manifest hook commands, including headless claude -p sessions. Empirically observed in CC 2.1.205 on 2026-07-10 (TASK-57 spike). For directory-source marketplaces it binds to the marketplace SOURCE path (/tmp/nav-v7-spike/marketplace/nav-spike), not the ~/.claude/plugins/cache copy \u2014 source edits take effect in new sessions without reinstall. Unset/empty env is a LOUD failure (exit 2, python cannot open /hooks/...), not mem-036's silent no-op \u2014 the :-fallback pattern stays prudent for commands that might run outside plugin context. SessionStart DOES fire in headless -p sessions. Two conformance-relevant harness facts: hooks that print no stdout leave NO transcript attachment (silent hooks are transcript-invisible; suites need side-channel logs), and hook payload cwd arrives realpath'd on macOS (/tmp becomes /private/tmp) while $PWD may stay logical \u2014 never gate hooks on raw string-prefix cwd checks; resolve paths first. Evidence: side-channel log /tmp/nav-v7-spike/state/log-s6.txt; transcripts /Users/aleks.petrov/.claude/projects/-private-tmp-nav-v7-spike-project/4c6781cf-54a1-47db-a47b-76e14b700ef6.jsonl and 4d1391c6-1862-44cf-ba46-baca113d5c85.jsonl; probe /tmp/nav-v7-spike/probes/probe_s6.py; verdict /tmp/nav-v7-spike/state/verdict-s6.json.",
         "path": "memories/learnings/mem-055.md",
         "confidence": 1.0,
         "concepts": [
@@ -2594,7 +2594,7 @@
       },
       "mem-061": {
         "type": "decision",
-        "summary": "Complexity model: additive - plan §4: kills the contradictory base-0.5± variant",
+        "summary": "Complexity model: additive - plan \u00a74: kills the contradictory base-0.5\u00b1 variant",
         "path": "memories/decisions/mem-061.md",
         "confidence": 0.95,
         "concepts": [
@@ -2614,11 +2614,11 @@
         "last_validated": "2026-07-10",
         "contradiction": "scoring nuance vs explainability",
         "separation": "n/a (contradiction dissolved)",
-        "principle": "ideality: drop the contradictory base-0.5± variant, additive model only"
+        "principle": "ideality: drop the contradictory base-0.5\u00b1 variant, additive model only"
       },
       "mem-062": {
         "type": "decision",
-        "summary": "Ambiguity handling: separate axis on ScoreCard - TASK-48 precedent: ambiguity ≠ complexity",
+        "summary": "Ambiguity handling: separate axis on ScoreCard - TASK-48 precedent: ambiguity \u2260 complexity",
         "path": "memories/decisions/mem-062.md",
         "confidence": 0.95,
         "concepts": [
@@ -2642,7 +2642,7 @@
       },
       "mem-063": {
         "type": "decision",
-        "summary": "Old scorer paths: ≤5-line re-export shims - rollback safety for one major; delete in v8",
+        "summary": "Old scorer paths: \u22645-line re-export shims - rollback safety for one major; delete in v8",
         "path": "memories/decisions/mem-063.md",
         "confidence": 0.95,
         "concepts": [
@@ -2738,7 +2738,7 @@
       },
       "mem-067": {
         "type": "decision",
-        "summary": "Pilot compat: parser accepts pilot-signal v2 → v3 - Pilot supervisor contract frozen",
+        "summary": "Pilot compat: parser accepts pilot-signal v2 \u2192 v3 - Pilot supervisor contract frozen",
         "path": "memories/decisions/mem-067.md",
         "confidence": 0.95,
         "concepts": [
@@ -2780,7 +2780,7 @@
       },
       "mem-069": {
         "type": "decision",
-        "summary": "Live hook check in CI: promote `--verify-hooks` into release.yml validate job - flag exists but was never wired — verified gap; manual steps get skipped",
+        "summary": "Live hook check in CI: promote `--verify-hooks` into release.yml validate job - flag exists but was never wired \u2014 verified gap; manual steps get skipped",
         "path": "memories/decisions/mem-069.md",
         "confidence": 0.95,
         "concepts": [
@@ -2831,7 +2831,7 @@
       },
       "mem-072": {
         "type": "decision",
-        "summary": "Release path: v7.0.0-rc1, ≥3 days, this repo + Pilot staging - big-bang runtime replacement; soak is the only end-to-end evidence",
+        "summary": "Release path: v7.0.0-rc1, \u22653 days, this repo + Pilot staging - big-bang runtime replacement; soak is the only end-to-end evidence",
         "path": "memories/decisions/mem-072.md",
         "confidence": 0.95,
         "concepts": [
@@ -2886,7 +2886,7 @@
       },
       "mem-075": {
         "type": "learning",
-        "summary": "Claude Code 2.1.258: the LSP tool is grantable to a subagent by listing LSP in tools: (agent .md frontmatter or --agents JSON); listing it without a language-server plugin is harmless (agent loads, zero LSP calls, no error). pyright's first request after server start races workspace indexing — findReferences returns only the definition, a second identical call returns the full set (61 refs for runtime.dispatch). Evidence: TASK-76 spike transcripts 7cd03832…/agent-af6a7fa4a596a9b78.jsonl (grant), 27906176…/agent-ae808b30ec9fbda5a.jsonl (negative control), e9008f11…/subagents (retry → 61).",
+        "summary": "Claude Code 2.1.258: the LSP tool is grantable to a subagent by listing LSP in tools: (agent .md frontmatter or --agents JSON); listing it without a language-server plugin is harmless (agent loads, zero LSP calls, no error). pyright's first request after server start races workspace indexing \u2014 findReferences returns only the definition, a second identical call returns the full set (61 refs for runtime.dispatch). Evidence: TASK-76 spike transcripts 7cd03832\u2026/agent-af6a7fa4a596a9b78.jsonl (grant), 27906176\u2026/agent-ae808b30ec9fbda5a.jsonl (negative control), e9008f11\u2026/subagents (retry \u2192 61).",
         "path": "memories/learnings/mem-075.md",
         "confidence": 0.95,
         "concepts": [
@@ -3001,7 +3001,7 @@
       },
       "mem-084": {
         "type": "decision",
-        "summary": "Navigator /nav UI is a car-navigator model, not a decisions log: destination (brief goal > active task), route (task checklist > phases, current waypoint dotted), off-route after 2 substantive prompts with no shared word stem → park/back/switch, fuel (context), saved. Band is one 'state: what' line. Rejected after Threads feedback: per-tool-call cost and a decisions log (model reasoning is invisible to mods; narrating it costs context).",
+        "summary": "Navigator /nav UI is a car-navigator model, not a decisions log: destination (brief goal > active task), route (task checklist > phases, current waypoint dotted), off-route after 2 substantive prompts with no shared word stem \u2192 park/back/switch, fuel (context), saved. Band is one 'state: what' line. Rejected after Threads feedback: per-tool-call cost and a decisions log (model reasoning is invisible to mods; narrating it costs context).",
         "path": "memories/decisions/mem-084.md",
         "confidence": 0.95,
         "concepts": [
@@ -3229,7 +3229,7 @@
       },
       "mem-102": {
         "type": "pitfall",
-        "summary": "navigator-docs: a prod-* tag push creates two Deploy QuantFlow AWS runs (main build → skipped, tag build → real) and both list head_branch=main because they are workflow_run events; pick the newest non-skipped run or grep its log for the tag. GitHub Actions queued the 8.3.5 runs ~5 min after the push and the events API lagged — poll, do not re-dispatch",
+        "summary": "navigator-docs: a prod-* tag push creates two Deploy QuantFlow AWS runs (main build \u2192 skipped, tag build \u2192 real) and both list head_branch=main because they are workflow_run events; pick the newest non-skipped run or grep its log for the tag. GitHub Actions queued the 8.3.5 runs ~5 min after the push and the events API lagged \u2014 poll, do not re-dispatch",
         "path": "memories/pitfalls/mem-102.md",
         "confidence": 0.9,
         "concepts": [
@@ -3251,13 +3251,25 @@
       },
       "mem-104": {
         "type": "decision",
-        "summary": "Claude Code metrics go through one OTel collector (.agent/grafana, OTLP :4318 → scrape :8889) instead of the per-process prometheus exporter on :9464; metric names kept byte-identical (add_metric_suffixes off + metricstransform _total) so dashboard and /nav queries never change; delta counters accumulated with metric_expiration 48h so an overnight pause does not reset a series",
+        "summary": "Claude Code metrics go through one OTel collector (.agent/grafana, OTLP :4318 \u2192 scrape :8889) instead of the per-process prometheus exporter on :9464; metric names kept byte-identical (add_metric_suffixes off + metricstransform _total) so dashboard and /nav queries never change; delta counters accumulated with metric_expiration 48h so an overnight pause does not reset a series",
         "path": "memories/decisions/mem-104.md",
         "confidence": 0.95,
         "concepts": [
           "hooks-runtime",
           "claude-code",
           "deployment"
+        ],
+        "created": "2026-10-14",
+        "last_validated": "2026-10-14"
+      },
+      "mem-105": {
+        "type": "pitfall",
+        "summary": "The release bump commit must include hooks/mod/tests/fixtures/tier1.gen.ts (bump-version.sh regenerates it with the new version); left out, release.yml --verify-mod fails on the tag with 'generated data fresh' before anything is published \u2014 fix on main, move the tag (v8.4.0, 2026-10-14)",
+        "path": "memories/pitfalls/mem-105.md",
+        "confidence": 1.0,
+        "concepts": [
+          "deployment",
+          "hooks-runtime"
         ],
         "created": "2026-10-14",
         "last_validated": "2026-10-14"
@@ -8875,7 +8887,8 @@
       "mem-101",
       "mem-102",
       "TASK-100",
-      "mem-104"
+      "mem-104",
+      "mem-105"
     ],
     "code quality": [
       "TASK-19",
@@ -9297,7 +9310,8 @@
       "mem-087",
       "mem-088",
       "mem-089",
-      "mem-104"
+      "mem-104",
+      "mem-105"
     ],
     "adhd": [
       "mem-078",
