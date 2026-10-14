@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.0] — 2026-10-14
+
+Metrics from every concurrent session. Claude Code's `prometheus` exporter serves one fixed
+port per process, so only the first of several sessions ever exported and the `/nav` card
+showed `$0.00` for the day. An OpenTelemetry Collector joins the Grafana stack: sessions push
+OTLP to `localhost:4318`, Prometheus scrapes the collector, metric names stay byte-identical
+and delta counters are accumulated with a 48 h expiry (TASK-101). The card asks Prometheus for
+this session's own series and, after two turns with none, shows `--` and `this session not in
+prometheus`; session start warns when `OTEL_METRICS_EXPORTER=prometheus` is still set, both
+runtimes byte-identical (TASK-102). Setup moves to one `env` block in `~/.claude/settings.json`.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.0.md)
+
 ## [v8.3.5] — 2026-10-08
 
 Release CI gains the gates TASK-64 Phase 1 left unbuilt: `--verify-dispatcher` (every manifest

@@ -1,6 +1,6 @@
 # TASK-100: Metrics from every session — OTel collector in the stack, pane guard when a session is not scraped
 
-**Status**: 🔄 In Progress — 2026-10-14, sliced into TASK-101 (stack), TASK-102 (guard + notice), TASK-103 (release)
+**Status**: ✅ Released — v8.4.0, 2026-10-14; sliced into TASK-101 (stack), TASK-102 (guard + notice), TASK-103 (release), all shipped
 **Origin**: 2026-10-14 dogfood: the /nav session card showed `$0.00` "today" in every project.
 Cause: Claude Code's `prometheus` exporter binds a fixed port, 9464. Only the first-started
 process gets it. With five or six concurrent sessions on this machine, the other sessions
