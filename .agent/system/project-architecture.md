@@ -63,7 +63,7 @@ navigator/
 │   ├── tasks/                   # Feature implementation plans (+ archive/)
 │   ├── system/                  # Architecture docs
 │   ├── sops/                    # Development SOPs
-│   ├── grafana/                 # Local Prometheus/Grafana for the pane's session card
+│   ├── grafana/                 # OTel collector + Prometheus + Grafana; the pane's session card reads this session's series
 │   └── .nav-config.json         # Shared config (local override is gitignored)
 │
 ├── CLAUDE.md                    # Navigator configuration for this repo

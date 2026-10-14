@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-14T15:06:34.371770+00:00",
+  "last_updated": "2026-10-14T17:25:39.794944+00:00",
   "stats": {
-    "total_nodes": 249,
+    "total_nodes": 250,
     "total_edges": 874,
-    "memory_count": 97
+    "memory_count": 98
   },
   "nodes": {
     "tasks": {
@@ -3269,6 +3269,18 @@
         "confidence": 1.0,
         "concepts": [
           "deployment",
+          "hooks-runtime"
+        ],
+        "created": "2026-10-14",
+        "last_validated": "2026-10-14"
+      },
+      "mem-106": {
+        "type": "learning",
+        "summary": "A resumed Claude Code session keeps its session id across restarts, so the /nav session card (this session's Prometheus series) covers the whole session, not the current context window; a fresh number needs a new session (claude without resume, or /clear)",
+        "path": "memories/learnings/mem-106.md",
+        "confidence": 0.95,
+        "concepts": [
+          "claude-code",
           "hooks-runtime"
         ],
         "created": "2026-10-14",
@@ -9116,7 +9128,8 @@
       "mem-037",
       "mem-086",
       "mem-087",
-      "mem-104"
+      "mem-104",
+      "mem-106"
     ],
     "policy-vs-judgment": [
       "mem-027"
@@ -9311,7 +9324,8 @@
       "mem-088",
       "mem-089",
       "mem-104",
-      "mem-105"
+      "mem-105",
+      "mem-106"
     ],
     "adhd": [
       "mem-078",
