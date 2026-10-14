@@ -29,6 +29,7 @@ export type EnvSnapshot = {
   XDG_CONFIG_HOME?: string
   HOME?: string
   TYPESAFE_API_KEY?: string
+  OTEL_METRICS_EXPORTER?: string
 }
 
 /**

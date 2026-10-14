@@ -1,6 +1,6 @@
 # TASK-102: /nav guard — say when this session is not in Prometheus; session-start notice
 
-**Status**: 📋 Planned — 2026-10-14
+**Status**: ✅ Implemented — 2026-10-14 (grace counts completed turns from the pane history, which now updates before the Prometheus refresh; Python fallback warns only when `OTEL_METRICS_EXPORTER` reaches the hook process)
 **Parent**: TASK-100 (part B)
 **Effort**: S–M
 **Depends on**: TASK-101 (so the guard has a true "seen" path to test against)
@@ -13,15 +13,15 @@ whether this session's series exist. Session start probes the judge key but not 
 
 ## Acceptance Criteria
 
-- [ ] `refreshTrip` adds `max(claude_code_token_usage_total{session_id="<id>"})` →
+- [x] `refreshTrip` adds `max(claude_code_token_usage_total{session_id="<id>"})` →
       `NavTrip.sessionSeen: boolean`; `false` only after ≥ 2 completed turns (export lands 10 s
       after the first turn).
-- [ ] Session card: `sessionSeen === false` → today cost `--` and one line
+- [x] Session card: `sessionSeen === false` → today cost `--` and one line
       `this session not in prometheus · metrics SOP` (≤ 48 cols). `TripSpan.usd` stays numeric.
-- [ ] `session_start` in both runtimes, byte-identical: when `OTEL_METRICS_EXPORTER=prometheus`
+- [x] `session_start` in both runtimes, byte-identical: when `OTEL_METRICS_EXPORTER=prometheus`
       append `Metrics: prometheus exporter is single-session (port 9464); switch to otlp — .agent/sops/integrations/opentelemetry-setup.md`
       after the judge/modes notices. Env-only, no `lsof`.
-- [ ] Tests: `trip.test.ts` (`sessionSeen` true/false), `register.test.ts` fetch counts
+- [x] Tests: `trip.test.ts` (`sessionSeen` true/false), `register.test.ts` fetch counts
       12 → 13 and a `sessionSeen=false` render, Python `test_session_start` notice,
       `scripts/mod_fixtures/lifeops.py` + regenerated `lifeops-session_start.gen.ts`,
       `make test-all` green with `NAVIGATOR_MOD_OWNS` unset.

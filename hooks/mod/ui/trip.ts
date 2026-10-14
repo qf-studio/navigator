@@ -4,7 +4,7 @@
 import type { NavTripSpan as TripSpan } from '../../../types'
 import { compact } from './palette'
 
-export type Trip = { today: TripSpan; week: TripSpan; perMinute: number[] }
+export type Trip = { today: TripSpan; week: TripSpan; perMinute: number[]; sessionSeen: boolean }
 export type TripResults = Record<string, Record<string, number> | null>
 
 // Not increase(): each session's counters start at their first push, so the first turn's
@@ -21,6 +21,16 @@ const METRICS: Record<string, (range: string) => string> = {
   lines: r => windowed('claude_code_lines_of_code_count_total', r, ' by (type)'),
   active: r => windowed('claude_code_active_time_total', r),
 }
+
+/**
+ * Whether Prometheus holds any series for this session (TASK-102). Session ids are UUIDs; anything
+ * else is dropped so the label value cannot break out of the selector.
+ */
+export const sessionQuery = (sessionId: string): string =>
+  `max(claude_code_token_usage_total{session_id="${sessionId.replace(/[^A-Za-z0-9-]/g, '')}"})`
+
+/** The first turns' export lands ~10 s after the turn ends: no verdict before this many turns. */
+export const SESSION_SEEN_AFTER_TURNS = 2
 
 /** Tokens per minute over the last two hours, one point per 7.5 minutes. */
 export const PER_MINUTE = 'sum(rate(claude_code_token_usage_total[5m])) * 60'
@@ -92,11 +102,20 @@ const spanOf = (results: TripResults, span: string): TripSpan => {
   }
 }
 
-/** The trip, or null when Prometheus had nothing to say (stack down, no metrics yet). */
-export const buildTrip = (results: TripResults, perMinute: number[] | null): Trip | null => {
+/**
+ * The trip, or null when Prometheus had nothing to say (stack down, no metrics yet).
+ * `sessionSeen` is the verdict of `sessionQuery` (a positive value), or true while the session
+ * is younger than SESSION_SEEN_AFTER_TURNS turns (`turnsDone`), or when no session query ran.
+ */
+export type SessionProbe = { seen: Record<string, number> | null; turnsDone: number }
+export const buildTrip = (
+  results: TripResults, perMinute: number[] | null, session?: SessionProbe,
+): Trip | null => {
   const week = spanOf(results, 'week')
   if (week.tokens <= 0 && week.usd <= 0) return null
-  return { today: spanOf(results, 'today'), week, perMinute: perMinute ?? [] }
+  const sessionSeen = session === undefined || session.turnsDone < SESSION_SEEN_AFTER_TURNS
+    || sum(session.seen) > 0
+  return { today: spanOf(results, 'today'), week, perMinute: perMinute ?? [], sessionSeen }
 }
 
 export const duration = (sec: number): string => {

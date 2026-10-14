@@ -41,7 +41,7 @@ import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
 import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
-  isLoopback, secondsSinceMidnight, tripQueries,
+  isLoopback, secondsSinceMidnight, sessionQuery, tripQueries,
 } from './ui/trip'
 import { PALETTE, areaColors, brailleArea, compact, gauge, isFlat, percentColor } from './ui/palette'
 
@@ -128,6 +128,7 @@ const ioOf = ($: EngineInterface): Io => ({
     XDG_CONFIG_HOME: await $.env.get('XDG_CONFIG_HOME'),
     HOME: await $.env.get('HOME'),
     TYPESAFE_API_KEY: await $.env.get('TYPESAFE_API_KEY'),
+    OTEL_METRICS_EXPORTER: await $.env.get('OTEL_METRICS_EXPORTER'),
   }),
   setOwned: value => $.env.set('NAVIGATOR_MOD_OWNS', value),
   http: async (url, init) => {
@@ -317,16 +318,23 @@ const refreshTrip = async ($: EngineInterface): Promise<void> => {
     await update($, trip, () => null)
     return
   }
-  const [range, ...vectors] = await Promise.all([
+  // TASK-102: is THIS session among the series? With the per-process prometheus exporter only
+  // the first session ever is (mem-087); the card must say so instead of a confident $0.00.
+  const sessionId = await io.sessionId()
+  const [range, seen, ...vectors] = await Promise.all([
     get('query_range', PER_MINUTE,
       `&start=${end - PER_MINUTE_SPAN_SEC}&end=${end}&step=${PER_MINUTE_STEP_SEC}`),
+    sessionId === null ? Promise.resolve(null) : get('query', sessionQuery(sessionId), `&time=${end}`),
     ...queries.map(([, q]) => get('query', q, `&time=${end}`)),
   ])
   const results = Object.fromEntries(queries.map(([key], i) => {
     const text = vectors[i]
     return [key, text == null ? null : parseVector(text)]
   }))
-  const built = buildTrip(results, range == null ? null : parseMatrix(range))
+  const turnsDone = (await readHistory($)).ctx.length
+  const session = sessionId === null ? undefined
+    : { seen: seen == null ? null : parseVector(seen), turnsDone }
+  const built = buildTrip(results, range == null ? null : parseMatrix(range), session)
   const source = `prometheus ${/:\d+$/.exec(base)?.[0] ?? base}`
   await update($, trip, () => (built === null ? null : { ...built, source }))
 }
@@ -653,16 +661,17 @@ export const register: Register = on => {
     // The pane follows the session without `r`: Prometheus every turn (local, ~12 curls, one
     // refused probe when the stack is down); the task list, marker and memories when a turn
     // wrote under .agent/ (three subprocess spawns, so not every turn).
+    // History first: refreshTrip counts completed turns from it (TASK-102 grace), this one included.
+    await update($, history, () => ({
+      ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
+      saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
+    }))
     const rootForRejects = await projectRoot(ioOf($))
     await Promise.all([
       refreshTrip($).catch(() => {}),
       a.docsTouched ? refreshPane($) : Promise.resolve(),
       rootForRejects === null ? Promise.resolve() : refreshRejects($, rootForRejects).catch(() => {}),
     ])
-    await update($, history, () => ({
-      ctx: [...h.ctx, fresh.ctxPercent ?? 0].slice(-64),
-      saved: [...h.saved, tokensOf(Math.max(0, tree - a.docsBytes))].slice(-64),
-    }))
     const goal = captureGoal(e.answer)
     if (goal !== null) await update($, destination, (): NavDestination => ({ title: goal, taskId: null, source: 'brief' }))
     const { here } = await navState($)
@@ -777,10 +786,14 @@ export const register: Register = on => {
             ) : (
               <Box flexDirection="column">
                 <Text wrap="truncate-end">
-                  <Text color={PALETTE.success} bold>${t.today.usd.toFixed(2)}</Text>
+                  <Text color={PALETTE.success} bold>{t.sessionSeen ? `$${t.today.usd.toFixed(2)}` : '--'}</Text>
                   <Text color={PALETTE.dim}>  {compact(t.today.tokens)}{cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}</Text>
                 </Text>
-                <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
+                {t.sessionSeen ? (
+                  <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
+                ) : (
+                  <Text color={PALETTE.warning} wrap="truncate-end">this session not in prometheus · metrics SOP</Text>
+                )}
                 {trend(t.perMinute, sessionInner - 12, PALETTE.accent, '  tokens/min')}
               </Box>
             )}

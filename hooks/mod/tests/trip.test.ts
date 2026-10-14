@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import {
-  buildTrip, duration, isLoopback, lines, parseMatrix, parseVector, secondsSinceMidnight, tripQueries, tripRows,
+  SESSION_SEEN_AFTER_TURNS, buildTrip, duration, isLoopback, lines, parseMatrix, parseVector, secondsSinceMidnight,
+  sessionQuery, tripQueries, tripRows,
 } from '../ui/trip'
 
 const vector = (rows: [Record<string, string>, number][]) => JSON.stringify({
@@ -57,10 +58,24 @@ describe('trip dashboard model', () => {
     }, [1, 2])
     expect(trip?.today).toEqual({ usd: 4.12, tokens: 2_100_000, cacheHit: 1_800_000 / 2_050_000, commits: 6, added: 820, removed: 214, activeSec: 7800 })
     expect(trip?.perMinute).toEqual([1, 2])
+    expect(trip?.sessionSeen).toBe(true) // no session query ran
+  })
+  test('session seen (TASK-102): the verdict of the session query, after a grace of two turns', () => {
+    const results = { 'week.tokens': { input: 10 } }
+    const at = (seen: Record<string, number> | null, turnsDone: number) =>
+      buildTrip(results, null, { seen, turnsDone })?.sessionSeen
+    expect(at({ '': 50012 }, 5)).toBe(true)
+    expect(at({}, 5)).toBe(false) // Prometheus answered: no series for this session
+    expect(at(null, 5)).toBe(false) // the query failed: not seen either
+    expect(at({}, SESSION_SEEN_AFTER_TURNS - 1)).toBe(true) // too early to tell
+    expect(at({}, SESSION_SEEN_AFTER_TURNS)).toBe(false)
+    expect(sessionQuery('596354cb-02ae-48a9-944b-3624ce22aeaa'))
+      .toBe('max(claude_code_token_usage_total{session_id="596354cb-02ae-48a9-944b-3624ce22aeaa"})')
+    expect(sessionQuery('x"} or up{a="')).toBe('max(claude_code_token_usage_total{session_id="xorupa"})')
   })
   test('rows render the draft: cost, tokens + cache, commits, lines, active', () => {
     const span = { usd: 4.12, tokens: 2_100_000, cacheHit: 0.91, commits: 6, added: 820, removed: 214, activeSec: 7800 }
-    const rows = tripRows({ today: span, week: { ...span, usd: 31.8, cacheHit: null }, perMinute: [] })
+    const rows = tripRows({ today: span, week: { ...span, usd: 31.8, cacheHit: null }, perMinute: [], sessionSeen: true })
     expect(rows).toEqual([
       ['cost', '$4.12', '$31.80', ''],
       ['tokens', '2.1M', '2.1M', 'cache 91%'], // today's cache hit, else the week's
@@ -68,7 +83,7 @@ describe('trip dashboard model', () => {
       ['lines', '+820 −214', '+820 −214', ''],
       ['active', '2h 10m', '2h 10m', ''],
     ])
-    expect(tripRows({ today: { ...span, cacheHit: null }, week: span, perMinute: [] })[1]?.[3]).toBe('cache 91%')
+    expect(tripRows({ today: { ...span, cacheHit: null }, week: span, perMinute: [], sessionSeen: true })[1]?.[3]).toBe('cache 91%')
     expect(duration(59)).toBe('0m')
     expect(duration(3 * 3600)).toBe('3h 0m')
     expect(lines(5100, 1900)).toBe('+5.1K −1.9K')

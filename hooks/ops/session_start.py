@@ -129,7 +129,25 @@ def _section_config(root: Path):
         f"```json\n{json.dumps(summary, indent=2)}\n```"
         + _judge_notice(cfg.get("judge"))
         + _modes_notice(root)
+        + _metrics_notice()
     )
+
+
+METRICS_NOTICE = ("Metrics: prometheus exporter is single-session (port 9464); switch to otlp"
+                  " — .agent/sops/integrations/opentelemetry-setup.md")
+
+
+def _metrics_notice() -> str:
+    """One line when the per-process prometheus exporter is still configured (TASK-102).
+
+    Only the first Claude Code process binds :9464; every later session exports
+    nothing, silently, and the dashboard shows $0 for the day (mem-087). Decided
+    from the environment alone: an lsof probe would race the exporter's own bind.
+    Silent otherwise, so existing session bytes are unchanged.
+    """
+    if os.environ.get("OTEL_METRICS_EXPORTER", "").strip().lower() != "prometheus":
+        return ""
+    return f"\n\n{METRICS_NOTICE}"
 
 
 def _modes_notice(root: Path) -> str:

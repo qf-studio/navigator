@@ -106,6 +106,20 @@ const modesNotice = async (io: Io, config: Record<string, unknown>): Promise<str
   }
 }
 
+// One line when the per-process prometheus exporter is still configured (TASK-102): only the
+// first Claude Code process binds :9464, later sessions export nothing, silently (mem-087).
+// Decided from the environment alone; an lsof probe would race the exporter's own bind.
+export const METRICS_NOTICE = 'Metrics: prometheus exporter is single-session (port 9464); switch to otlp'
+  + ' — .agent/sops/integrations/opentelemetry-setup.md'
+const metricsNotice = async (io: Io): Promise<string> => {
+  try {
+    const exporter = ((await io.env()).OTEL_METRICS_EXPORTER ?? '').trim().toLowerCase()
+    return exporter === 'prometheus' ? `\n\n${METRICS_NOTICE}` : ''
+  } catch {
+    return ''
+  }
+}
+
 const configSection = async (io: Io, root: string, layered: Record<string, unknown>) => {
   const cfg = await safeJson(io, `${root}/.agent/.nav-config.json`)
   if (cfg === null || cfg.size === 0) return null
@@ -121,7 +135,7 @@ const configSection = async (io: Io, root: string, layered: Record<string, unkno
     ['auto_update', orEmptyGet(get(cfg, 'auto_update'), 'enabled')],
   ])
   return `## Navigator Config (.agent/.nav-config.json)\n\n\`\`\`json\n${dumps(summary, 2)}\n\`\`\``
-    + await judgeNotice(io, get(cfg, 'judge')) + await modesNotice(io, layered)
+    + await judgeNotice(io, get(cfg, 'judge')) + await modesNotice(io, layered) + await metricsNotice(io)
 }
 
 const profileSection = async (io: Io, root: string) => {

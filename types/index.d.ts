@@ -100,7 +100,14 @@ export type NavTripSpan = {
   activeSec: number
 }
 /** The /nav trip panel: Claude Code's OTel metrics from Prometheus, today and over 7 days. */
-export type NavTrip = { today: NavTripSpan; week: NavTripSpan; perMinute: number[]; source: string }
+export type NavTrip = {
+  today: NavTripSpan
+  week: NavTripSpan
+  perMinute: number[]
+  source: string
+  /** False when Prometheus has no series for this session after its first turns (TASK-102). */
+  sessionSeen: boolean
+}
 
 declare module 'claude-code' {
   interface PluginState {

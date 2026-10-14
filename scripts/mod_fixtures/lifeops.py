@@ -46,7 +46,7 @@ GIT_STUB = (
     "sys.stdout.write(spec.get('out', ''))\n"
     "sys.exit(spec.get('code', 0))\n"
 )
-ENV_KEYS = ("HOME", "NAVIGATOR_CONFIG_HOME", "XDG_CONFIG_HOME", "TYPESAFE_API_KEY",
+ENV_KEYS = ("HOME", "NAVIGATOR_CONFIG_HOME", "XDG_CONFIG_HOME", "TYPESAFE_API_KEY", "OTEL_METRICS_EXPORTER",
             "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DIR", "PATH", "TZ", "STUB_GIT",
             "STUB_GRAPH_MANAGER_PY", "STUB_MEMORY_RECALL_PY", "STUB_AUTO_UPDATER_PY")
 
@@ -158,6 +158,10 @@ def _scenarios():
               {"TYPESAFE_API_KEY": " k-1 "}, stubs, {}, {}))
     s.append(("session_start", "SessionStart", "judge-no-key",
               {**full, ".agent/.nav-config.json": json.dumps(judge_cfg)}, {}, {}, stubs, {}, {}))
+    s.append(("session_start", "SessionStart", "metrics-prometheus-exporter", full, {},
+              {"OTEL_METRICS_EXPORTER": "prometheus"}, stubs, {}, {}))
+    s.append(("session_start", "SessionStart", "metrics-otlp-exporter", full, {},
+              {"OTEL_METRICS_EXPORTER": "otlp"}, stubs, {}, {}))
     s.append(("session_start", "SessionStart", "adhd-personal-on",
               {**full, "cfg/adhd-mode.json": json.dumps({"on": True})}, {},
               {"NAVIGATOR_CONFIG_HOME": "{T}/p/cfg"}, stubs, {}, {}))

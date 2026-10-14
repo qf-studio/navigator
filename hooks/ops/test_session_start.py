@@ -493,3 +493,26 @@ class SectionJudgeNoticeTest(SessionStartOpTestBase):
         self.assertIn("Typed judge is enabled but no API key was found", body)
         self.assertIn("console.typesafe.ai/keys", body)
         self.assertIn("--check", body)
+
+
+class SectionMetricsNoticeTest(SessionStartOpTestBase):
+    """TASK-102: warn when the single-session prometheus exporter is still configured."""
+
+    def test_no_exporter_no_notice(self):
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("OTEL_METRICS_EXPORTER", None)
+            body = self.run_op()["additional_context"]
+        self.assertNotIn("Metrics:", body)
+
+    def test_otlp_exporter_no_notice(self):
+        with mock.patch.dict(os.environ, {"OTEL_METRICS_EXPORTER": "otlp"}):
+            body = self.run_op()["additional_context"]
+        self.assertNotIn("Metrics:", body)
+
+    def test_prometheus_exporter_warns_after_the_config_block(self):
+        with mock.patch.dict(os.environ, {"OTEL_METRICS_EXPORTER": "Prometheus "}):
+            body = self.run_op()["additional_context"]
+        self.assertIn(
+            "\n\nMetrics: prometheus exporter is single-session (port 9464); switch to otlp"
+            " — .agent/sops/integrations/opentelemetry-setup.md", body)
+        self.assertLess(body.index("## Navigator Config"), body.index("Metrics: prometheus"))
