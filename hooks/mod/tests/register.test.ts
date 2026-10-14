@@ -504,8 +504,8 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
 // Prometheus of .agent/grafana/docker-compose.yml behind `curl` (the panel never uses
 // $.http.fetch: sessions with nonessential traffic disabled refuse it, loopback included).
 let curlReply: ((url: string) => string | null) | null = null
-// What the session query (TASK-102) answers: the token max of this session's series, 0 = none.
-let sessionTokens = 50_012
+// Whether this session's own series exist (TASK-102): the `session.*` queries answer empty when not.
+let sessionSeen = true
 const prometheus = (_on: On, fetches: string[], up = true) => {
   const vector = (rows: [Record<string, string>, number][]) => JSON.stringify({
     status: 'success',
@@ -515,13 +515,14 @@ const prometheus = (_on: On, fetches: string[], up = true) => {
     fetches.push(url)
     if (!up) return null
     const q = decodeURIComponent(/query=([^&]*)/.exec(url)?.[1] ?? '')
-    const week = q.includes('[7d]')
+    const mine = q.includes('session_id="session-1"')
+    const week = q.includes('[7d]') && !mine
+    if (mine && !sessionSeen) return vector([])
     return url.includes('/query_range')
       ? JSON.stringify({ status: 'success', data: { resultType: 'matrix', result: [{ metric: {}, values: [[1, '10'], [2, '40']] }] } })
-      : q.includes('session_id=') ? (sessionTokens > 0 ? vector([[{}, sessionTokens]]) : vector([]))
-      : q.includes('cost') ? vector([[{}, week ? 31.8 : 4.12]])
+      : q.includes('cost') ? vector([[{}, mine ? 0.73 : week ? 31.8 : 4.12]])
       : q.includes('token_usage') ? vector([[{ type: 'input' }, 100_000], [{ type: 'cacheRead' }, 900_000], [{ type: 'output' }, 50_000]])
-      : q.includes('commit') ? vector([[{}, week ? 41 : 6]])
+      : q.includes('commit') ? vector([[{}, mine ? 1 : week ? 41 : 6]])
       : q.includes('lines') ? vector([[{ type: 'added' }, 820], [{ type: 'removed' }, 214]])
       : vector([[{}, 7800]])
   }
@@ -533,36 +534,36 @@ test('(t) the session card shows Prometheus numbers when the local stack answers
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('$4.12')
+  expect(all).toContain('$0.73') // this session
   expect(all).toContain('1.1M · 90% cache')
-  expect(all).toContain('7d $31.80 · 41 commits')
+  expect(all).toContain('today $4.12 · 7d $31.80 · 41 commits') // the machine
   expect(all).toContain('tokens/min')
   expect(all).not.toContain('prometheus') // the source shows with the details only
   expect(all).not.toContain('phase —') // the Prometheus lines replace the local ones
   expect(await texts($, true)).toContain('session · prometheus :9092')
-  expect(fetches).toHaveLength(13) // probe + range + session + 10 instant queries
+  expect(fetches).toHaveLength(17) // probe + range + 10 machine-wide + 5 session queries
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
-  expect(fetches.some(u => decodeURIComponent(u).includes('{session_id="session-1"}'))).toBe(true)
+  expect(fetches.filter(u => decodeURIComponent(u).includes('{session_id="session-1"}'))).toHaveLength(5)
 })
 
 test('(t11) a session Prometheus never sees says so after two turns instead of $0.00 (TASK-102)', async ($, on) => {
   world(on, {}, 20)
   const fetches: string[] = []
-  sessionTokens = 0
+  sessionSeen = false
   try {
     prometheus(on, fetches)
     await $.command.run(NAV_CMD)
-    expect(await texts($)).toContain('$4.12') // too early to tell: the first export lands after a turn
+    expect(await texts($)).toContain('$0.00') // too early to tell: the first export lands after a turn
     await complete($, 'one\n')
-    expect(await texts($)).toContain('$4.12')
+    expect(await texts($)).toContain('$0.00')
     await complete($, 'two\n')
     const all = await texts($)
-    expect(all).not.toContain('$4.12')
-    expect(all).toContain('--  1.1M · 90% cache') // the fleet's numbers stay, the cost does not pretend
+    expect(all).not.toContain('$0.00')
+    expect(all).toContain('--') // the cost does not pretend
     expect(all).toContain('this session not in prometheus · metrics SOP')
     expect(all).not.toContain('7d $31.80')
   } finally {
-    sessionTokens = 50_012
+    sessionSeen = true
   }
 })
 
@@ -571,13 +572,13 @@ test('(t5) the session card follows the turns: Prometheus is read again after ea
   const fetches: string[] = []
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
-  expect(fetches).toHaveLength(13)
+  expect(fetches).toHaveLength(17)
   await complete($, 'one turn\n')
-  expect(fetches).toHaveLength(26)
+  expect(fetches).toHaveLength(34)
   await $.turn.complete({
     answer: 'sub', durationMs: 1, isAborted: false, turnId: 's1', reason: 'answer', agentId: 'sub-1',
   } as never)
-  expect(fetches).toHaveLength(26) // subagent turns do not
+  expect(fetches).toHaveLength(34) // subagent turns do not
 })
 
 test('(t6) a turn that wrote under .agent/ reloads the task list and marker', async ($, on) => {

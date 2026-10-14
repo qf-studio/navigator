@@ -41,7 +41,7 @@ import type { Step, Waypoint } from './ui/route'
 import { statusOf } from './ui/status'
 import {
   PER_MINUTE, PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, buildTrip, parseMatrix, parseVector,
-  isLoopback, secondsSinceMidnight, sessionQuery, tripQueries,
+  isLoopback, secondsSinceMidnight, tripQueries,
 } from './ui/trip'
 import { PALETTE, areaColors, brailleArea, compact, gauge, isFlat, percentColor } from './ui/palette'
 
@@ -310,7 +310,10 @@ const refreshTrip = async ($: EngineInterface): Promise<void> => {
   }
   const now = await $.clock.now()
   const end = Math.floor(now / 1000)
-  const queries = Object.entries(tripQueries(secondsSinceMidnight(now)))
+  // TASK-102: this session's own counters ride along (`session.*`). With the per-process
+  // prometheus exporter only the first session ever has any (mem-087); the card says so.
+  const sessionId = await io.sessionId()
+  const queries = Object.entries(tripQueries(secondsSinceMidnight(now), sessionId ?? undefined))
   // One probe first, so a stopped stack costs one refused connection, not eleven.
   const probe = await get('query', tripQueries(0)['week.tokens']!, `&time=${end}`)
   const probed = probe === null ? null : parseVector(probe)
@@ -318,13 +321,9 @@ const refreshTrip = async ($: EngineInterface): Promise<void> => {
     await update($, trip, () => null)
     return
   }
-  // TASK-102: is THIS session among the series? With the per-process prometheus exporter only
-  // the first session ever is (mem-087); the card must say so instead of a confident $0.00.
-  const sessionId = await io.sessionId()
-  const [range, seen, ...vectors] = await Promise.all([
+  const [range, ...vectors] = await Promise.all([
     get('query_range', PER_MINUTE,
       `&start=${end - PER_MINUTE_SPAN_SEC}&end=${end}&step=${PER_MINUTE_STEP_SEC}`),
-    sessionId === null ? Promise.resolve(null) : get('query', sessionQuery(sessionId), `&time=${end}`),
     ...queries.map(([, q]) => get('query', q, `&time=${end}`)),
   ])
   const results = Object.fromEntries(queries.map(([key], i) => {
@@ -332,9 +331,7 @@ const refreshTrip = async ($: EngineInterface): Promise<void> => {
     return [key, text == null ? null : parseVector(text)]
   }))
   const turnsDone = (await readHistory($)).ctx.length
-  const session = sessionId === null ? undefined
-    : { seen: seen == null ? null : parseVector(seen), turnsDone }
-  const built = buildTrip(results, range == null ? null : parseMatrix(range), session)
+  const built = buildTrip(results, range == null ? null : parseMatrix(range), { turnsDone })
   const source = `prometheus ${/:\d+$/.exec(base)?.[0] ?? base}`
   await update($, trip, () => (built === null ? null : { ...built, source }))
 }
@@ -739,7 +736,9 @@ export const register: Register = on => {
     const legPrompt = here === null ? null
       : `Do the next leg${dest?.taskId ? ` of ${dest.taskId}` : ''}: ${here.label}`
     const window = u?.rates[0]
-    const cacheHit = t?.today.cacheHit ?? t?.week.cacheHit ?? null
+    // The card's first line is this session; machine-wide today/7d go on the second line.
+    const mine = t?.session ?? t?.today ?? null
+    const cacheHit = mine?.cacheHit ?? t?.week.cacheHit ?? null
     const tally = judgeOpen ? judgeTally(await judgeSection($)) : []
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
     // A trend is a braille area in a subdued gradient of the card's color; flat ones go dim.
@@ -786,11 +785,11 @@ export const register: Register = on => {
             ) : (
               <Box flexDirection="column">
                 <Text wrap="truncate-end">
-                  <Text color={PALETTE.success} bold>{t.sessionSeen ? `$${t.today.usd.toFixed(2)}` : '--'}</Text>
-                  <Text color={PALETTE.dim}>  {compact(t.today.tokens)}{cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}</Text>
+                  <Text color={PALETTE.success} bold>{t.sessionSeen && mine ? `$${mine.usd.toFixed(2)}` : '--'}</Text>
+                  <Text color={PALETTE.dim}>{t.sessionSeen && mine ? `  ${compact(mine.tokens)}${cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}` : ''}</Text>
                 </Text>
                 {t.sessionSeen ? (
-                  <Text color={PALETTE.dim} wrap="truncate-end">7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
+                  <Text color={PALETTE.dim} wrap="truncate-end">today ${t.today.usd.toFixed(2)} · 7d ${t.week.usd.toFixed(2)} · {t.week.commits} commits</Text>
                 ) : (
                   <Text color={PALETTE.warning} wrap="truncate-end">this session not in prometheus · metrics SOP</Text>
                 )}

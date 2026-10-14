@@ -4,30 +4,37 @@
 import type { NavTripSpan as TripSpan } from '../../../types'
 import { compact } from './palette'
 
-export type Trip = { today: TripSpan; week: TripSpan; perMinute: number[]; sessionSeen: boolean }
+/**
+ * `session` is this session's own counters (null when no session id was known); `today` and
+ * `week` are machine-wide. `sessionSeen` is false once Prometheus should hold this session's
+ * series and does not (TASK-102).
+ */
+export type Trip = {
+  session: TripSpan | null; today: TripSpan; week: TripSpan
+  perMinute: number[]; sessionSeen: boolean
+}
 export type TripResults = Record<string, Record<string, number> | null>
 
 // Not increase(): each session's counters start at their first push, so the first turn's
 // usage is never an observed rise, and a laptop asleep across the window edge leaves live
 // series without a sample there, which `offset` then misses. Per series: the max in the window
 // minus the last sample before it (looking back a day), or the whole max when there is none.
-const windowed = (metric: string, range: string, by = ''): string =>
-  `sum${by} ((max_over_time(${metric}[${range}]) - last_over_time(${metric}[1d] offset ${range}))`
-  + ` or max_over_time(${metric}[${range}]))`
-const METRICS: Record<string, (range: string) => string> = {
-  usd: r => windowed('claude_code_cost_usage_total', r),
-  tokens: r => windowed('claude_code_token_usage_total', r, ' by (type)'),
-  commits: r => windowed('claude_code_commit_count_total', r),
-  lines: r => windowed('claude_code_lines_of_code_count_total', r, ' by (type)'),
-  active: r => windowed('claude_code_active_time_total', r),
+const windowed = (metric: string, range: string, by = '', selector = ''): string => {
+  const m = `${metric}${selector}`
+  return `sum${by} ((max_over_time(${m}[${range}]) - last_over_time(${m}[1d] offset ${range}))`
+    + ` or max_over_time(${m}[${range}]))`
+}
+const METRICS: Record<string, (range: string, selector: string) => string> = {
+  usd: (r, sel) => windowed('claude_code_cost_usage_total', r, '', sel),
+  tokens: (r, sel) => windowed('claude_code_token_usage_total', r, ' by (type)', sel),
+  commits: (r, sel) => windowed('claude_code_commit_count_total', r, '', sel),
+  lines: (r, sel) => windowed('claude_code_lines_of_code_count_total', r, ' by (type)', sel),
+  active: (r, sel) => windowed('claude_code_active_time_total', r, '', sel),
 }
 
-/**
- * Whether Prometheus holds any series for this session (TASK-102). Session ids are UUIDs; anything
- * else is dropped so the label value cannot break out of the selector.
- */
-export const sessionQuery = (sessionId: string): string =>
-  `max(claude_code_token_usage_total{session_id="${sessionId.replace(/[^A-Za-z0-9-]/g, '')}"})`
+/** Session ids are UUIDs; anything else is dropped so the value cannot escape the selector. */
+export const sessionSelector = (sessionId: string): string =>
+  `{session_id="${sessionId.replace(/[^A-Za-z0-9-]/g, '')}"}`
 
 /** The first turns' export lands ~10 s after the turn ends: no verdict before this many turns. */
 export const SESSION_SEEN_AFTER_TURNS = 2
@@ -42,11 +49,22 @@ const LOOPBACK_RE = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/.*)?$
 /** The panel reads a Prometheus on this machine only: nothing it fetches leaves the host. */
 export const isLoopback = (url: string): boolean => LOOPBACK_RE.test(url)
 
-/** `today.usd`, `week.tokens`, … → PromQL; today is a range back to local midnight. */
-export const tripQueries = (sinceMidnightSec: number): Record<string, string> => {
-  const spans = { today: `${Math.max(60, Math.round(sinceMidnightSec))}s`, week: '7d' }
-  return Object.fromEntries(Object.entries(spans).flatMap(([span, range]) =>
-    Object.entries(METRICS).map(([name, q]) => [`${span}.${name}`, q(range)])))
+/**
+ * `today.usd`, `week.tokens`, … → PromQL; today is a range back to local midnight. With a
+ * session id, `session.*` adds this session's own counters: its series over the week (a
+ * session's whole life, counters never reset), so "this session" is exact and the machine-wide
+ * spans stay.
+ */
+export const tripQueries = (
+  sinceMidnightSec: number, sessionId?: string,
+): Record<string, string> => {
+  const spans: [string, string, string][] = [
+    ['today', `${Math.max(60, Math.round(sinceMidnightSec))}s`, ''],
+    ['week', '7d', ''],
+  ]
+  if (sessionId !== undefined) spans.push(['session', '7d', sessionSelector(sessionId)])
+  return Object.fromEntries(spans.flatMap(([span, range, sel]) =>
+    Object.entries(METRICS).map(([name, q]) => [`${span}.${name}`, q(range, sel)])))
 }
 
 export const secondsSinceMidnight = (nowMs: number): number => {
@@ -103,19 +121,21 @@ const spanOf = (results: TripResults, span: string): TripSpan => {
 }
 
 /**
- * The trip, or null when Prometheus had nothing to say (stack down, no metrics yet).
- * `sessionSeen` is the verdict of `sessionQuery` (a positive value), or true while the session
- * is younger than SESSION_SEEN_AFTER_TURNS turns (`turnsDone`), or when no session query ran.
+ * The trip, or null when Prometheus had nothing to say (stack down, no metrics yet). With
+ * `session.*` results, `session` is this session's span and `sessionSeen` is whether it has any
+ * tokens, except during the first SESSION_SEEN_AFTER_TURNS turns (`turnsDone`), when the first
+ * export may not have landed yet. Without them (no session id) both default to absent / true.
  */
-export type SessionProbe = { seen: Record<string, number> | null; turnsDone: number }
 export const buildTrip = (
-  results: TripResults, perMinute: number[] | null, session?: SessionProbe,
+  results: TripResults, perMinute: number[] | null, probe?: { turnsDone: number },
 ): Trip | null => {
   const week = spanOf(results, 'week')
   if (week.tokens <= 0 && week.usd <= 0) return null
-  const sessionSeen = session === undefined || session.turnsDone < SESSION_SEEN_AFTER_TURNS
-    || sum(session.seen) > 0
-  return { today: spanOf(results, 'today'), week, perMinute: perMinute ?? [], sessionSeen }
+  const asked = Object.keys(results).some(k => k.startsWith('session.'))
+  const session = asked ? spanOf(results, 'session') : null
+  const sessionSeen = session === null || (probe?.turnsDone ?? 0) < SESSION_SEEN_AFTER_TURNS
+    || session.tokens > 0
+  return { session, today: spanOf(results, 'today'), week, perMinute: perMinute ?? [], sessionSeen }
 }
 
 export const duration = (sec: number): string => {

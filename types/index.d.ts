@@ -101,6 +101,8 @@ export type NavTripSpan = {
 }
 /** The /nav trip panel: Claude Code's OTel metrics from Prometheus, today and over 7 days. */
 export type NavTrip = {
+  /** This session's own counters over its life; null when no session id was known. */
+  session: NavTripSpan | null
   today: NavTripSpan
   week: NavTripSpan
   perMinute: number[]
