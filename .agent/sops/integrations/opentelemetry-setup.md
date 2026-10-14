@@ -2,43 +2,58 @@
 
 **Purpose**: Enable real-time session statistics with official Claude Code metrics
 **When to use**: Setting up Navigator for the first time, enabling ROI measurement
-**Last Updated**: 2025-10-20
+**Last Updated**: 2026-10-14 (TASK-101: OTLP through the collector is the default; the `prometheus` exporter is single-session)
 
 ---
 
 ## Quick Start
 
-### 1. Enable Telemetry (One-Time Setup)
-
-Add to your shell configuration:
+### 1. Start the local stack
 
 ```bash
-# For Zsh users (~/.zshrc)
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=console
-
-# For Bash users (~/.bashrc)
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=console
+cd .agent/grafana && docker compose up -d
 ```
 
-### 2. Apply Changes
+This starts an OpenTelemetry Collector (OTLP in on `localhost:4318`, scrape endpoint on
+`localhost:8889`), Prometheus (`:9092`) and Grafana (`:3333`). Details:
+[`.agent/grafana/README.md`](../../grafana/README.md).
+
+### 2. Point Claude Code at the collector (one-time)
+
+Put the variables in `~/.claude/settings.json`. They apply to every project and override the
+same variables exported by your shell:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000"
+  }
+}
+```
+
+Remove any `export OTEL_METRICS_EXPORTER=...` line from `~/.zshrc` / `~/.bashrc`; one place
+only. Restart running Claude Code sessions.
+
+**Do not use `OTEL_METRICS_EXPORTER=prometheus` with more than one session.** That exporter
+serves a fixed port (`9464`) from each Claude Code process. Only the first process binds it;
+every later session exports nothing, silently (`CLAUDE_CODE_OTEL_DIAG_STDERR=1` surfaces the
+error). The dashboard and the `/nav` session card then show `$0.00` for the day, and session
+start warns `Metrics: prometheus exporter is single-session`. The collector accepts any number
+of sessions on one endpoint (mem-087).
+
+### 3. Verify
+
+After one full turn (plus the 10 s export interval):
 
 ```bash
-# Reload shell configuration
-source ~/.zshrc  # or source ~/.bashrc
+curl -s http://localhost:8889/metrics | grep -o 'session_id="[^"]*"' | sort -u
 ```
 
-### 3. Verify Setup
-
-Start a new Claude Code session and check for OTel output:
-
-```bash
-claude
-# You should see OpenTelemetry metrics in stderr
-```
-
-Navigator will now show real-time statistics when you start sessions.
+One line per running session. `/nav` shows today's cost from the same data.
 
 ---
 
@@ -82,9 +97,10 @@ Navigator will now show real-time statistics when you start sessions.
 
 ## Configuration Options
 
-### Console Exporter (Recommended for Development)
+### Console Exporter (terminal only)
 
-**Fastest setup - metrics displayed in terminal**:
+**No stack, metrics printed to stderr every interval**. Nothing stores them, so `/nav`, the
+dashboard and `otel_session_stats.py` see nothing:
 
 ```bash
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
@@ -92,31 +108,31 @@ export OTEL_METRICS_EXPORTER=console
 export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10 seconds (default: 60s)
 ```
 
-### OTLP Exporter (For Centralized Monitoring)
+### OTLP Exporter (default: the local collector, or any remote one)
 
-**Send metrics to Prometheus/Grafana/Datadog**:
+The Quick Start above. `OTEL_EXPORTER_OTLP_PROTOCOL` may be `grpc` (`:4317`) or
+`http/protobuf` (`:4318`); the local collector listens on both. For a remote collector set
+`OTEL_EXPORTER_OTLP_ENDPOINT` and, if needed, `OTEL_EXPORTER_OTLP_HEADERS`.
 
-```bash
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-```
+Claude Code sends **delta** counters over OTLP. The local collector accumulates them per series
+and keeps a quiet session's running total for 48 h (`metric_expiration` in
+`.agent/grafana/otel-collector-config.yml`), so an overnight pause does not reset a counter.
+Metric names on the scrape side are the same as the direct exporter's
+(`claude_code_cost_usage_total`, `claude_code_token_usage_total`, ...); the collector config
+strips unit suffixes and restores `_total` so dashboards and `/nav` queries never change.
 
-Requires OpenTelemetry Collector running locally or remotely.
-
-### Prometheus Exporter (Recommended for Grafana)
-
-**For Prometheus scraping and visual dashboards**:
+### Prometheus Exporter (single session only)
 
 ```bash
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=prometheus
 ```
 
-Metrics available at `http://localhost:9464/metrics` by default.
-
-**See**: [Grafana Dashboard Setup](#grafana-dashboard-quick-start) below for visual monitoring.
+Metrics at `http://localhost:9464/metrics`, served by the Claude Code process itself. One
+process per port: a second concurrent session exports nothing. Prometheus still scrapes this
+endpoint as job `claude-code-direct`, so a one-session machine keeps working, but the OTLP path
+above is the one Navigator documents and tests. `lsof -nP -iTCP:9464 -sTCP:LISTEN` names the
+process that holds the port.
 
 ---
 
@@ -167,20 +183,19 @@ Lower cardinality = better performance, less storage cost.
 
 ### Recommended Configuration for Navigator Projects
 
-```bash
-# ~/.zshrc or ~/.bashrc
+The `~/.claude/settings.json` block from the Quick Start, plus optional resource tags:
 
-# Enable telemetry
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-
-# Console exporter (see metrics in terminal)
-export OTEL_METRICS_EXPORTER=console
-
-# Fast export for development (10 seconds)
-export OTEL_METRIC_EXPORT_INTERVAL=10000
-
-# Tag sessions with project context
-export OTEL_RESOURCE_ATTRIBUTES="workflow=navigator,context_optimization=enabled"
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+    "OTEL_RESOURCE_ATTRIBUTES": "workflow=navigator,context_optimization=enabled"
+  }
+}
 ```
 
 ### For ROI Measurement
@@ -204,21 +219,30 @@ Calculate token savings, cost reduction, productivity gains.
 
 ### Issue: No Metrics Displayed
 
-**Symptom**: Navigator says "No metrics yet"
+**Symptom**: Navigator says "No metrics yet"; `/nav` shows `--` for cost
 
 **Solutions**:
-1. Check telemetry is enabled:
-   ```bash
-   echo $CLAUDE_CODE_ENABLE_TELEMETRY
-   # Should print: 1
-   ```
+1. Check telemetry is enabled in `~/.claude/settings.json` `env` (or `echo
+   $CLAUDE_CODE_ENABLE_TELEMETRY` prints `1`).
+2. Check the stack is up: `docker ps | grep navigator-` lists the collector, Prometheus and
+   Grafana.
+3. Wait for the first export (`OTEL_METRIC_EXPORT_INTERVAL`, default 60 s; Navigator
+   recommends 10 s), then `curl -s http://localhost:8889/metrics | grep -c claude_code`.
+4. Export errors are silent by default: start one session with
+   `CLAUDE_CODE_OTEL_DIAG_STDERR=1` to see them.
 
-2. Reduce export interval:
-   ```bash
-   export OTEL_METRIC_EXPORT_INTERVAL=10000
-   ```
+### Issue: Only one session has metrics; `/nav` says `$0.00` today
 
-3. Wait for first export (default: 60 seconds)
+**Symptom**: several Claude Code sessions run; Prometheus has one `session_id`; the session card
+reads `this session not in prometheus`; session start prints
+`Metrics: prometheus exporter is single-session (port 9464); switch to otlp`.
+
+**Cause**: `OTEL_METRICS_EXPORTER=prometheus` is still set (shell rc, a project
+`.claude/settings.json`, or a stale `~/.claude/settings.json`). One process holds port 9464;
+the rest export nothing.
+
+**Fix**: the Quick Start block in `~/.claude/settings.json`; delete the shell export; restart
+the sessions. `lsof -nP -iTCP:9464 -sTCP:LISTEN` shows which process held the port.
 
 ### Issue: Setup Instructions Always Show
 
@@ -254,33 +278,11 @@ If not, check:
 
 ### Using OpenTelemetry Collector
 
-**Setup collector for centralized monitoring**:
-
-```yaml
-# docker-compose.yml
-version: '3'
-services:
-  otel-collector:
-    image: otel/opentelemetry-collector:latest
-    ports:
-      - "4317:4317"  # OTLP gRPC
-      - "4318:4318"  # OTLP HTTP
-    volumes:
-      - ./otel-config.yaml:/etc/otel/config.yaml
-    command: ["--config=/etc/otel/config.yaml"]
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-```
+**Setup collector for centralized monitoring**: the local stack in `.agent/grafana/` is the
+same shape (collector → Prometheus → Grafana); host its `docker-compose.yml` and
+`otel-collector-config.yml` on a shared machine and point every developer's
+`OTEL_EXPORTER_OTLP_ENDPOINT` at it. Keep the collector's `metricstransform` and
+`add_metric_suffixes: false` so metric names match the dashboard.
 
 **Client configuration**:
 

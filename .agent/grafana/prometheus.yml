@@ -5,14 +5,25 @@ global:
     monitor: 'navigator-claude-code'
 
 scrape_configs:
+  # Claude Code sessions push OTLP to the collector (OTEL_METRICS_EXPORTER=otlp); this is
+  # the one target that sees every concurrent session (TASK-101).
   - job_name: 'claude-code'
+    static_configs:
+      - targets: ['otel-collector:8889']
+        labels:
+          app: 'claude-code'
+          environment: 'local'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Legacy direct exporter (OTEL_METRICS_EXPORTER=prometheus). Only one Claude Code process
+  # can bind :9464, so with several sessions this job sees the first one only (mem-087).
+  - job_name: 'claude-code-direct'
     static_configs:
       - targets: ['host.docker.internal:9464']
         labels:
           app: 'claude-code'
           environment: 'local'
-
-    # Scrape interval for Claude Code metrics
     scrape_interval: 15s
     scrape_timeout: 10s
 

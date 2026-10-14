@@ -103,43 +103,25 @@ enable_otel() {
         return
     fi
 
-    # Detect shell config file
-    SHELL_CONFIG=""
-    if [ -n "$ZSH_VERSION" ] || [ -f "$HOME/.zshrc" ]; then
-        SHELL_CONFIG="$HOME/.zshrc"
-    elif [ -n "$BASH_VERSION" ] || [ -f "$HOME/.bashrc" ]; then
-        SHELL_CONFIG="$HOME/.bashrc"
-    else
-        echo -e "${YELLOW}⚠️  Could not detect shell config file${NC}"
-        echo "Manually add to ~/.zshrc or ~/.bashrc:"
-        echo ""
-        echo "  export CLAUDE_CODE_ENABLE_TELEMETRY=1"
-        echo "  export OTEL_METRICS_EXPORTER=console"
-        echo "  export OTEL_METRIC_EXPORT_INTERVAL=10000"
-        echo ""
-        return
-    fi
-
-    # Check if already configured
-    if grep -q "CLAUDE_CODE_ENABLE_TELEMETRY" "$SHELL_CONFIG" 2>/dev/null; then
-        echo -e "${GREEN}✅ OpenTelemetry already configured in $(basename "$SHELL_CONFIG")${NC}"
-        echo ""
-        return
-    fi
-
-    # Add configuration
-    cat >> "$SHELL_CONFIG" << 'OTEL_EOF'
-
-# OpenTelemetry for Claude Code (Navigator v3.1)
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=console
-export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10 seconds for development
-OTEL_EOF
-
-    echo -e "${GREEN}✅ Added OpenTelemetry configuration to $(basename "$SHELL_CONFIG")${NC}"
+    # Never edit the shell rc: the exporter choice belongs in ~/.claude/settings.json, which
+    # applies to every project and overrides shell exports (TASK-101). The `prometheus`
+    # exporter is single-session (one process per port 9464); OTLP to the local collector
+    # in .agent/grafana/ takes any number of concurrent sessions.
+    echo -e "${BLUE}Add this to ~/.claude/settings.json (merge into an existing \"env\" block):${NC}"
     echo ""
-    echo -e "${YELLOW}⚠️  Restart your terminal or run:${NC}"
-    echo "   source $SHELL_CONFIG"
+    cat << 'OTEL_EOF'
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000"
+  }
+OTEL_EOF
+    echo ""
+    echo "Then start the stack:  cd .agent/grafana && docker compose up -d"
+    echo "Remove any 'export OTEL_METRICS_EXPORTER=...' line from ~/.zshrc or ~/.bashrc."
+    echo -e "${BLUE}💡 Details: .agent/sops/integrations/opentelemetry-setup.md${NC}"
     echo ""
 }
 

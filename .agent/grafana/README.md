@@ -11,16 +11,26 @@ This directory contains everything needed to run Grafana dashboards for Navigato
 ### Prerequisites
 
 1. **Docker and Docker Compose** installed
-2. **Enable Claude Code Prometheus exporter**:
-   ```bash
-   # Add to ~/.zshrc or ~/.bashrc
-   export CLAUDE_CODE_ENABLE_TELEMETRY=1
-   export OTEL_METRICS_EXPORTER=prometheus
-
-   # Reload shell
-   source ~/.zshrc  # or source ~/.bashrc
+2. **Point Claude Code at the collector** (OTLP). Put this in `~/.claude/settings.json`;
+   it applies to every project and overrides the same variables in your shell:
+   ```json
+   {
+     "env": {
+       "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+       "OTEL_METRICS_EXPORTER": "otlp",
+       "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+       "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+       "OTEL_METRIC_EXPORT_INTERVAL": "10000"
+     }
+   }
    ```
-3. **Start Claude Code** - metrics will be available at `http://localhost:9464/metrics`
+   Remove any `OTEL_METRICS_EXPORTER=prometheus` line from `~/.zshrc` / `~/.bashrc`.
+
+   **Why OTLP and not the `prometheus` exporter**: the `prometheus` exporter makes each
+   Claude Code process serve `http://localhost:9464/metrics`. Only the first process can bind
+   that port; every later session exports nothing, silently, and the dashboard and the `/nav`
+   session card show `$0.00` for the day. The collector accepts any number of sessions.
+3. **Start Claude Code** (new sessions pick up the settings; restart running ones)
 
 ### Start Monitoring Stack
 
@@ -30,6 +40,8 @@ docker compose up -d
 ```
 
 This starts:
+- **OpenTelemetry Collector** on http://localhost:4318 (OTLP http), 4317 (grpc); scrape
+  endpoint http://localhost:8889/metrics
 - **Prometheus** on http://localhost:9092
 - **Grafana** on http://localhost:3333
 
@@ -87,8 +99,9 @@ This starts:
 ```
 .agent/grafana/
 ├── README.md                      # This file
-├── docker-compose.yml             # Container orchestration (ports: 9092, 3001)
-├── prometheus.yml                 # Prometheus config (scrapes localhost:9464)
+├── docker-compose.yml             # Container orchestration (ports: 4317/4318/8889, 9092, 3333)
+├── otel-collector-config.yml      # OTLP in → Prometheus scrape endpoint out, names unchanged
+├── prometheus.yml                 # Prometheus config (scrapes otel-collector:8889; :9464 legacy)
 ├── grafana-datasource.yml         # Grafana data source (auto-configured)
 ├── grafana-dashboards.yml         # Dashboard provisioning config
 └── navigator-dashboard.json       # Pre-built 13-panel dashboard
@@ -154,26 +167,42 @@ command:
 **Problem**: No data showing in Grafana
 
 **Solutions**:
-1. Check Claude Code is running with Prometheus exporter:
+1. Check the collector sees your session (one `session_id` per running session):
    ```bash
-   curl http://localhost:9464/metrics
+   curl -s http://localhost:8889/metrics | grep -o 'session_id="[^"]*"' | sort -u
    ```
+   Nothing after a full turn (+10 s)? Claude Code is not on OTLP. Check `~/.claude/settings.json`
+   `env` (above) and restart the session. `CLAUDE_CODE_OTEL_DIAG_STDERR=1` prints export
+   errors, which are silent by default.
 
-2. Check Prometheus can scrape Claude Code:
-   - Open http://localhost:9090/targets
-   - Look for `claude-code` target
-   - Should be "UP" (not "DOWN")
+2. Check Prometheus can scrape the collector:
+   - Open http://localhost:9092/targets
+   - Job `claude-code` (target `otel-collector:8889`) should be "UP"
+   - Job `claude-code-direct` (`host.docker.internal:9464`) is the legacy `prometheus`
+     exporter; "DOWN" is normal on OTLP
 
 3. Check Prometheus data:
-   - Open http://localhost:9090
+   - Open http://localhost:9092
    - Query: `claude_code_token_usage_total`
    - Should return data
+
+### Only one session shows up
+
+**Problem**: several Claude Code sessions run, Prometheus has series for one `session_id`,
+the `/nav` session card says `$0.00` today.
+
+**Cause**: `OTEL_METRICS_EXPORTER=prometheus` is still set somewhere (shell rc, project
+`.claude/settings.json`). That exporter serves a fixed port, 9464, and only the first process
+binds it. `lsof -nP -iTCP:9464 -sTCP:LISTEN` names the one that did.
+
+**Fix**: switch to OTLP as in Prerequisites; restart the sessions.
 
 ### Prometheus Can't Connect
 
 **Problem**: Target shows "DOWN" in Prometheus (check at http://localhost:9092/targets)
 
-**Solution**:
+**Solution** (job `claude-code-direct`, legacy exporter only; the collector job needs no host
+address):
 - **macOS/Windows Docker Desktop**: Already configured as `host.docker.internal:9464` ✓
 - **Linux**: Change to `172.17.0.1:9464` (Docker bridge IP)
 
@@ -181,16 +210,16 @@ Edit `prometheus.yml` for Linux:
 
 ```yaml
 scrape_configs:
-  - job_name: 'claude-code'
+  - job_name: 'claude-code-direct'
     static_configs:
       - targets: ['172.17.0.1:9464']  # For Linux
 ```
 
-Then restart: `docker compose restart prometheus`
+Then reload: `docker kill -s HUP navigator-prometheus`
 
 ### Port Already in Use
 
-**Problem**: "Port 3333 is already allocated" or "Port 9092 is already allocated"
+**Problem**: "Port 3333 is already allocated", "Port 9092 ..." or "Port 4318 ..."
 
 **Solutions**:
 1. Stop conflicting service
@@ -336,11 +365,11 @@ To remove everything:
 docker-compose down -v
 
 # Remove images
-docker rmi prom/prometheus:latest grafana/grafana:latest
+docker rmi prom/prometheus:latest grafana/grafana:latest otel/opentelemetry-collector-contrib:0.144.0
 ```
 
 ---
 
-**Dashboard Version**: 1.0.0
-**Navigator Version**: 3.1.0
-**Last Updated**: 2025-10-20
+**Dashboard Version**: 1.1.0 (collector stack, TASK-101)
+**Navigator Version**: 8.4.0
+**Last Updated**: 2026-10-14

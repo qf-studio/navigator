@@ -1,6 +1,21 @@
-version: '3.8'
-
 services:
+  otel-collector:
+    # Every Claude Code session pushes OTLP metrics here (OTEL_METRICS_EXPORTER=otlp,
+    # OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318). One endpoint for any number of
+    # processes; the direct prometheus exporter can only be bound by one (TASK-101).
+    image: otel/opentelemetry-collector-contrib:0.144.0
+    container_name: navigator-otel-collector
+    command: ["--config=/etc/otelcol/config.yml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"   # scrape endpoint, exposed for `curl localhost:8889/metrics`
+    volumes:
+      - ./otel-collector-config.yml:/etc/otelcol/config.yml:ro
+    restart: unless-stopped
+    networks:
+      - navigator-monitoring
+
   prometheus:
     image: prom/prometheus:latest
     container_name: navigator-prometheus

@@ -1,0 +1,53 @@
+# OpenTelemetry Collector for Claude Code metrics (TASK-101).
+# Every Claude Code session pushes OTLP here (one endpoint, any number of processes);
+# Prometheus scrapes this collector on :8889. Metric names are kept identical to the names
+# Claude Code's own prometheus exporter produced (claude_code_cost_usage_total, ...), so the
+# Grafana dashboard and the /nav pane queries stay unchanged.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+  # Claude Code names its counters claude_code.cost.usage, claude_code.token.usage, ...
+  # With add_metric_suffixes off (below) the exporter would drop the `_total` suffix; put it
+  # back explicitly so the names match the direct exporter byte for byte.
+  metricstransform:
+    transforms:
+      - include: ^(claude_code\..*)$
+        match_type: regexp
+        action: update
+        new_name: $${1}_total
+      # claude_code.active_time.total already ends in .total: undo the doubled suffix.
+      - include: ^(claude_code\..*)\.total_total$
+        match_type: regexp
+        action: update
+        new_name: $${1}_total
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Resource attributes (session.id, user.email, terminal.type, ...) become labels, as they
+    # were with the direct exporter.
+    resource_to_telemetry_conversion:
+      enabled: true
+    # No unit suffixes (_USD, _tokens, _seconds): names must stay as the dashboard knows them.
+    add_metric_suffixes: false
+    # Claude Code sends delta counters; the exporter accumulates them per series. A session that
+    # stops pushing (exit, overnight idle) keeps its running total for two days, so a resumed
+    # session continues its counter instead of restarting at zero (the /nav pane and the
+    # dashboard read per-series max minus last-before-window, which a reset would undercount).
+    metric_expiration: 48h
+    enable_open_metrics: false
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [metricstransform, batch]
+      exporters: [prometheus]

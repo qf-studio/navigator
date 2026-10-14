@@ -43,6 +43,7 @@ Creates the Navigator documentation structure (`.agent/`) in a new project, copi
    │   └── deployment/
    └── grafana/
        ├── docker-compose.yml
+       ├── otel-collector-config.yml
        ├── prometheus.yml
        ├── grafana-datasource.yml
        ├── grafana-dashboards.yml
@@ -138,12 +139,13 @@ fi
 ```
 
 Files copied:
-- docker-compose.yml (Grafana + Prometheus stack)
-- prometheus.yml (scrape config for Claude Code metrics)
+- docker-compose.yml (OpenTelemetry Collector + Prometheus + Grafana stack)
+- otel-collector-config.yml (OTLP in from every Claude Code session, scrape endpoint out)
+- prometheus.yml (scrapes the collector; legacy direct exporter job on :9464)
 - grafana-datasource.yml (Prometheus datasource config)
 - grafana-dashboards.yml (dashboard provider config)
-- navigator-dashboard.json (10-panel Navigator metrics dashboard)
-- README.md (setup instructions)
+- navigator-dashboard.json (13-panel Navigator metrics dashboard)
+- README.md (setup instructions, incl. the `~/.claude/settings.json` env block)
 
 ### 5. Update Project CLAUDE.md
 

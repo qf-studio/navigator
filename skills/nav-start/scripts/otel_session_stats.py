@@ -10,7 +10,8 @@ Usage:
 
 Environment Variables Required:
     CLAUDE_CODE_ENABLE_TELEMETRY=1
-    OTEL_METRICS_EXPORTER=console (or otlp)
+    OTEL_METRICS_EXPORTER=otlp (collector on localhost, see .agent/grafana/README.md)
+    or OTEL_METRICS_EXPORTER=prometheus (single-session exporter on :9464)
 """
 
 import os
@@ -52,16 +53,23 @@ def get_otel_metrics() -> Optional[Dict]:
         # OpenTelemetry SDK not installed - expected in most cases
         pass
 
-    # Alternative: Check if Prometheus exporter is running
+    # Scrape endpoints, by exporter. `prometheus`: Claude Code's own exporter on :9464 (one
+    # process per port, so only the first session shows). `otlp` to localhost: the collector
+    # of .agent/grafana re-exposes every session's series on :8889 (TASK-101).
     exporter_type = os.getenv("OTEL_METRICS_EXPORTER", "")
-
+    endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    scrape_url = None
     if exporter_type == "prometheus":
-        # Try to query Prometheus endpoint
+        scrape_url = "http://localhost:9464/metrics"
+    elif exporter_type == "otlp" and ("localhost" in endpoint or "127.0.0.1" in endpoint):
+        scrape_url = "http://localhost:8889/metrics"
+
+    if scrape_url is not None:
         try:
             import urllib.request
-            response = urllib.request.urlopen("http://localhost:9464/metrics", timeout=1)
+            response = urllib.request.urlopen(scrape_url, timeout=1)
             prometheus_data = response.read().decode('utf-8')
-            return {"source": "prometheus", "data": prometheus_data}
+            return {"source": exporter_type, "data": prometheus_data}
         except Exception:
             pass
 
