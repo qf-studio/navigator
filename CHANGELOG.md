@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.2] — 2026-10-14
+
+The `/nav` session card is this session, nothing else: cost, tokens and cache hit rate, then
+its commits, lines and active time, then its own tokens/min trend. The machine-wide today and
+7-day numbers leave the card (Grafana keeps them); seven loopback fetches per refresh instead
+of seventeen (TASK-104).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.2.md)
+
 ## [v8.4.1] — 2026-10-14
 
 The `/nav` session card's first line is this session: its own cost, tokens and cache hit

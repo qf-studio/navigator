@@ -67,11 +67,11 @@ behavior in both runtimes (one policy point each: `nav_hook_lib.config.is_pilot_
 `hooks/mod/lib/config.ts` `isPilotExecutor`).
 
 What the mod adds beyond v7: **`/nav`**, a pane of cards: context (fill, compact verdict,
-trend), session (this session's cost, tokens and cache hit on the first line, the machine's
-today and 7-day cost plus commits on the second, and a tokens/min sparkline, all from the
-local Prometheus of `.agent/grafana/` when it answers, `dashboard.enabled`; else Claude Code's
-own numbers; `--` and `this session not in prometheus` when Prometheus has no series for this
-session after two turns, TASK-102/104), reads (fan-out verdict), the typed judge's verdict on the last prompt and what
+trend), session (this session only: cost, tokens and cache hit, then its commits, lines and
+active time, and its tokens/min sparkline, from the local Prometheus of `.agent/grafana/`
+when it answers, `dashboard.enabled`; else Claude Code's own numbers; `--` and `this session
+not in prometheus` when Prometheus has no series for this session after two turns,
+TASK-102/104), reads (fan-out verdict), the typed judge's verdict on the last prompt and what
 Navigator did with it (`j`: the session tally and the last decisions, `y`/`x` label the latest
 into `~/.config/navigator/judge-labels.json` for `scripts/judge_eval.py`), next (the current leg as a press that submits it, with an ETA from
 the pace so far), memories with pinning, reads and tasks behind `d`, the reject log behind `l`
@@ -455,4 +455,4 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
 **For complete Navigator documentation**: See `.agent/DEVELOPMENT-README.md`
 
 **Last Updated**: 2026-10-14
-**Navigator Version**: 8.4.1
+**Navigator Version**: 8.4.2
