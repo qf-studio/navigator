@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.1] — 2026-10-14
+
+The `/nav` session card's first line is this session: its own cost, tokens and cache hit
+rate from Prometheus (`{session_id="<id>"}` over the session's life). The machine-wide
+numbers move to the second line, `today $x · 7d $y · N commits`. The v8.4.0 guard derives
+from the same queries (TASK-104).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.1.md)
+
 ## [v8.4.0] — 2026-10-14
 
 Metrics from every concurrent session. Claude Code's `prometheus` exporter serves one fixed
