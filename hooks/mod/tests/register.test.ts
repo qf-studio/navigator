@@ -516,13 +516,12 @@ const prometheus = (_on: On, fetches: string[], up = true) => {
     if (!up) return null
     const q = decodeURIComponent(/query=([^&]*)/.exec(url)?.[1] ?? '')
     const mine = q.includes('session_id="session-1"')
-    const week = q.includes('[7d]') && !mine
     if (mine && !sessionSeen) return vector([])
     return url.includes('/query_range')
       ? JSON.stringify({ status: 'success', data: { resultType: 'matrix', result: [{ metric: {}, values: [[1, '10'], [2, '40']] }] } })
-      : q.includes('cost') ? vector([[{}, mine ? 0.73 : week ? 31.8 : 4.12]])
+      : q.includes('cost') ? vector([[{}, 0.73]])
       : q.includes('token_usage') ? vector([[{ type: 'input' }, 100_000], [{ type: 'cacheRead' }, 900_000], [{ type: 'output' }, 50_000]])
-      : q.includes('commit') ? vector([[{}, mine ? 1 : week ? 41 : 6]])
+      : q.includes('commit') ? vector([[{}, 1]])
       : q.includes('lines') ? vector([[{ type: 'added' }, 820], [{ type: 'removed' }, 214]])
       : vector([[{}, 7800]])
   }
@@ -534,16 +533,16 @@ test('(t) the session card shows Prometheus numbers when the local stack answers
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('$0.73') // this session
+  expect(all).toContain('$0.73') // this session, nothing else
   expect(all).toContain('1.1M · 90% cache')
-  expect(all).toContain('today $4.12 · 7d $31.80 · 41 commits') // the machine
+  expect(all).toContain('1 commit · +820 −214 · 2h 10m active')
   expect(all).toContain('tokens/min')
   expect(all).not.toContain('prometheus') // the source shows with the details only
   expect(all).not.toContain('phase —') // the Prometheus lines replace the local ones
   expect(await texts($, true)).toContain('session · prometheus :9092')
-  expect(fetches).toHaveLength(17) // probe + range + 10 machine-wide + 5 session queries
+  expect(fetches).toHaveLength(7) // probe + range + 5 session queries
   expect(fetches.every(u => u.startsWith('http://localhost:9092/api/v1/'))).toBe(true)
-  expect(fetches.filter(u => decodeURIComponent(u).includes('{session_id="session-1"}'))).toHaveLength(5)
+  expect(fetches.filter(u => decodeURIComponent(u).includes('{session_id="session-1"}'))).toHaveLength(6)
 })
 
 test('(t11) a session Prometheus never sees says so after two turns instead of $0.00 (TASK-102)', async ($, on) => {
@@ -561,7 +560,7 @@ test('(t11) a session Prometheus never sees says so after two turns instead of $
     expect(all).not.toContain('$0.00')
     expect(all).toContain('--') // the cost does not pretend
     expect(all).toContain('this session not in prometheus · metrics SOP')
-    expect(all).not.toContain('7d $31.80')
+    expect(all).not.toContain('commit')
   } finally {
     sessionSeen = true
   }
@@ -572,13 +571,13 @@ test('(t5) the session card follows the turns: Prometheus is read again after ea
   const fetches: string[] = []
   prometheus(on, fetches)
   await $.command.run(NAV_CMD)
-  expect(fetches).toHaveLength(17)
+  expect(fetches).toHaveLength(7)
   await complete($, 'one turn\n')
-  expect(fetches).toHaveLength(34)
+  expect(fetches).toHaveLength(14)
   await $.turn.complete({
     answer: 'sub', durationMs: 1, isAborted: false, turnId: 's1', reason: 'answer', agentId: 'sub-1',
   } as never)
-  expect(fetches).toHaveLength(34) // subagent turns do not
+  expect(fetches).toHaveLength(14) // subagent turns do not
 })
 
 test('(t6) a turn that wrote under .agent/ reloads the task list and marker', async ($, on) => {
