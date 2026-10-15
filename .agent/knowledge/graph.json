@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-14T17:25:39.794944+00:00",
+  "last_updated": "2026-10-15T16:43:53.397781+00:00",
   "stats": {
-    "total_nodes": 250,
-    "total_edges": 874,
-    "memory_count": 98
+    "total_nodes": 254,
+    "total_edges": 875,
+    "memory_count": 99
   },
   "nodes": {
     "tasks": {
@@ -1855,6 +1855,21 @@
         "name": "Heredoc",
         "aliases": [],
         "domain": "general"
+      },
+      "nav-sync-claude": {
+        "name": "Nav-Sync-Claude",
+        "aliases": [],
+        "domain": "general"
+      },
+      "claude-md": {
+        "name": "Claude-Md",
+        "aliases": [],
+        "domain": "general"
+      },
+      "templates": {
+        "name": "Templates",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3285,6 +3300,20 @@
         ],
         "created": "2026-10-14",
         "last_validated": "2026-10-14"
+      },
+      "mem-107": {
+        "type": "decision",
+        "summary": "nav-sync-claude model: the project CLAUDE.md is the truth for everything the template leaves to the project (full standards/forbidden lists, multi-line bullets, core principle, custom-section positions); the installed template supplies only structure and the two stamp lines; the liveness guard resolves the project root (--project-root > source_dir > cwd), never --output",
+        "path": "memories/decisions/mem-107.md",
+        "confidence": 0.95,
+        "concepts": [
+          "nav-sync-claude",
+          "claude-md",
+          "templates"
+        ],
+        "created": "2026-10-15",
+        "last_validated": "2026-10-15",
+        "contradiction": "faithful round trip of project content vs template upgrades reaching the project's lists"
       }
     },
     "files": {}
@@ -8002,6 +8031,11 @@
       "from": "TASK-100",
       "to": "api",
       "type": "implements"
+    },
+    {
+      "from": "mem-107",
+      "to": "TASK-105",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -9391,6 +9425,15 @@
     ],
     "heredoc": [
       "mem-097"
+    ],
+    "nav-sync-claude": [
+      "mem-107"
+    ],
+    "claude-md": [
+      "mem-107"
+    ],
+    "templates": [
+      "mem-107"
     ]
   }
 }
