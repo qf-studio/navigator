@@ -93,14 +93,18 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_H
 python3 "$PLUGIN_DIR/skills/nav-sync-claude/functions/claude_updater.py" extract CLAUDE.md > /tmp/nav-customizations.json
 ```
 
-This extracts:
+This extracts, verbatim (multi-line values and bullets keep their line breaks):
 - **Project name** (from title)
-- **Project description** (from Context section)
+- **Project description** and **Core Principle** (from Context section)
 - **Tech stack** (languages, frameworks)
-- **Code standards** (custom rules beyond Navigator defaults)
-- **Forbidden actions** (project-specific restrictions)
+- **Code standards** (every bullet the project lists, template defaults included;
+  a default the project removed stays removed)
+- **Forbidden actions** (every bullet, same rule)
 - **PM tool configuration** (Linear, GitHub, Jira, etc.)
-- **Custom sections** (anything not in Navigator template)
+- **Custom sections** (every `##` header not in the template) with the standard
+  section each one precedes, so generate puts it back in the same place
+- **source_dir**: the directory CLAUDE.md was read from (the project root for
+  the liveness guard)
 
 ### Step 4: Generate Updated CLAUDE.md
 
@@ -117,6 +121,13 @@ python3 "$PLUGIN_DIR/skills/nav-sync-claude/functions/claude_updater.py" generat
   --template "$PLUGIN_DIR/templates/CLAUDE.md" \
   --output CLAUDE.md
 ```
+
+Generate stamps `**Last Updated**` with today's date and `**Navigator Version**` with the
+installed plugin version (`--stamp-date` / `--stamp-version` override them). A dry run
+writes anywhere: `--output /tmp/CLAUDE.preview.md`. The hook-liveness guard checks the
+project root, never the output directory: `--project-root DIR`, else the `source_dir`
+that extract recorded, else the current directory. It exits 3 and leaves CLAUDE.md
+untouched when `.agent/.nav-runtime-state.json` is absent or older than 7 days.
 
 **Template Source Priority**:
 1. **GitHub** (version-matched): Fetches from `https://raw.githubusercontent.com/qf-studio/navigator/v{version}/templates/CLAUDE.md`
@@ -270,23 +281,34 @@ python3 claude_updater.py generate \
   "project_name": "MyApp",
   "description": "Brief project description",
   "tech_stack": ["Next.js", "TypeScript", "PostgreSQL"],
-  "code_standards": ["Custom rule 1", "Custom rule 2"],
-  "forbidden_actions": ["Custom restriction 1"],
+  "core_principle": "API-first design with type safety",
+  "code_standards": ["**Architecture**: KISS, DRY, SOLID principles", "Custom rule 1"],
+  "forbidden_actions": ["No Claude Code mentions in commits/code", "Custom restriction 1"],
+  "violations_marker": false,
   "pm_tool": "github",
   "custom_sections": {
     "Deployment": "Custom deployment instructions..."
-  }
+  },
+  "custom_section_anchors": {
+    "Deployment": "Forbidden Actions"
+  },
+  "source_dir": "/path/to/project"
 }
 ```
 
-**Generate mode**:
+**Generate mode** (the project's content inside the installed template's structure; a
+round trip on an already-current file changes only the two stamp lines):
 1. Loads template
 2. Replaces `[Project Name]` with `project_name`
-3. Replaces `[Brief project description]` with `description`
+3. Replaces `[Brief project description]` with `description` (line breaks kept)
 4. Replaces `[List your technologies...]` with `tech_stack`
-5. Appends custom code standards
-6. Appends custom forbidden actions
-7. Inserts custom sections at end
+5. Replaces the `**Core Principle**` placeholder with `core_principle` (multi-line)
+6. Replaces the template's code-standards list and its `[Customize ...]` placeholder
+   with `code_standards` (an empty list keeps the template's)
+7. Replaces the template's forbidden-actions list with `forbidden_actions`; the
+   `[Add project-specific violations here]` marker stays only when the project had it
+8. Inserts each custom section before its anchor section (end of file without one)
+9. Stamps `**Last Updated**` (today) and `**Navigator Version**` (installed plugin)
 
 ### functions/config_migrator.py
 

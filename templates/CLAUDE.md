@@ -8,8 +8,8 @@
 
 **Core Principle**: [Key architectural principle, e.g., "API-first design with type safety"]
 
-**Last Updated**: 2026-07-10
-**Navigator Version**: 7.0.0-alpha
+**Last Updated**: 2026-10-15
+**Navigator Version**: 8.4.2
 
 ---
 

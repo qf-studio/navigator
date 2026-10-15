@@ -209,6 +209,11 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-105** ✅ (2026-10-15, PR pending, unreleased) — nav-sync-claude extract + generate
+  are faithful: the project's standards/forbidden lists, multi-line bullets, core principle
+  and custom-section positions round-trip; generate stamps the installed version and today;
+  the liveness guard resolves the project root (`--project-root` / `source_dir` / cwd),
+  never `--output` (`tasks/TASK-105-sync-claude-faithful-round-trip.md`).
 - **TASK-104** ✅ (v8.4.1 → v8.4.2, 2026-10-14) — the `/nav` session card is this session,
   nothing else: cost/tokens/cache, then commits/lines/active, then its own tokens/min
   (`{session_id}` queries over the session's life, 7 fetches). 8.4.1 kept a machine-wide

@@ -80,11 +80,27 @@ class TemplateShapeTest(unittest.TestCase):
                 self.assertRegex(stripped, r"^\|(?:---\|)+$",
                                  f"wide table separator row: {stripped!r}")
 
-    def test_pristine_template_extracts_no_customizations(self):
+    def test_pristine_template_extracts_only_its_own_defaults(self):
+        # extract records the lists verbatim (a project may drop a default),
+        # so the pristine template yields exactly its own bullets and nothing
+        # custom: no description, no core principle, no custom sections.
         got = claude_updater.extract_customizations(str(TEMPLATE_PATH))
         self.assertEqual(got["project_name"], "[Project Name]")
-        self.assertEqual(got["code_standards"], [])
-        self.assertEqual(got["forbidden_actions"], [])
+        self.assertEqual(got["description"], "")
+        self.assertEqual(got["core_principle"], "")
+        self.assertEqual(got["code_standards"], [
+            "**Architecture**: KISS, DRY, SOLID principles",
+            "**TypeScript**: Strict mode, no `any` without justification",
+            "**Line Length**: Max 100 characters",
+            "**Testing**: High coverage (backend 90%+, frontend 85%+)",
+        ])
+        self.assertEqual(got["forbidden_actions"], [
+            "No Claude Code mentions in commits/code",
+            "No package.json modifications without approval",
+            "Never commit secrets/API keys/.env files",
+            "Don't delete tests without replacement",
+        ])
+        self.assertTrue(got["violations_marker"])
         self.assertEqual(got["custom_sections"], {})
         self.assertEqual(got["pm_tool"], "none")
 
