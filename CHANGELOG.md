@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.3] — 2026-10-15
+
+`nav-sync-claude` extract + generate are faithful: the project's standards and forbidden lists,
+multi-line bullets, core principle and custom-section positions round-trip; generate stamps the
+installed plugin version and today's date; the liveness guard resolves the project root, never
+the `--output` directory, so a dry run to `/tmp` works. A round trip on an already-current file
+changes only the two stamp lines (TASK-105).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.3.md)
+
 ## [v8.4.2] — 2026-10-14
 
 The `/nav` session card is this session, nothing else: cost, tokens and cache hit rate, then

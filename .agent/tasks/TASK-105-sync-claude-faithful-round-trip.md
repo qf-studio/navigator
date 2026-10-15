@@ -1,6 +1,6 @@
 # TASK-105: nav-sync-claude — faithful extract + generate
 
-**Status**: ✅ Implemented — 2026-10-15 (PR pending; not released)
+**Status**: ✅ Released in v8.4.3 — 2026-10-15 (PR #38)
 **Priority**: High
 **Owner**: Navigator maintainers
 
