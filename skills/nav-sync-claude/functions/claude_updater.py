@@ -125,7 +125,6 @@ def check_hook_liveness(project_root, now: Optional[float] = None) -> Tuple[bool
     ])
     return False, message
 
-
 def get_plugin_version() -> Optional[str]:
     """
     Get installed Navigator plugin version from plugin.json.
@@ -135,8 +134,6 @@ def get_plugin_version() -> Optional[str]:
     """
     # Check multiple possible installation paths
     possible_paths = [
-        # Marketplace cache path (versioned)
-        Path.home() / '.claude' / 'plugins' / 'cache' / 'navigator-marketplace' / 'navigator',
         # Legacy marketplace paths
         Path.home() / '.claude' / 'plugins' / 'marketplaces' / 'navigator-marketplace' / '.claude-plugin' / 'plugin.json',
         Path.home() / '.config' / 'claude' / 'plugins' / 'navigator' / '.claude-plugin' / 'plugin.json',
@@ -155,19 +152,38 @@ def get_plugin_version() -> Optional[str]:
                     with open(plugin_json, 'r') as f:
                         data = json.load(f)
                         return data.get('version')
-                except (json.JSONDecodeError, FileNotFoundError, PermissionError):
+                except (json.JSONDecodeError, OSError):
                     pass
 
     for path in possible_paths:
-        if path.exists():
+        if path.is_file():
             try:
                 with open(path, 'r') as f:
                     data = json.load(f)
                     return data.get('version')
-            except (json.JSONDecodeError, FileNotFoundError, PermissionError):
+            except (json.JSONDecodeError, OSError):
                 continue
 
     return None
+
+
+def installed_plugin_version() -> Optional[str]:
+    """Version of the plugin this script ships with, else the installed one.
+
+    The skill layout (`skills/<skill>/functions/<script>`) is the same in the
+    source repo and in the marketplace cache, so the nearest ancestor holding
+    `.claude-plugin/plugin.json` is the plugin that runs this sync. The
+    home-directory lookup in `get_plugin_version` is the fallback.
+    """
+    for parent in Path(__file__).resolve().parents:
+        manifest = parent / '.claude-plugin' / 'plugin.json'
+        if manifest.is_file():
+            data = _read_json_object(manifest)
+            version = data.get('version') if data else None
+            if isinstance(version, str) and version:
+                return version
+    return get_plugin_version()
+
 
 def fetch_template_from_github(version: Optional[str] = None) -> Optional[str]:
     """
@@ -246,259 +262,336 @@ def get_template_path(bundled_template_dir: str, version: Optional[str] = None) 
 
     raise FileNotFoundError(f"No template found (GitHub failed, bundled not at {bundled_path})")
 
-def extract_section(content: str, header: str, next_headers: List[str]) -> Optional[str]:
-    """Extract content between header and next section header"""
-    # Find header (supports ## or # with various markdown formats)
-    header_pattern = r'^#{1,2}\s+' + re.escape(header) + r'.*?$'
-    match = re.search(header_pattern, content, re.MULTILINE | re.IGNORECASE)
 
+# ---------------------------------------------------------------------------
+# Extract / generate
+#
+# Model: the project's CLAUDE.md is the truth for everything the template
+# leaves to the project (Context fields, the standards and forbidden lists,
+# custom sections). `extract` records those verbatim — multi-line bullets,
+# template defaults the project kept, the position of each custom section —
+# and `generate` renders the installed template's structure around them.
+# A round trip on an already-current file therefore changes only the two
+# stamp lines (**Last Updated**, **Navigator Version**).
+# ---------------------------------------------------------------------------
+
+VIOLATIONS_MARKER = "[Add project-specific violations here]"
+STANDARDS_PLACEHOLDER = "[Customize for your project's framework and patterns]"
+DESCRIPTION_PLACEHOLDER = "[Brief project description - explain what this project does]"
+TECH_STACK_PLACEHOLDER = "[List your technologies, e.g., Next.js, TypeScript, PostgreSQL]"
+
+# Sections the template owns. Any other `##` header is a custom section.
+STANDARD_SECTIONS = [
+    "Context", "Navigator", "Quick Start", "Code Standards",
+    "Project-Specific Code Standards", "Forbidden Actions",
+    "Documentation Structure", "Project Management",
+    "Configuration", "Commit Guidelines", "Success Metrics",
+]
+
+_TOP_HEADER_RE = re.compile(r'^#{1,2}\s', re.MULTILINE)
+
+
+def _header_match(content: str, header: str) -> Optional[re.Match]:
+    """Match a `#`/`##` header line that starts with `header`."""
+    pattern = r'^#{1,2}\s+' + re.escape(header) + r'.*?$'
+    return re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
+
+
+def extract_section(content: str, header: str,
+                    next_headers: Optional[List[str]] = None) -> Optional[str]:
+    """Body of the section under `header`, up to the next `#`/`##` header.
+
+    `next_headers` is accepted for backward compatibility and ignored: a
+    section ends at the next top-level header whatever its name, so an
+    unknown custom section is never swallowed into the one before it.
+    """
+    match = _header_match(content, header)
     if not match:
         return None
 
     start = match.end()
-
-    # Find next header
-    next_pattern = r'^#{1,2}\s+(' + '|'.join(re.escape(h) for h in next_headers) + r').*?$'
-    next_match = re.search(next_pattern, content[start:], re.MULTILINE | re.IGNORECASE)
-
-    if next_match:
-        end = start + next_match.start()
-    else:
-        end = len(content)
+    next_match = _TOP_HEADER_RE.search(content, start)
+    end = next_match.start() if next_match else len(content)
 
     section = content[start:end].strip()
     return section if section else None
 
+
+def _is_bullet(stripped: str) -> bool:
+    return len(stripped) > 1 and stripped[0] in '-*' and stripped[1] == ' '
+
+
+def _list_items(section: str) -> List[Tuple[str, str]]:
+    """Split a section body into ('bullet', text) and ('loose', text) items.
+
+    A bullet keeps its continuation lines (indented lines that follow it)
+    with their original indentation, joined by newlines, so it renders back
+    byte for byte. Headers and bold field lines are skipped. Any other
+    unindented line is 'loose'.
+    """
+    items: List[Tuple[str, str]] = []
+    for raw in section.split('\n'):
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        if stripped.startswith('#') or stripped.startswith('**'):
+            continue
+        if _is_bullet(stripped):
+            text = stripped[1:].strip()
+            if text:
+                items.append(('bullet', text))
+        elif raw[:1].isspace() and items and items[-1][0] == 'bullet':
+            kind, text = items[-1]
+            items[-1] = (kind, text + '\n' + raw.rstrip())
+        else:
+            items.append(('loose', stripped))
+    return items
+
+
+def _field_value(context: str, field: str) -> str:
+    """Value of a `**Field**: ...` line plus its continuation lines.
+
+    The value ends at a blank line or at the next `**` field line. A
+    placeholder value (starts with `[`) counts as empty.
+    """
+    lines = context.split('\n')
+    prefix = f'**{field}**:'
+    for index, line in enumerate(lines):
+        if not line.startswith(prefix):
+            continue
+        parts = [line[len(prefix):].strip()]
+        for continuation in lines[index + 1:]:
+            if not continuation.strip() or continuation.startswith('**'):
+                break
+            parts.append(continuation.rstrip())
+        value = '\n'.join(parts).strip()
+        return '' if value.startswith('[') else value
+    return ''
+
+
 def extract_customizations(claude_md_path: str) -> Dict:
     """Extract project-specific customizations from CLAUDE.md"""
 
-    with open(claude_md_path, 'r', encoding='utf-8') as f:
+    source = Path(claude_md_path).resolve()
+    with open(source, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    customizations = {
+    customizations: Dict = {
         "project_name": "",
         "description": "",
         "tech_stack": [],
+        "core_principle": "",
         "code_standards": [],
         "forbidden_actions": [],
+        "violations_marker": False,
         "pm_tool": "none",
-        "custom_sections": {}
+        "custom_sections": {},
+        "custom_section_anchors": {},
+        "source_dir": str(source.parent),
     }
 
-    # Extract project name (first # header)
-    title_match = re.search(r'^#\s+(.+?)\s*-\s*Claude Code Configuration', content, re.MULTILINE)
+    # Extract project name (first # header). The dash needs whitespace on
+    # both sides so a hyphenated project name survives.
+    title_match = re.search(
+        r'^#\s+(.+?)\s+-\s+Claude Code Configuration', content, re.MULTILINE)
     if title_match:
         customizations["project_name"] = title_match.group(1).strip()
 
-    # Extract description from Context section
-    context = extract_section(content, "Context", [
-        "Navigator Quick Start", "Quick Start", "Project-Specific", "Code Standards",
-        "Forbidden Actions", "Documentation", "Project Management"
-    ])
-
+    # Context: description (every line before the first `**` field, minus
+    # placeholders, line breaks kept), tech stack, core principle.
+    context = extract_section(content, "Context")
     if context:
-        # Extract brief description (text before tech stack, excluding brackets)
-        lines = context.split('\n')
         desc_lines = []
-        for line in lines:
-            line = line.strip()
-            if line and not line.startswith('**Tech Stack') and not line.startswith('['):
-                desc_lines.append(line)
-            if line.startswith('**Tech Stack'):
+        for line in context.split('\n'):
+            if line.startswith('**'):
                 break
-        if desc_lines:
-            customizations["description"] = ' '.join(desc_lines)
+            if line.strip().startswith('['):
+                continue
+            desc_lines.append(line.rstrip())
+        customizations["description"] = '\n'.join(desc_lines).strip()
 
-        # Extract tech stack
         tech_match = re.search(r'\*\*Tech Stack\*\*:\s*(.+?)(?:\n|$)', context)
         if tech_match:
-            tech_text = tech_match.group(1).strip()
-            # Remove brackets and split by comma
-            tech_text = re.sub(r'\[|\]', '', tech_text)
-            customizations["tech_stack"] = [t.strip() for t in tech_text.split(',')]
+            tech_text = re.sub(r'\[|\]', '', tech_match.group(1).strip())
+            if tech_text:
+                customizations["tech_stack"] = [t.strip() for t in tech_text.split(',')]
 
-    # Extract code standards
-    standards_section = extract_section(content, "Project-Specific Code Standards", [
-        "Forbidden", "Documentation", "Project Management", "Configuration",
-        "Commit Guidelines", "Success Metrics"
-    ])
+        customizations["core_principle"] = _field_value(context, "Core Principle")
 
-    if not standards_section:
-        standards_section = extract_section(content, "Code Standards", [
-            "Forbidden", "Documentation", "Project Management", "Configuration"
-        ])
-
+    # Code standards: every bullet the project lists, verbatim and in order.
+    # Template defaults the project kept stay; defaults it removed stay gone.
+    standards_section = (extract_section(content, "Project-Specific Code Standards")
+                         or extract_section(content, "Code Standards"))
     if standards_section:
-        # Extract custom rules (lines that aren't in default template)
-        default_rules = [
-            "KISS, DRY, SOLID",
-            "TypeScript",
-            "Strict mode",
-            "Line Length",
-            "Max 100",
-            "Testing",
-            "Framework-Specific",
-            "General Standards",
-            "Architecture"
-        ]
+        for kind, text in _list_items(standards_section):
+            if kind == 'bullet':
+                customizations["code_standards"].append(text)
+            elif ':' in text and not text.startswith('['):
+                # Legacy shape: "Custom rule: Always use hooks" without a dash.
+                customizations["code_standards"].append(text)
 
-        lines = standards_section.split('\n')
-        for line in lines:
-            line = line.strip()
-            # Skip empty lines, headers, and default rules
-            if not line or line.startswith('#') or line.startswith('**'):
-                continue
-            # Check if it's a custom rule
-            is_default = any(rule in line for rule in default_rules)
-            if not is_default:
-                if line.startswith('-') or line.startswith('*'):
-                    standard = line.lstrip('-*').strip()
-                    # Skip bullets that strip to nothing (e.g. a `---` rule),
-                    # mirroring the forbidden_actions truthiness guard.
-                    if standard:
-                        customizations["code_standards"].append(standard)
-                elif ':' in line:  # Format like "Custom rule: Always use hooks"
-                    customizations["code_standards"].append(line)
-
-    # Extract forbidden actions
-    forbidden_section = extract_section(content, "Forbidden Actions", [
-        "Documentation", "Project Management", "Configuration",
-        "Commit Guidelines", "Success Metrics"
-    ])
-
+    # Forbidden actions: every bullet, the ❌ prefix normalized away.
+    forbidden_section = extract_section(content, "Forbidden Actions")
     if forbidden_section:
-        # Extract custom forbidden actions (not in default template)
-        default_forbidden = [
-            "NEVER wait for explicit commit",
-            "NEVER leave tickets open",
-            "NEVER skip documentation",
-            "NEVER load all `.agent/`",
-            "NEVER load all .agent",
-            "NEVER skip reading DEVELOPMENT-README",
-            "No Claude Code mentions",
-            "No package.json modifications",
-            "Never commit secrets",
-            "Don't delete tests",
-            "NEVER skip tests"
-        ]
-
-        lines = forbidden_section.split('\n')
-        for line in lines:
-            line = line.strip()
-            # Skip empty lines and headers
-            if not line or line.startswith('#') or line.startswith('**'):
+        customizations["violations_marker"] = VIOLATIONS_MARKER in forbidden_section
+        for kind, text in _list_items(forbidden_section):
+            if kind == 'loose' and not text.startswith('❌'):
                 continue
-            if line.startswith('❌') or line.startswith('-'):
-                action = line.lstrip('❌- ').strip()
-                # Check if it's truly custom
-                is_default = any(df in action for df in default_forbidden)
-                if action and not is_default:
-                    # Remove any leading emoji that might remain
-                    action = action.lstrip('❌ ')
-                    customizations["forbidden_actions"].append(action)
+            action = text.lstrip('❌ ').strip()
+            if action:
+                customizations["forbidden_actions"].append(action)
 
     # Extract PM tool configuration
-    pm_section = extract_section(content, "Project Management", [
-        "Configuration", "Commit Guidelines", "Success Metrics"
-    ])
-
+    pm_section = extract_section(content, "Project Management")
     if pm_section:
-        # Look for configured tool
         tool_match = re.search(r'\*\*Configured Tool\*\*:\s*(\w+)', pm_section, re.IGNORECASE)
         if tool_match:
             tool = tool_match.group(1).lower()
             if tool in ['linear', 'github', 'jira', 'gitlab']:
                 customizations["pm_tool"] = tool
 
-    # Extract custom sections (not in standard template)
-    standard_sections = [
-        "Context", "Navigator", "Quick Start", "Code Standards",
-        "Project-Specific Code Standards", "Forbidden Actions",
-        "Documentation Structure", "Project Management",
-        "Configuration", "Commit Guidelines", "Success Metrics"
-    ]
-
-    # Find all ## headers
-    headers = re.findall(r'^##\s+(.+?)$', content, re.MULTILINE)
-    for header in headers:
-        if header.strip() not in standard_sections:
-            section_content = extract_section(content, header, standard_sections + headers)
-            if section_content:
-                customizations["custom_sections"][header.strip()] = section_content
+    # Custom sections: every `##` header the template does not own, with the
+    # standard section that follows it as the anchor for re-insertion.
+    headers = [h.strip() for h in re.findall(r'^##\s+(.+?)\s*$', content, re.MULTILINE)]
+    for index, header in enumerate(headers):
+        if header in STANDARD_SECTIONS:
+            continue
+        section_content = extract_section(content, header)
+        if not section_content:
+            continue
+        customizations["custom_sections"][header] = section_content
+        anchor = next((h for h in headers[index + 1:] if h in STANDARD_SECTIONS), None)
+        customizations["custom_section_anchors"][header] = anchor
 
     return customizations
 
-def generate_updated_claude_md(customizations: Dict, template_path: str, output_path: str):
-    """Generate updated CLAUDE.md using v3.1 template and customizations"""
+
+def _replace_section_body(text: str, header: str, body: str) -> str:
+    """Replace the body under `## header` (up to the next header) with `body`."""
+    match = re.search(r'^##\s+' + re.escape(header) + r'[ \t]*$', text, re.MULTILINE)
+    if not match:
+        return text
+    start = match.end()
+    next_match = _TOP_HEADER_RE.search(text, start)
+    if next_match:
+        return text[:start] + '\n\n' + body + '\n\n' + text[next_match.start():]
+    return text[:start] + '\n\n' + body + '\n'
+
+
+def _replace_field_line(text: str, field: str, value: str) -> str:
+    """Replace the whole `**Field**: ...` line (single line) with `value`."""
+    pattern = re.compile(r'^\*\*' + re.escape(field) + r'\*\*:.*$', re.MULTILINE)
+    return pattern.sub(lambda _m: f'**{field}**: {value}', text, count=1)
+
+
+def _insert_custom_sections(text: str, sections: Dict[str, str],
+                            anchors: Dict[str, Optional[str]]) -> str:
+    """Put each custom section back before its anchor, else at the end."""
+    for name, body in sections.items():
+        block = f"## {name}\n\n{body}\n\n"
+        anchor = anchors.get(name)
+        match = None
+        if anchor:
+            match = re.search(r'^##\s+' + re.escape(anchor) + r'[ \t]*$', text, re.MULTILINE)
+        if match:
+            text = text[:match.start()] + block + text[match.start():]
+        else:
+            text = text.rstrip('\n') + '\n\n' + block.rstrip('\n') + '\n'
+    return text
+
+
+def stamp_lines(text: str, version: Optional[str], today: str) -> str:
+    """Stamp **Last Updated** with `today` and **Navigator Version** with `version`."""
+    text = _replace_field_line(text, "Last Updated", today)
+    if version:
+        text = _replace_field_line(text, "Navigator Version", version)
+    return text
+
+
+def generate_updated_claude_md(customizations: Dict, template_path: str, output_path: str,
+                               version: Optional[str] = None,
+                               today: Optional[str] = None):
+    """Generate CLAUDE.md: the installed template's structure around the
+    project's own content. `version` defaults to the plugin this script
+    ships with; `today` to the local date (both injectable for tests)."""
 
     with open(template_path, 'r', encoding='utf-8') as f:
         template = f.read()
 
-    # Replace project name
-    if customizations["project_name"]:
+    # Context fields
+    if customizations.get("project_name"):
         template = template.replace('[Project Name]', customizations["project_name"])
 
-    # Replace description
-    if customizations["description"]:
+    if customizations.get("description"):
+        template = template.replace(DESCRIPTION_PLACEHOLDER, customizations["description"])
+
+    if customizations.get("tech_stack"):
         template = template.replace(
-            '[Brief project description - explain what this project does]',
-            customizations["description"]
-        )
+            TECH_STACK_PLACEHOLDER, ', '.join(customizations["tech_stack"]))
 
-    # Replace tech stack
-    if customizations["tech_stack"]:
-        tech_stack = ', '.join(customizations["tech_stack"])
-        template = template.replace(
-            '[List your technologies, e.g., Next.js, TypeScript, PostgreSQL]',
-            tech_stack
-        )
+    if customizations.get("core_principle"):
+        template = _replace_field_line(
+            template, "Core Principle", customizations["core_principle"])
 
-    # Append custom code standards
-    if customizations["code_standards"]:
-        standards_marker = "[Add project-specific violations here]"
-        if standards_marker in template:
-            custom_standards = "\n\n### Additional Project Standards\n\n"
-            for standard in customizations["code_standards"]:
-                custom_standards += f"- {standard}\n"
-            template = template.replace(standards_marker, custom_standards + "\n" + standards_marker)
+    # Code standards: the project's list replaces the template's list and
+    # the "[Customize ...]" placeholder. An empty list keeps the template's.
+    if customizations.get("code_standards"):
+        body = '\n'.join(f"- {s}" for s in customizations["code_standards"])
+        template = _replace_section_body(template, "Project-Specific Code Standards", body)
 
-    # Append custom forbidden actions
-    if customizations["forbidden_actions"]:
-        forbidden_marker = "[Add project-specific violations here]"
-        if forbidden_marker in template:
-            custom_forbidden = "\n### Additional Forbidden Actions\n\n"
-            for action in customizations["forbidden_actions"]:
-                custom_forbidden += f"- ❌ {action}\n"
-            # Find the marker and append after it
-            template = template.replace(forbidden_marker, custom_forbidden)
+    # Forbidden actions: same rule; the violations marker survives only when
+    # the project's file carried it (or when the template's list is kept).
+    if customizations.get("forbidden_actions"):
+        body = '\n'.join(f"- ❌ {a}" for a in customizations["forbidden_actions"])
+        if customizations.get("violations_marker"):
+            body += f"\n\n{VIOLATIONS_MARKER}"
+        template = _replace_section_body(template, "Forbidden Actions", body)
 
     # Update PM tool
-    if customizations["pm_tool"] != "none":
+    if customizations.get("pm_tool", "none") != "none":
         template = template.replace(
             '**Configured Tool**: [Linear / GitHub Issues / Jira / GitLab / None]',
             f'**Configured Tool**: {customizations["pm_tool"].title()}'
         )
-        # Update config JSON
         template = template.replace(
             '"project_management": "none"',
             f'"project_management": "{customizations["pm_tool"]}"'
         )
 
-    # Append custom sections at the end
-    if customizations["custom_sections"]:
-        template += "\n\n---\n\n## Custom Project Sections\n\n"
-        for section_name, section_content in customizations["custom_sections"].items():
-            template += f"### {section_name}\n\n{section_content}\n\n"
+    # Custom sections go back where they were (before the standard section
+    # that followed them); sections without an anchor go to the end.
+    if customizations.get("custom_sections"):
+        template = _insert_custom_sections(
+            template, customizations["custom_sections"],
+            customizations.get("custom_section_anchors") or {})
 
-    # Write updated file
+    template = stamp_lines(
+        template,
+        version if version is not None else installed_plugin_version(),
+        today if today is not None else datetime.now().date().isoformat(),
+    )
+
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(template)
+
+
+def resolve_project_root(explicit: Optional[str], customizations: Dict) -> Path:
+    """Project root for the liveness guard: --project-root, else the
+    directory `extract` read CLAUDE.md from, else the current directory.
+    Never the --output path: a dry run may write anywhere."""
+    if explicit:
+        return Path(explicit).resolve()
+    source_dir = customizations.get("source_dir")
+    if isinstance(source_dir, str) and source_dir:
+        return Path(source_dir).resolve()
+    return Path.cwd().resolve()
+
 
 def main():
     if len(sys.argv) < 3:
         print("Usage:", file=sys.stderr)
         print("  Extract: python3 claude_updater.py extract CLAUDE.md > customizations.json", file=sys.stderr)
-        print("  Generate: python3 claude_updater.py generate --customizations file.json --template template.md --output CLAUDE.md", file=sys.stderr)
+        print("  Generate: python3 claude_updater.py generate --customizations file.json --template template.md --output CLAUDE.md [--project-root DIR] [--stamp-version X.Y.Z] [--stamp-date YYYY-MM-DD]", file=sys.stderr)
         sys.exit(1)
 
     command = sys.argv[1]
@@ -522,19 +615,20 @@ def main():
         args = {
             'customizations': None,
             'template': None,
-            'output': None
+            'output': None,
+        }
+        optional = {'project_root': None, 'stamp_version': None, 'stamp_date': None}
+        flags = {
+            '--customizations': 'customizations', '--template': 'template',
+            '--output': 'output', '--project-root': 'project_root',
+            '--stamp-version': 'stamp_version', '--stamp-date': 'stamp_date',
         }
 
         i = 2
         while i < len(sys.argv):
-            if sys.argv[i] == '--customizations' and i + 1 < len(sys.argv):
-                args['customizations'] = sys.argv[i + 1]
-                i += 2
-            elif sys.argv[i] == '--template' and i + 1 < len(sys.argv):
-                args['template'] = sys.argv[i + 1]
-                i += 2
-            elif sys.argv[i] == '--output' and i + 1 < len(sys.argv):
-                args['output'] = sys.argv[i + 1]
+            key = flags.get(sys.argv[i])
+            if key and i + 1 < len(sys.argv):
+                (args if key in args else optional)[key] = sys.argv[i + 1]
                 i += 2
             else:
                 i += 1
@@ -544,18 +638,24 @@ def main():
             print("Required: --customizations, --template, --output", file=sys.stderr)
             sys.exit(1)
 
+        try:
+            with open(args['customizations'], 'r') as f:
+                customizations = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"Error reading customizations: {e}", file=sys.stderr)
+            sys.exit(2)
+
         # TASK-63 Phase 5: regeneration only after observed hook liveness.
         # Runs before any template fetch/read so a refusal is side-effect free.
-        project_root = Path(args['output']).resolve().parent
+        # The root is the project, never the --output path (a dry run may
+        # write to /tmp).
+        project_root = resolve_project_root(optional['project_root'], customizations)
         alive, guard_message = check_hook_liveness(project_root)
         if not alive:
             print(guard_message, file=sys.stderr)
             sys.exit(3)
 
         try:
-            with open(args['customizations'], 'r') as f:
-                customizations = json.load(f)
-
             # Use get_template_path for GitHub fetch with bundled fallback
             # If --template is a directory, treat it as bundled_template_dir
             # Otherwise, use it directly as a file path
@@ -573,7 +673,9 @@ def main():
                 template_dir = str(Path(template_arg).parent)
                 template_path, is_github = get_template_path(template_dir)
 
-            generate_updated_claude_md(customizations, template_path, args['output'])
+            generate_updated_claude_md(
+                customizations, template_path, args['output'],
+                version=optional['stamp_version'], today=optional['stamp_date'])
             print(f"✓ Generated {args['output']}", file=sys.stderr)
 
             # Cleanup temp file if from GitHub
