@@ -1,6 +1,6 @@
 # TASK-106: nav-onboard runs as documented; practice tasks never touch shared state
 
-**Status**: 🚧 In Progress — 2026-10-16
+**Status**: ✅ Released in v8.4.4 — 2026-10-16 (PR #39)
 **Priority**: High
 **Source**: [qf-studio/navigator#35](https://github.com/qf-studio/navigator/issues/35)
 **Owner**: Navigator maintainers

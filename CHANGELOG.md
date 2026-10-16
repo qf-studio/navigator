@@ -6,6 +6,17 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.4] — 2026-10-16
+
+`nav-onboard` runs as its SKILL.md documents, and its exercises never touch the repo: the
+recommender and tracker compute their own inputs (one-line forms work), curriculum task files
+resolve against `learning-tasks/` on disk, the Full Education philosophy reading is the
+plugin's own copy, and a new `practice.py` sandbox under
+`~/.config/navigator/onboarding/<repo-id>/practice/` renders what nav-marker, nav-task,
+nav-sop and nav-compact would create; it never opens a GitHub issue or runs `gh`
+(TASK-106, GH-35).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.4.md)
+
 ## [v8.4.3] — 2026-10-15
 
 `nav-sync-claude` extract + generate are faithful: the project's standards and forbidden lists,
