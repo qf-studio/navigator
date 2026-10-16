@@ -17,12 +17,14 @@ Context windows fill up. When they do, AI starts forgetting, hallucinating, or c
 Type: "Clear context and preserve markers"
 ```
 
+**Practice mode**: during onboarding this command runs in the practice sandbox (your personal onboarding dir, outside the repo). The real skill writes the marker and `.active` to `.agent/.context-markers/`, so your next session offers a restore. Nothing in the repo changes and no GitHub issue is opened. Type the same words later, outside onboarding, and the real skill runs.
+
 ### Step 2: Observe What Happens
 
 **WHAT SHOULD HAPPEN:**
 
-1. Automatic marker created (preserves current state)
-2. `.active` file set (for auto-restore next session)
+1. Automatic marker created in the practice `.agent/.context-markers/`
+2. `.active` file set there (the real one triggers auto-restore next session)
 3. Instructions for manual clear provided
 
 You should see:
@@ -30,7 +32,7 @@ You should see:
 ✅ Ready to compact!
 
 Marker created: before-compact-[timestamp]
-Location: .agent/.context-markers/
+Location: <practice>/.agent/.context-markers/
 Active marker set: ✅ (will auto-restore next session)
 
 To complete compact:
@@ -65,9 +67,10 @@ If you want to practice the full cycle:
 This task is complete when:
 - [ ] Compact initiated with "Clear context and preserve markers"
 - [ ] Marker created automatically
-- [ ] `.active` file set for auto-restore
+- [ ] `.active` file set in the sandbox
 
-**Automatic check**: File `.agent/.context-markers/.active` exists.
+**Automatic check**: `task_validator.py nav-compact --practice` finds
+`.context-markers/.active` in the sandbox.
 
 ## Pro Tip
 

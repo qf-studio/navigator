@@ -17,20 +17,22 @@ Task documentation captures WHAT you build - implementation plans, technical dec
 Type: "Create task doc for learning-feature"
 ```
 
+**Practice mode**: during onboarding this command runs in the practice sandbox (your personal onboarding dir, outside the repo). The real skill writes to `.agent/tasks/` and, with `task_id_source: github`, opens an issue in the team repo first; practice shows the issue it would open instead. Nothing in the repo changes and no GitHub issue is opened. Type the same words later, outside onboarding, and the real skill runs.
+
 ### Step 2: Observe What Happens
 
 **WHAT SHOULD HAPPEN:**
 
-1. Task ID generated (TASK-XX format)
-2. Template created in `.agent/tasks/`
-3. Navigator index updated with reference
+1. Task ID shown (the next `TASK-XX`, or `GH-NEW` with the issue that would be created)
+2. Template created in the practice `.agent/tasks/`
+3. In a real run, the Navigator index gains a reference
 
 You should see:
 ```
 ✅ Task document created!
 
 Task: TASK-XX-learning-feature
-File: .agent/tasks/TASK-XX-learning-feature.md
+File: <practice>/.agent/tasks/TASK-XX-learning-feature.md
 
 Template includes:
 - Problem Statement
@@ -67,10 +69,11 @@ The archive captures what was ACTUALLY built vs what was planned.
 
 This task is complete when:
 - [ ] Task doc created with "Create task doc for learning-feature"
-- [ ] File exists in `.agent/tasks/`
+- [ ] File exists in the practice `.agent/tasks/`
 - [ ] Template structure visible
 
-**Automatic check**: File `.agent/tasks/*learning-feature*.md` exists.
+**Automatic check**: `task_validator.py nav-task --practice` finds
+`tasks/*learning-feature*.md` in the sandbox.
 
 ## Pro Tip
 

@@ -209,6 +209,14 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-106** 🚧 (2026-10-16, GH-35) — nav-onboard runs as documented and its exercises
+  never touch the repo: the recommender and tracker compute their own inputs, curriculum
+  `task_file` names resolve against `learning-tasks/` on disk, the philosophy reading is the
+  plugin's copy, and `practice.py` renders what nav-marker/nav-task/nav-sop/nav-compact
+  would create under `~/.config/navigator/onboarding/<repo-id>/practice/` (never runs `gh`;
+  shows `would_create_issue` with `task_id_source: github`). `task_validator.py --practice`
+  checks the sandbox; `.agent/ONBOARDING.md` extends the tutorial
+  (`tasks/TASK-106-onboard-quick-start-practice-mode.md`).
 - **TASK-105** ✅ (v8.4.3, 2026-10-15) — nav-sync-claude extract + generate
   are faithful: the project's standards/forbidden lists, multi-line bullets, core principle
   and custom-section positions round-trip; generate stamps the installed version and today;

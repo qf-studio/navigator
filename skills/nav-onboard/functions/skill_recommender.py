@@ -5,9 +5,28 @@ Skill recommendation engine for Navigator onboarding.
 Maps project analysis to recommended skills and workflow order.
 """
 
+import argparse
 import json
 import sys
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, List, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from project_analyzer import analyze_project  # noqa: E402
+
+SKILL_DIR = Path(__file__).resolve().parent.parent
+LEARNING_TASKS_DIR = SKILL_DIR / "learning-tasks"
+# The plugin ships the philosophy docs; a project created by nav-init does not (GH-35 #4).
+PLUGIN_ROOT = SKILL_DIR.parent.parent
+PHILOSOPHY_FILE = PLUGIN_ROOT / ".agent" / "philosophy" / "CONTEXT-EFFICIENCY.md"
+# A project may extend the tutorial with its own text (GH-35, optional).
+PROJECT_TUTORIAL = Path(".agent") / "ONBOARDING.md"
+DEV_SKILL_TASK_FILE = "06-dev-skill.md"
+# Teaching order of the essential skills = the learning-task numbering on disk. The daily
+# workflow order (``workflow_position``) differs: markers come late in a work day but are
+# taught second because the compact exercise needs one.
+TEACHING_ORDER = ["nav-start", "nav-marker", "nav-task", "nav-sop", "nav-compact"]
+QUICK_START_ESSENTIALS = TEACHING_ORDER[:3]
 
 
 # Skill definitions with metadata
@@ -140,7 +159,7 @@ SKILLS = {
 }
 
 
-def recommend_skills(project_analysis: Dict) -> Dict:
+def recommend_skills(project_analysis: Dict, project_dir: str = ".") -> Dict:
     """
     Generate skill recommendations based on project analysis.
 
@@ -218,21 +237,48 @@ def recommend_skills(project_analysis: Dict) -> Dict:
             "quick_start": _generate_quick_start_curriculum(essential, recommended),
             "full_education": _generate_full_curriculum(essential, recommended, optional),
         },
+        "project_tutorial": project_tutorial(project_dir),
     }
+
+
+def task_file_for(skill_id: str, category: str = "essential") -> Optional[str]:
+    """Learning-task file name for a skill, resolved against ``learning-tasks/`` on disk.
+
+    Essential skills have one file each (``NN-<skill>.md``); every development skill
+    shares ``06-dev-skill.md``. Returns None when nothing on disk fits, so a caller can
+    skip the exercise instead of asking for a file that does not exist (GH-35 #3).
+    """
+    matches = sorted(LEARNING_TASKS_DIR.glob(f"*-{skill_id}.md"))
+    if matches:
+        return matches[0].name
+    if category == "development" and (LEARNING_TASKS_DIR / DEV_SKILL_TASK_FILE).exists():
+        return DEV_SKILL_TASK_FILE
+    return None
+
+
+def project_tutorial(project_dir: str = ".") -> Optional[str]:
+    """Path of the project's own tutorial text, when the repo ships one."""
+    candidate = Path(project_dir) / PROJECT_TUTORIAL
+    return str(candidate) if candidate.is_file() else None
+
+
+def _in_teaching_order(skills: List[Dict]) -> List[Dict]:
+    """Essential skills sorted by TEACHING_ORDER; unknown ids keep their place at the end."""
+    rank = {skill_id: i for i, skill_id in enumerate(TEACHING_ORDER)}
+    return sorted(skills, key=lambda s: rank.get(s["id"], len(rank)))
 
 
 def _generate_quick_start_curriculum(essential: List[Dict], recommended: List[Dict]) -> List[Dict]:
     """Generate Quick Start curriculum (4 skills, 15 min)."""
     curriculum = []
 
-    # First 3 essential skills
-    essential_subset = ["nav-start", "nav-marker", "nav-task"]
-    for skill in essential:
-        if skill["id"] in essential_subset:
+    # First 3 essential skills, in teaching order
+    for skill in _in_teaching_order(essential):
+        if skill["id"] in QUICK_START_ESSENTIALS:
             curriculum.append({
                 "skill": skill["id"],
                 "estimated_time": "3 min",
-                "task_file": f"{len(curriculum) + 1:02d}-{skill['id']}.md",
+                "task_file": task_file_for(skill["id"]),
             })
 
     # One dev skill if available
@@ -241,7 +287,7 @@ def _generate_quick_start_curriculum(essential: List[Dict], recommended: List[Di
         curriculum.append({
             "skill": dev_skill["id"],
             "estimated_time": "5 min",
-            "task_file": f"{len(curriculum) + 1:02d}-{dev_skill['id']}.md",
+            "task_file": task_file_for(dev_skill["id"], "development"),
         })
 
     return curriculum
@@ -259,25 +305,25 @@ def _generate_full_curriculum(
         "skill": None,
         "estimated_time": "5 min",
         "description": "Read context efficiency principles",
-        "file": ".agent/philosophy/CONTEXT-EFFICIENCY.md",
+        "file": str(PHILOSOPHY_FILE),
     })
 
-    # All essential skills
-    for i, skill in enumerate(essential):
+    # All essential skills, in teaching order
+    for skill in _in_teaching_order(essential):
         curriculum.append({
             "section": "Essential",
             "skill": skill["id"],
             "estimated_time": "3 min",
-            "task_file": f"{i + 1:02d}-{skill['id']}.md",
+            "task_file": task_file_for(skill["id"]),
         })
 
     # All recommended skills
-    for i, skill in enumerate(recommended):
+    for skill in recommended:
         curriculum.append({
             "section": "Development",
             "skill": skill["id"],
             "estimated_time": "5 min",
-            "task_file": f"0{len(essential) + i + 1}-{skill['id']}.md",
+            "task_file": task_file_for(skill["id"], "development"),
         })
 
     # Summary
@@ -317,13 +363,37 @@ def format_recommendations(recommendations: Dict) -> str:
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
-    # Read project analysis from stdin or file
-    if len(sys.argv) > 1:
-        with open(sys.argv[1]) as f:
-            project_analysis = json.load(f)
-    else:
-        project_analysis = json.load(sys.stdin)
+def load_analysis(source: Optional[str], project_dir: str) -> Dict:
+    """Project analysis from ``--analysis`` (a file or ``-`` for stdin), else computed."""
+    if source == "-":
+        return json.load(sys.stdin)
+    if source:
+        with open(source, encoding="utf-8") as handle:
+            return json.load(handle)
+    return analyze_project(project_dir)
 
-    recommendations = recommend_skills(project_analysis)
-    print(json.dumps(recommendations, indent=2))
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Recommend Navigator skills and a learning curriculum for a project.")
+    parser.add_argument("project_dir", nargs="?", default=".",
+                        help="project to analyze (default: current directory)")
+    parser.add_argument("--analysis", default=None, metavar="FILE",
+                        help="use this project_analyzer.py JSON instead (- for stdin)")
+    parser.add_argument("--text", action="store_true", help="human-readable summary")
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    args = _build_parser().parse_args(argv)
+    project_analysis = load_analysis(args.analysis, args.project_dir)
+    recommendations = recommend_skills(project_analysis, args.project_dir)
+    if args.text:
+        print(format_recommendations(recommendations))
+    else:
+        print(json.dumps(recommendations, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

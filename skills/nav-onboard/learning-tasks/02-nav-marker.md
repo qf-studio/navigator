@@ -17,11 +17,13 @@ Context markers are "save points" for your AI sessions. When you take a break or
 Type: "Create checkpoint learning-test"
 ```
 
+**Practice mode**: during onboarding this command runs in the practice sandbox (your personal onboarding dir, outside the repo). The real skill writes to `.agent/.context-markers/`. Nothing in the repo changes and no GitHub issue is opened. Type the same words later, outside onboarding, and the real skill runs.
+
 ### Step 2: Observe What Happens
 
 **WHAT SHOULD HAPPEN:**
 
-1. System creates marker file in `.agent/.context-markers/`
+1. System creates the marker file (practice: `<practice>/.agent/.context-markers/`)
 2. Marker captures:
    - What you were working on
    - Files you modified (if any)
@@ -33,7 +35,7 @@ You should see:
 ✅ Context marker created!
 
 Marker: learning-test
-File: .agent/.context-markers/[timestamp]_learning-test.md
+File: <practice>/.agent/.context-markers/[timestamp]_learning-test.md
 Size: ~2-3 KB
 
 This marker captures:
@@ -62,10 +64,11 @@ You should see structured content:
 
 This task is complete when:
 - [ ] Marker created with "Create checkpoint learning-test"
-- [ ] File exists in `.agent/.context-markers/`
+- [ ] File exists in the practice `.agent/.context-markers/`
 - [ ] Marker contains session summary
 
-**Automatic check**: File `.agent/.context-markers/*learning-test*.md` exists.
+**Automatic check**: `task_validator.py nav-marker --practice` finds
+`.context-markers/*learning-test*.md` in the sandbox.
 
 ## Pro Tip
 
