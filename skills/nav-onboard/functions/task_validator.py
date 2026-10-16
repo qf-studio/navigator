@@ -2,9 +2,12 @@
 """
 Task validation for Navigator onboarding.
 
-Validates whether learning tasks have been completed.
+Validates whether learning tasks have been completed. With ``practice=True`` the checks
+run against the practice sandbox (``practice.practice_root``), which mirrors ``.agent/``
+outside the repo (GH-35); the exercises write there and the repo stays untouched.
 """
 
+import argparse
 import json
 import os
 import sys
@@ -12,14 +15,18 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from practice import practice_root  # noqa: E402
 
-def validate_task(project_dir: str, skill_name: str) -> Dict:
+
+def validate_task(project_dir: str, skill_name: str, practice: bool = False) -> Dict:
     """
     Validate if a learning task has been completed.
 
     Args:
         project_dir: Project directory path
         skill_name: Name of skill to validate
+        practice: Check the practice sandbox instead of the repo
 
     Returns:
         Validation result dictionary
@@ -46,7 +53,11 @@ def validate_task(project_dir: str, skill_name: str) -> Dict:
             "suggestion": "Mark as complete manually if you've done the task",
         }
 
-    return validator(Path(project_dir))
+    root = practice_root(project_dir) if practice else Path(project_dir)
+    result = validator(root)
+    result["mode"] = "practice" if practice else "repo"
+    result["root"] = str(root)
+    return result
 
 
 def _validate_nav_start(project_dir: Path) -> Dict:
@@ -415,10 +426,21 @@ def _is_recent(path: Path, hours: int = 1) -> bool:
         return False
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: task_validator.py <project_dir> <skill_name>")
-        sys.exit(1)
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate a nav-onboard learning task")
+    parser.add_argument("skill_name")
+    parser.add_argument("--project-dir", default=".", help="repo being onboarded")
+    parser.add_argument("--practice", action="store_true",
+                        help="check the practice sandbox, not the repo")
+    return parser
 
-    result = validate_task(sys.argv[1], sys.argv[2])
+
+def main(argv: Optional[List[str]] = None) -> int:
+    args = _build_parser().parse_args(argv)
+    result = validate_task(args.project_dir, args.skill_name, practice=args.practice)
     print(json.dumps(result, indent=2))
+    return 0 if result.get("valid") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

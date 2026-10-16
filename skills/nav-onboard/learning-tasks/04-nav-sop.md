@@ -17,11 +17,13 @@ SOPs (Standard Operating Procedures) capture HOW to solve problems. When you deb
 Type: "Create SOP for debugging test-failures"
 ```
 
+**Practice mode**: during onboarding this command runs in the practice sandbox (your personal onboarding dir, outside the repo). The real skill writes to `.agent/sops/<category>/`. Nothing in the repo changes and no GitHub issue is opened. Type the same words later, outside onboarding, and the real skill runs.
+
 ### Step 2: Observe What Happens
 
 **WHAT SHOULD HAPPEN:**
 
-1. SOP file created in `.agent/sops/debugging/`
+1. SOP file created in the practice `.agent/sops/debugging/`
 2. Template includes problem, solution, prevention
 3. Categories: debugging, integrations, development, deployment
 
@@ -30,7 +32,7 @@ You should see:
 ✅ SOP created!
 
 SOP: debugging-test-failures
-File: .agent/sops/debugging/test-failures.md
+File: <practice>/.agent/sops/debugging/test-failures.md
 Category: debugging
 
 Template includes:
@@ -66,10 +68,11 @@ SOPs are organized by type:
 
 This task is complete when:
 - [ ] SOP created with "Create SOP for debugging test-failures"
-- [ ] File exists in `.agent/sops/debugging/`
+- [ ] File exists in the practice `.agent/sops/debugging/`
 - [ ] Template structure visible
 
-**Automatic check**: File in `.agent/sops/*/` exists.
+**Automatic check**: `task_validator.py nav-sop --practice` finds a file in
+`sops/*/` in the sandbox.
 
 ## Pro Tip
 
