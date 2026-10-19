@@ -138,6 +138,7 @@ When implementation is complete, run these without prompting:
 
 - `research/current-state-webgpu-support-across-chrome/report.md` — WebGPU support across Chrome, Firefox, Safari: status, platforms, limitations, per-engine feature table (22 sources, 2026-09-10; first live run on v7.3.0 plugin agents)
 - `research/current-status-free-threaded-no-gil/report.md` — Free-threaded CPython as of September 2026: versions, single-thread cost, NumPy/pandas/Django readiness (15 sources, 2026-09-10; TASK-74 dry run)
+- `research/claude-code-mods-2026-10-19/findings.md` — Claude Code mods API drift 2.1.287 → 2.1.299 against Navigator's mod: extracted d.ts for both versions + diff, embedded changelog 2.1.289–2.1.296, validate outputs, fetch-policy probe, official-docs notes in `sources.md` (2026-10-19; graph mem-108..112)
 
 ---
 

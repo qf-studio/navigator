@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-15T16:43:53.397781+00:00",
+  "last_updated": "2026-10-19T20:59:16.025066+00:00",
   "stats": {
-    "total_nodes": 254,
-    "total_edges": 875,
-    "memory_count": 99
+    "total_nodes": 262,
+    "total_edges": 890,
+    "memory_count": 106
   },
   "nodes": {
     "tasks": {
@@ -977,6 +977,20 @@
           "knowledge",
           "deployment",
           "api"
+        ]
+      },
+      "TASK-107": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-107-mod-cc-2-1-299-validate.md",
+        "title": "Mod clean under `claude plugin validate` on Claude Code 2.1.299",
+        "status": "in-progress",
+        "concepts": [
+          "api",
+          "testing",
+          "skills",
+          "deployment",
+          "context",
+          "markers",
+          "workflow"
         ]
       }
     },
@@ -3042,7 +3056,7 @@
       "mem-086": {
         "type": "pitfall",
         "summary": "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 makes Claude Code refuse every mod $.http.fetch (loopback included) with no visible error; the mod's typed judge was silently dead for a day. Any mod network call needs a curl fallback via $.process.run (key in env, body on stdin) and a test with http that throws (TASK-84, v8.0.0)",
-        "path": "memories/pitfalls/mem-086.md",
+        "path": "memories/pitfalls/resolved/mem-086.md",
         "confidence": 1.0,
         "concepts": [
           "hooks-runtime",
@@ -3050,7 +3064,10 @@
           "claude-code"
         ],
         "created": "2026-10-04",
-        "last_validated": "2026-10-04"
+        "last_validated": "2026-10-04",
+        "resolved": true,
+        "resolved_date": "2026-10-19",
+        "superseded_by": "mem-108"
       },
       "mem-087": {
         "type": "pitfall",
@@ -3314,6 +3331,91 @@
         "created": "2026-10-15",
         "last_validated": "2026-10-15",
         "contradiction": "faithful round trip of project content vs template upgrades reaching the project's lists"
+      },
+      "mem-108": {
+        "type": "learning",
+        "summary": "Claude Code 2.1.299 narrowed the mod network policy: CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 refuses only built-in requests and plugin $.http.fetch calls that carry an auth handle; a plain mod fetch to api.github.com answered 200 and loopback failed with ECONNREFUSED (socket, not policy) in a -p probe on 2026-10-19. The curl fallback (judge io.runWith, auto_update.curl_fallback) stays for 2.1.287-2.1.28x; earliest relaxed version unknown (not in the embedded changelog 2.1.289-2.1.296). Supersedes mem-086 for new CC.",
+        "path": "memories/learnings/mem-108.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks-runtime",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-109": {
+        "type": "pitfall",
+        "summary": "Claude Code 2.1.290+ treats a gating hook (prompt.submit, tool.call, tool.check, classic.*, command.run, agent.spawn) that throws, times out or re-enters (HookFailure.kind 're-entry', cause 'lent') as skipped: the action goes on unless on(...).catch(($, e, next) => next.called ? next(e) : { deny }) answers in its place. claude plugin validate on 2.1.299 lists Navigator's 14 gating hooks as 'gating hook without .catch' (gatingHooks under --json). Navigator fails open by design, so this is a warning; adding a pass-through .catch keeps the policy and silences it. Update from the GitHub changelog: since 2.1.301 the .catch runs only on throw or timeout; an event raised beneath the hook's own calls skips the hook without asking its .catch (the 2.1.299 re-entry handler lasted two releases).",
+        "path": "memories/pitfalls/mem-109.md",
+        "confidence": 0.95,
+        "concepts": [
+          "hooks-runtime",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-110": {
+        "type": "learning",
+        "summary": "Claude Code 2.1.299 prompt.submit carries e.command = {name, args} when the submission runs a slash command (a rewrite of text is then ignored and the person is told; {drop} stops a skill or prompt command before it renders) and e.isMeta on prompts the person did not type; both pinned. Navigator's gate/brief/tier1/modes score e.text with no command check \u2014 return next(e) first when e.command is set. A hook that drops after calling next(e) is reported as failed by name (2.1.290); ours drops before next.",
+        "path": "memories/learnings/mem-110.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks-runtime",
+          "workflow"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-111": {
+        "type": "pitfall",
+        "summary": "claude plugin validate on Claude Code 2.1.287 skipped the plugin entirely when the folder also held .claude-plugin/marketplace.json (fixed 2.1.289), so the v8 release gate's optional validate never checked the Navigator mod on 2.1.287. On 2.1.299 it validates and adds: marketplace unknown-field warnings (displayName, metadata.breaking_changes), 'hooks on classic.* do not run in a plugin a person installs where an organization manages Claude Code' (then NAVIGATOR_MOD_OWNS still gets set and the classic-event ops run nowhere), 'answers its own command', gating-hook .catch list, README install-line advice.",
+        "path": "memories/pitfalls/mem-111.md",
+        "confidence": 0.95,
+        "concepts": [
+          "hooks-runtime",
+          "deployment",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-112": {
+        "type": "learning",
+        "summary": "Claude Code embeds its plugin API declarations in the binary as a zstd blob named claude-code.d.ts-<hash>.txt.zst (hash changes when the API changes: e37ccc4a on 2.1.287, 632d5898 on 2.1.299) and the test kit as kit-modules.js-<hash>.txt.zst; the engine writes .claude-plugin/types/ only while a mod is developed in an interactive session (2.1.295), never in -p, so the repo copy can go stale. To diff API versions: scan the binary for zstd magic 28B52FFD, stream-decompress, keep the blob whose head says 'Claude Code function hooks'; recipe and outputs in .agent/research/claude-code-mods-2026-10-19/.",
+        "path": "memories/learnings/mem-112.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks-runtime",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-113": {
+        "type": "learning",
+        "summary": "Claude Code 2.1.299 changelog: 'Fixed mods loaded from source files being refused when a hook hands $ to a function declaration imported from another file of the mod' \u2014 the mem-083 static-scan refusal ($ never crosses an import) is relaxed from 2.1.299 on; not probed here. Navigator's Io port (hooks/mod/lib/types.ts) stays valid and is still required while MIN_CC is 2.1.287. Same release: claude plugin test stamps each mod Box/Text root with part: { plugin } (exact-tree assertions must include it) and fails a served $ method slower than 10 s.",
+        "path": "memories/learnings/mem-113.md",
+        "confidence": 0.85,
+        "concepts": [
+          "hooks-runtime",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
+      },
+      "mem-114": {
+        "type": "pattern",
+        "summary": "Claude Code mods: a gating hook that must fail open still carries a .catch so validate lists it as 'with .catch' and the policy is stated in code. One named handler (the static scan refuses a handler returned by a call) does next(e) whether or not next.called, skips kind 're-entry', and counts the failure toward the breaker via owns.noteCrash for every op the event serves (EVENT_OPS; the event read from hook_event_name / tool / else prompt.submit). Navigator: failOpen in hooks/mod/register.tsx, TASK-107; .catch exists on Registration since 2.1.287.",
+        "path": "memories/patterns/mem-114.md",
+        "confidence": 0.9,
+        "concepts": [
+          "hooks-runtime",
+          "testing"
+        ],
+        "created": "2026-10-19",
+        "last_validated": "2026-10-19"
       }
     },
     "files": {}
@@ -8036,6 +8138,81 @@
       "from": "mem-107",
       "to": "TASK-105",
       "type": "learned-from"
+    },
+    {
+      "from": "mem-108",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-109",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-110",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-111",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-112",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-108",
+      "to": "mem-086",
+      "type": "supersedes"
+    },
+    {
+      "from": "mem-113",
+      "to": "TASK-84",
+      "type": "learned-from"
+    },
+    {
+      "from": "TASK-107",
+      "to": "api",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "context",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "markers",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-107",
+      "to": "workflow",
+      "type": "implements"
+    },
+    {
+      "from": "mem-114",
+      "to": "TASK-107",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -8222,7 +8399,14 @@
       "TASK-96",
       "TASK-97",
       "mem-103",
-      "TASK-100"
+      "TASK-100",
+      "mem-108",
+      "mem-109",
+      "mem-111",
+      "mem-112",
+      "mem-113",
+      "TASK-107",
+      "mem-114"
     ],
     "context": [
       "TASK-32",
@@ -8344,7 +8528,8 @@
       "TASK-74",
       "TASK-83",
       "TASK-93",
-      "TASK-100"
+      "TASK-100",
+      "TASK-107"
     ],
     "skills": [
       "TASK-32",
@@ -8472,7 +8657,8 @@
       "TASK-95",
       "TASK-96",
       "TASK-97",
-      "TASK-100"
+      "TASK-100",
+      "TASK-107"
     ],
     "session": [
       "TASK-32",
@@ -8654,7 +8840,9 @@
       "mem-077",
       "TASK-83",
       "TASK-93",
-      "mem-096"
+      "mem-096",
+      "mem-110",
+      "TASK-107"
     ],
     "backend": [
       "TASK-16",
@@ -8772,7 +8960,8 @@
       "mem-073",
       "TASK-74",
       "TASK-83",
-      "TASK-100"
+      "TASK-100",
+      "TASK-107"
     ],
     "markers": [
       "TASK-18",
@@ -8851,7 +9040,8 @@
       "TASK-68",
       "TASK-65",
       "TASK-69",
-      "TASK-83"
+      "TASK-83",
+      "TASK-107"
     ],
     "deployment": [
       "TASK-11",
@@ -8934,7 +9124,9 @@
       "mem-102",
       "TASK-100",
       "mem-104",
-      "mem-105"
+      "mem-105",
+      "mem-111",
+      "TASK-107"
     ],
     "code quality": [
       "TASK-19",
@@ -9359,7 +9551,14 @@
       "mem-089",
       "mem-104",
       "mem-105",
-      "mem-106"
+      "mem-106",
+      "mem-108",
+      "mem-109",
+      "mem-110",
+      "mem-111",
+      "mem-112",
+      "mem-113",
+      "mem-114"
     ],
     "adhd": [
       "mem-078",
