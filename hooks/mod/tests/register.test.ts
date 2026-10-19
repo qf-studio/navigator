@@ -146,6 +146,25 @@ test('(a2) injects nothing when nothing is switched on', async ($, on) => {
   expect((r.context ?? []).some(c => c.includes('ADHD MODE: on ('))).toBe(false)
 })
 
+test('(a3) a slash command line passes through unscored: no context, no drop (TASK-107)', async ($, on) => {
+  const w = world(on, { [PERSONAL]: JSON.stringify({ on: true }) })
+  const line = '/loop run until done: fix the flaky test'
+  // 2.1.299 sets e.command when the submission runs a slash command; the hook steps aside.
+  // Cast: the engine lays 2.1.287 types beside the mod, and `command` arrived in 2.1.299.
+  const r = await $.prompt.submit({
+    text: line, command: { name: 'loop', args: 'run until done: fix the flaky test' },
+    origin: { kind: 'composer' }, wait: false,
+  } as unknown as Parameters<typeof $.prompt.submit>[0])
+  expect(r.drop).toBeUndefined()
+  expect(r.context).toBeUndefined()
+  expect(r.text).toBe(line)
+  expect(w.submitted).toEqual([line])
+  // The same words typed as a prompt are scored: the gate answers the loop trigger (a drop
+  // or a context block, by `strict_block`), and the ADHD block rides along otherwise.
+  const typed = await submit($, line)
+  expect(typeof typed.drop === 'string' || (typed.context ?? []).length > 0).toBe(true)
+})
+
 test('(b) a repo pin off wins over the personal switch', async ($, on) => {
   world(on, {
     [PERSONAL]: JSON.stringify({ on: true }),

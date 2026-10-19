@@ -22,7 +22,7 @@ import { RELEASES_URL, dueForCheck, latestStable, releasesViaCurl, updateNotice,
 import type { Io, OpCtx } from './lib/types'
 import { projectRoot, run } from './lib/project'
 import { EVENT_OPS } from './ops'
-import { announce } from './owns'
+import { announce, noteCrash } from './owns'
 import { runEvent } from './runner'
 import type { Judgment } from './lib/scoring'
 import {
@@ -439,6 +439,41 @@ const checkForUpdate = async ($: EngineInterface): Promise<void> => {
   if (notice !== null) $.ui.toast(notice, { timeoutMs: 15000 })
 }
 
+/** What `next` carries into a `.catch` handler: why the hook failed, whether it called `next`. */
+type Caught = { readonly called: boolean; readonly error: { readonly kind: string } }
+
+/** The classic event a failed hook served; tool.call hooks by tool, prompt.submit otherwise. */
+const failedEvent = (e: unknown): string => {
+  const p = (e ?? {}) as { hook_event_name?: unknown; tool?: unknown }
+  if (typeof p.hook_event_name === 'string') return p.hook_event_name
+  if (p.tool === 'Read') return 'PreToolUse'
+  if (p.tool === 'Bash') return 'tool.call:Bash'
+  if (typeof p.tool === 'string') return 'PostToolUse'
+  return 'UserPromptSubmit'
+}
+
+/**
+ * The `.catch` of every gating hook (TASK-107). Navigator fails open by design: without a
+ * handler the engine skips a failed hook and the action goes on, and this handler does the
+ * same, so `claude plugin validate` sees the policy stated rather than a hook without one.
+ * It also counts the failure toward the breaker (owns.noteCrash), so three failures of one
+ * hook hand its ops to Python as three op crashes do. `next.called` true: `next(e)` replays
+ * what the hook's last call settled to; false: it runs the hooks beneath once. A re-entry
+ * (2.1.299 asks the handler; 2.1.301 skips the hook silently) is no fault and counts nothing.
+ * One named function: the static scan follows `$` only into a literal or a named handler.
+ */
+const failOpen = async <E, R>(
+  $: EngineInterface, e: E, next: ((e: E) => Promise<R>) & Caught,
+): Promise<R> => {
+  if (next.error.kind !== 're-entry') {
+    const io = ioOf($)
+    const event = failedEvent(e)
+    const ops = (EVENT_OPS[event] ?? []).map(op => op.spec.name)
+    for (const name of ops.length > 0 ? ops : [event]) await noteCrash(io, name).catch(() => false)
+  }
+  return next(e)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await announce(ioOf($))
@@ -461,37 +496,37 @@ export const register: Register = on => {
     const r = await next(e)
     const merged = await runFor($, 'SessionStart', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
-  })
+  }).catch(failOpen)
 
   on('classic.PreCompact', async ($, e, next) => {
     const r = await next(e)
     await runFor($, 'PreCompact', e as unknown as Record<string, unknown>)
     return r
-  })
+  }).catch(failOpen)
 
   on('classic.PostCompact', async ($, e, next) => {
     const r = await next(e)
     await runFor($, 'PostCompact', e as unknown as Record<string, unknown>)
     return r
-  })
+  }).catch(failOpen)
 
   on('classic.SubagentStart', async ($, e, next) => {
     const r = await next(e)
     const merged = await runFor($, 'SubagentStart', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
-  })
+  }).catch(failOpen)
 
   on('classic.ConfigChange', async ($, e, next) => {
     const r = await next(e)
     await runFor($, 'ConfigChange', e as unknown as Record<string, unknown>)
     return r
-  })
+  }).catch(failOpen)
 
   on('classic.Setup', async ($, e, next) => {
     const r = await next(e)
     const merged = await runFor($, 'Setup', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
-  })
+  }).catch(failOpen)
 
   on('command.run', { command: 'nav' }, async $ => {
     await Promise.all([refreshPane($), refreshTrip($).catch(() => {})])
@@ -519,7 +554,7 @@ export const register: Register = on => {
     // v8: read_guard's warn reaches the model as context (v7 printed it to stderr only).
     const warn = pre?.notes ?? null
     return warn !== null && ran.deny === undefined ? { ...ran, context: [...(ran.context ?? []), warn] } : ran
-  })
+  }).catch(failOpen)
 
   on('tool.call', { tool: MUTATING }, async ($, e, next) => {
     const ran = await next(e)
@@ -529,25 +564,25 @@ export const register: Register = on => {
     if (target.includes('/.agent/')) await docsTouched($)
     const post = await runFor($, 'PostToolUse', toolPayload(e as unknown as Record<string, unknown>))
     return post?.context ? { ...ran, context: [...(ran.context ?? []), post.context] } : ran
-  })
+  }).catch(failOpen)
 
   on('classic.TaskCreated', async ($, e, next) => {
     const r = await next(e)
     await runFor($, 'TaskCreated', e as unknown as Record<string, unknown>)
     return r
-  })
+  }).catch(failOpen)
 
   on('classic.TaskCompleted', async ($, e, next) => {
     const r = await next(e)
     await runFor($, 'TaskCompleted', e as unknown as Record<string, unknown>)
     return r
-  })
+  }).catch(failOpen)
 
   on('classic.PostToolUseFailure', async ($, e, next) => {
     const r = await next(e)
     const merged = await runFor($, 'PostToolUseFailure', e as unknown as Record<string, unknown>)
     return withContext(r, merged?.context)
-  })
+  }).catch(failOpen)
 
   on('classic.Stop', async ($, e, next) => {
     const r = await next(e)
@@ -556,7 +591,7 @@ export const register: Register = on => {
     const merged = await runFor($, 'Stop', e as unknown as Record<string, unknown>,
       { bashAllReadOnly: a.bashCalls > 0 && !a.bashMutating })
     return merged?.block != null ? { ...r, block: merged.block } : r
-  })
+  }).catch(failOpen)
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
@@ -582,9 +617,12 @@ export const register: Register = on => {
       await update($, activity, a => ({ ...NO_ACTIVITY, ...a, committed: true }))
     }
     return ran
-  })
+  }).catch(failOpen)
 
   on('prompt.submit', async ($, e, next) => {
+    // TASK-107: a slash command's line is not a prompt to score. 2.1.299 sets e.command for
+    // one; earlier engines never do, so the ops see the same prompts they did before.
+    if ((e as { command?: unknown }).command !== undefined) return next(e)
     const ctx = await makeCtx(ioOf($), 'UserPromptSubmit', { prompt: e.text })
     const merged = ctx === null ? null : await runEvent(ctx, EVENT_OPS.UserPromptSubmit ?? [])
     if (merged?.drop != null) return { drop: merged.drop }
@@ -617,7 +655,7 @@ export const register: Register = on => {
       }
     }
     return entered
-  })
+  }).catch(failOpen)
 
   on('turn.complete', async ($, e, next) => {
     if (e.agentId !== undefined) {

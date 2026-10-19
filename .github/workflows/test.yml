@@ -45,8 +45,8 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code@2.1.287
 
       - name: Validate plugin manifest and hooks module
-        # Non-strict: the baseline carries three known, benign warnings (CLAUDE.md at the
-        # plugin root; marketplace displayName/breaking_changes). Errors still fail.
+        # Non-strict: the baseline carries one known, benign warning (CLAUDE.md at the
+        # plugin root). Errors still fail. TASK-107 cleared the gating-hook and manifest lines.
         run: make mod-validate
 
       - name: Run mod kit tests

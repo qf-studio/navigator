@@ -181,7 +181,10 @@ Efficiency score:                  94/100 (excellent)
 ### Install
 
 ```bash
-# Claude Code plugin marketplace
+# Claude Code plugin marketplace (one step on Claude Code 2.1.275 or later)
+/plugin install navigator --marketplace qf-studio/navigator
+
+# Older Claude Code: add the marketplace first
 /plugin marketplace add qf-studio/navigator
 /plugin install navigator
 
@@ -256,8 +259,7 @@ Navigator fixes this with context engineering—the same principles Anthropic re
 **92% token savings. 20+ exchange sessions. Verified metrics.**
 
 ```bash
-/plugin marketplace add qf-studio/navigator
-/plugin install navigator
+/plugin install navigator --marketplace qf-studio/navigator
 ```
 
 **Finish what you start.**
