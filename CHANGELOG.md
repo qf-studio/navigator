@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.10] — 2026-10-20
+
+One cell of gap between the side-by-side top `/nav` cards on remote surfaces, and a dim
+line that says hotkeys arm only while the pane holds the keyboard (TASK-108). Terminal
+unchanged.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.10.md)
+
 ## [v8.4.9] — 2026-10-20
 
 The `/nav` pane's top-row gap is set only along the axis the row flows, so the stacked

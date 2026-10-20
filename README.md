@@ -5,7 +5,7 @@
 Sessions that last. AI that learns. Features that ship.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-8.4.9-blue.svg)](https://github.com/qf-studio/navigator/releases)
+[![Version](https://img.shields.io/badge/version-8.4.10-blue.svg)](https://github.com/qf-studio/navigator/releases)
 
 ---
 
