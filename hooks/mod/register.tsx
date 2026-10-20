@@ -842,10 +842,11 @@ export const register: Register = on => {
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
 
     // The terminal shows a row between cards on its own; the desktop stacks their frames
-    // edge to edge, so it gets one cell of gap (a number is the same on every surface).
+    // edge to edge, so it gets one cell of gap down and three across between the top cards
+    // (a cell across is a code-font advance, a third of a row's height).
     return (
       <Box flexDirection="column" rowGap={remote ? 1 : 0}>
-        <Box flexDirection={narrow ? 'column' : 'row'} rowGap={remote ? 1 : 0}>
+        <Box flexDirection={narrow ? 'column' : 'row'} rowGap={remote ? 1 : 0} columnGap={remote ? 3 : 0}>
           <Box {...panel} flexDirection="column" width={cardWidth('40%', '31%')}>
             {title('context')}
             {gaugeRow}
