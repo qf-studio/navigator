@@ -330,8 +330,7 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
       expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
     }
     expect(texts).not.toMatch(/TASK-80 {2,}/) // no padEnd label columns anywhere
-    if (surface === 'terminal') expect(texts).not.toContain('hotkeys work in the terminal')
-    else expect(texts).toContain('hotkeys work in the terminal only for now')
+    expect(texts).not.toContain('hotkeys work') // no key hint on either surface
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')
@@ -341,16 +340,17 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
   }
 })
 
-test('(f2) a remote pane says hotkeys are terminal-only, focused or not; the terminal never does', async ($, on) => {
+test('(f2) remote buttons carry no hotkey (the desktop draws a dead key chip); terminal buttons do', async ($, on) => {
   world(on, {}, 10)
   await $.command.run(NAV_CMD)
-  for (const focused of [false, true]) {
-    const desktop = await navPane($, 'desktop', 72, focused)
-    expect((await desktop.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('hotkeys work in the terminal only for now')
-    await desktop.unmount()
-  }
+  const desktop = await navPane($, 'desktop', 72, false)
+  const remoteButtons = await desktop.findAll({ type: 'Button' })
+  expect(remoteButtons.length).toBeGreaterThan(5)
+  expect(remoteButtons.every(b => (b as { props?: { hotkey?: string } }).props?.hotkey === undefined)).toBe(true)
+  await desktop.unmount()
   const terminal = await navPane($, 'terminal', 72, false)
-  expect((await terminal.findAll({ type: 'Text' })).map(t => t.text).join('\n')).not.toContain('hotkeys work in the terminal')
+  const localButtons = await terminal.findAll({ type: 'Button' })
+  expect(localButtons.some(b => (b as { props?: { hotkey?: string } }).props?.hotkey === 'd')).toBe(true)
   await terminal.unmount()
 })
 

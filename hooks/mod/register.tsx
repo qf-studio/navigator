@@ -840,10 +840,12 @@ export const register: Register = on => {
     // Key-row separators: the terminal's `·` between plain presses; a desktop draws native
     // buttons, where `columnGap` is the separator.
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
-    // A hotkey presses only while the pane holds the keyboard (`isFocused`). The terminal
-    // hands it over on `/nav`. Claude Code Desktop 3.1623 sets `isFocused` on a click inside
-    // the pane but fires no hotkey (claude-code#100966 is the same gap for Input), so a remote
-    // pane says the keys are terminal-only and its native buttons press by click.
+    // A hotkey presses only while the pane holds the keyboard. The terminal hands it over on
+    // `/nav`. Claude Code Desktop 3.1623 reports `isFocused` on a click inside the pane while
+    // the composer keeps the keys (claude-code#100966 is the same gap for Input), and it draws
+    // a key chip for every `hotkey`. So a remote surface gets no `hotkey` props at all: plain
+    // native buttons that press by click, no chip that promises a key.
+    const hk = (key: string) => (remote ? {} : { hotkey: key })
 
     // The terminal shows a row between cards on its own; the desktop stacks their frames
     // edge to edge, so it gets one cell of gap down between stacked cards and one across
@@ -932,8 +934,8 @@ export const register: Register = on => {
             ))}
             {judgeOpen && j.label === undefined ? (
               <Box flexDirection="row" columnGap={3} marginTop={1}>
-                <Button key="confirm" label="verdict right" hotkey="y" plain onPress={() => labelLatest($, 'confirmed')} />
-                <Button key="dispute" label="wrong" hotkey="x" plain onPress={() => labelLatest($, 'disputed')} />
+                <Button key="confirm" label="verdict right" {...hk('y')} plain onPress={() => labelLatest($, 'confirmed')} />
+                <Button key="dispute" label="wrong" {...hk('x')} plain onPress={() => labelLatest($, 'disputed')} />
               </Box>
             ) : null}
           </Box>
@@ -951,7 +953,7 @@ export const register: Register = on => {
             <Box flexDirection="row" justifyContent="space-between">
               <Box flexDirection="row" flexGrow={1} flexShrink={1}>
                 <Box flexShrink={0}>
-                  <Button key="leg" label={`● ${at}/${route.length}`} hotkey="n"
+                  <Button key="leg" label={`● ${at}/${route.length}`} {...hk('n')}
                     onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
                 </Box>
                 <Box flexGrow={1} flexShrink={1} marginLeft={1}>
@@ -992,10 +994,10 @@ export const register: Register = on => {
             </Text>
             <Text> </Text>
             <Box flexDirection="row" columnGap={3}>
-              <Button key="park" label="park as new task" hotkey="p" plain onPress={() => parkDetour($)} />
-              <Button key="back" label="back to route" hotkey="b" plain
+              <Button key="park" label="park as new task" {...hk('p')} plain onPress={() => parkDetour($)} />
+              <Button key="back" label="back to route" {...hk('b')} plain
                 onPress={() => update($, offRoute, () => null)} />
-              <Button key="switch" label="switch" hotkey="s" plain onPress={() => switchToDetour($)} />
+              <Button key="switch" label="switch" {...hk('s')} plain onPress={() => switchToDetour($)} />
             </Box>
           </Box>
         ) : null}
@@ -1038,26 +1040,21 @@ export const register: Register = on => {
         ) : null}
 
         <Box flexDirection="row" flexWrap="wrap" columnGap={2} paddingX={1}>
-          <Button key="marker" label="marker" hotkey="m" plain
+          <Button key="marker" label="marker" {...hk('m')} plain
             onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })} />
           {dot()}
-          <Button key="compact" label="compact" hotkey="c" plain onPress={() => $.session.compact()} />
+          <Button key="compact" label="compact" {...hk('c')} plain onPress={() => $.session.compact()} />
           {dot()}
-          <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
+          <Button key="refresh" label="refresh" {...hk('r')} plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
           {dot()}
-          <Button key="details" label="details" hotkey="d" plain onPress={() => update($, showDetails, v => !v)} />
+          <Button key="details" label="details" {...hk('d')} plain onPress={() => update($, showDetails, v => !v)} />
           {dot()}
-          <Button key="rejects" label="rejects" hotkey="l" plain onPress={() => update($, showRejects, v => !v)} />
+          <Button key="rejects" label="rejects" {...hk('l')} plain onPress={() => update($, showRejects, v => !v)} />
           {j === null ? null : dot()}
           {j === null ? null : (
-            <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
+            <Button key="judge" label="judge" {...hk('j')} plain onPress={() => update($, showJudge, v => !v)} />
           )}
         </Box>
-        {remote ? (
-          <Box paddingX={1}>
-            <Text color={PALETTE.dim}>hotkeys work in the terminal only for now, click the buttons here</Text>
-          </Box>
-        ) : null}
       </Box>
     )
   })
