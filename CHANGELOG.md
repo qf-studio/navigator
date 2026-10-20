@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.6] — 2026-10-20
+
+The `/nav` pane and the intent brief draw correctly on Claude Code Desktop (TASK-108): the
+pane hook branches on `e.surface` (Box-fill gauge and `Svg` trend on remote surfaces, glyphs
+on the terminal), label columns are Box cells on every surface, the leg press is the short
+`● k/n` beside its text, stacked rows wrap; the injected `NAV-BRIEF` says the brief is a
+bullet list or a fenced block, no box glyphs. Floor stays Claude Code 2.1.287.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.6.md)
+
 ## [v8.4.5] — 2026-10-20
 
 The mod is clean under `claude plugin validate` on Claude Code 2.1.299: one shared fail-open

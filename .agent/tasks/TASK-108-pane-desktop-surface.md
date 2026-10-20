@@ -1,6 +1,6 @@
 # TASK-108: /nav pane and intent brief draw correctly on the desktop surface
 
-**Status**: 🚧 In Progress — implemented 2026-10-20; desktop screenshot verification pending
+**Status**: ✅ Completed — 2026-10-20; released in v8.4.6 (cb8a244); desktop screenshot verification pending from the person
 **Priority**: Medium
 **Source**: three screenshots of 2026-10-20 (terminal pane, desktop chat brief, desktop sidebar
 pane); `.agent/research/claude-code-mods-2026-10-19/claude-code.d.ts-2.1.299.txt` (line
