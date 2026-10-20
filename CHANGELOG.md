@@ -6,6 +6,12 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.8] — 2026-10-20
+
+Three cells of gap between the side-by-side top cards of the `/nav` pane on remote surfaces
+(TASK-108, after the v8.4.7 screenshot). Terminal unchanged.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.8.md)
+
 ## [v8.4.7] — 2026-10-20
 
 Two desktop pane fixes after the v8.4.6 screenshot (TASK-108): the trend `Svg` carries an
