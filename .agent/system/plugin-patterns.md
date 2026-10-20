@@ -447,8 +447,8 @@ detect this (the prop says focused); the native buttons press by click. Nothing 
 API changes this (`$.ui.focus` only moves the ring inside a site that already holds the keys).
 The desktop draws a key chip for every `hotkey`, so the pane passes no `hotkey` prop on remote
 surfaces (`hk()` in the pane hook): plain native buttons, no chip that promises a key.
-Upstream: issue draft in `.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`;
-related anthropics/claude-code#100966 (desktop Input never gets the keys), #99395 (first click
+Upstream: anthropics/claude-code#103773 (filed 2026-10-20; draft in
+`.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`); related anthropics/claude-code#100966 (desktop Input never gets the keys), #99395 (first click
 only focuses), #102378 (hotkeys follow the input source). Re-test on each desktop release;
 restore the props once a desktop build fires the keys.
 

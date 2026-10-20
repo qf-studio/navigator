@@ -1,6 +1,6 @@
 # TASK-108: /nav pane and intent brief draw correctly on the desktop surface
 
-**Status**: ✅ Completed — 2026-10-20; released in v8.4.6–v8.4.11 (cb8a244, 95ec927, 9c7e441, 210ebba, eaf0b41, ac73bc5, ef90d09). Desktop verified by screenshots: gauge, Svg trends, label columns, gaps, chip-free buttons. Left upstream: desktop pane hotkeys (the composer keeps the keys; draft in `research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`, not filed).
+**Status**: ✅ Completed — 2026-10-20; released in v8.4.6–v8.4.11 (cb8a244, 95ec927, 9c7e441, 210ebba, eaf0b41, ac73bc5, ef90d09). Desktop verified by screenshots: gauge, Svg trends, label columns, gaps, chip-free buttons. Left upstream: desktop pane hotkeys (the composer keeps the keys; filed as anthropics/claude-code#103773 on 2026-10-20).
 **Priority**: Medium
 **Source**: three screenshots of 2026-10-20 (terminal pane, desktop chat brief, desktop sidebar
 pane); `.agent/research/claude-code-mods-2026-10-19/claude-code.d.ts-2.1.299.txt` (line
