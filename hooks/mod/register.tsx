@@ -842,12 +842,12 @@ export const register: Register = on => {
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
 
     // The terminal shows a row between cards on its own; the desktop stacks their frames
-    // edge to edge, so it gets one cell of gap down between stacked cards and three across
-    // between the side-by-side top cards (a cell across is a code-font advance, a third of a
-    // row). Each gap is set only in the direction the top Box flows: the desktop reads a gap
-    // of the other axis as space too, which doubled the stacked layout's gap (v8.4.8).
+    // edge to edge, so it gets one cell of gap down between stacked cards and one across
+    // between the side-by-side top cards (measured on the desktop: a cell across is ~14 px
+    // beside the frames' own ~10 px; three cells read as a hole, v8.4.8). Each gap is set
+    // only in the direction the top Box flows.
     const topGap = remote
-      ? (narrow ? { rowGap: 1 } : { columnGap: 3 })
+      ? (narrow ? { rowGap: 1 } : { columnGap: 1 })
       : {}
     return (
       <Box flexDirection="column" rowGap={remote ? 1 : 0}>
