@@ -441,8 +441,9 @@ bullet list, one line per field (`skills/nav-brief/SKILL.md`), and the injected
 **Hotkeys are terminal-only today (2026-10-20).** A Button `hotkey` presses only while the
 pane holds the keyboard (`e.props.isFocused`). On the terminal `/nav` opens with `focus:
 true` and the keys work. In Claude Code Desktop 3.1623.0 on engine 2.1.299 a click inside the
-pane does set `isFocused` (the tree re-draws with it true), but no hotkey fires; the native
-buttons press by click. Nothing in the mod API changes this (`$.ui.focus` only moves the ring
+pane sets `isFocused` (the tree re-draws with it true), but the composer keeps the real
+keyboard: the pressed letter lands in the prompt box and no hotkey fires. The plugin cannot
+detect this (the prop says focused); the native buttons press by click. Nothing in the mod API changes this (`$.ui.focus` only moves the ring
 inside a site that already holds the keys), so the pane shows a dim "hotkeys: terminal only"
 line on remote surfaces and the docs say so. Upstream: issue draft in
 `.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`; related
