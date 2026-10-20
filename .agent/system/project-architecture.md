@@ -172,7 +172,10 @@ announces the active subset through `NAVIGATOR_MOD_OWNS`. `config.mod_owns` is t
 reader of that variable on the Python side; `runtime._dispatch` skips owned ops and exits
 immediately when every op of an event is owned. An op that crashes three times in a session
 (`BREAKER_LIMIT`) is disowned and re-announced, so Python runs it for the rest of the session.
-On a host older than 2.1.287 the mod owns nothing and Python runs everything.
+On a host older than 2.1.287 the mod owns nothing and Python runs everything. A gating hook
+that throws or overruns its budget is skipped by the engine; its shared `.catch` handler
+`failOpen` (v8.4.5) passes the event on and counts the failure toward the same breaker, so the
+mod never blocks an action on its own fault.
 
 **Shared state.** Both runtimes read and write `.agent/.nav-runtime-state.json` (schema 2:
 `session`, `turn`, `reads`, `completion`, `brief`, `jit`, `tier1`, `profile`, `compact`,

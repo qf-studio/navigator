@@ -276,6 +276,23 @@ owned. Below `MIN_CC`, or where policy blocks mods, the announcement is empty an
 runs everything. An op that crashes `BREAKER_LIMIT = 3` times is disowned and re-announced
 mid-session, so Python takes it over without a restart.
 
+**Fail-open `.catch` (v8.4.5, TASK-107)**: since Claude Code 2.1.290 a mod hook at a gating
+site (`prompt.submit`, `tool.call`, `classic.*`) that throws or overruns its budget is
+skipped and the action goes on unless its registration carries a `.catch`; `claude plugin
+validate` lists every gating hook with or without one. All 14 gating hooks in `register.tsx`
+share one named handler, `failOpen`: it passes the event on (`next(e)`, replayed when
+`next.called`) and counts the failure through `owns.noteCrash` for every op the event serves,
+so three hook-level failures disown those ops exactly as three op crashes do. The static scan
+accepts only a function literal or a function name as the handler, so `failOpen` derives the
+event from the payload. Same release: `prompt.submit` returns `next(e)` first when
+`e.command` is set (a slash command on 2.1.299+), so no prompt op scores a command line; the
+classic payload has no command field, so the guard is mod-only. Background and API diffs:
+`research/claude-code-mods-2026-10-19/findings.md`.
+
+**Rule**: a `.catch` on a Navigator gating hook never denies. A denying handler would turn a
+Navigator bug into a blocked tool call or a dropped prompt; add new gating hooks with
+`.catch(failOpen)`.
+
 **Rule**: an op joins `OWNED` in the same commit as its parity tests. Never register an
 event with no op module behind it (the v5.1.0 lesson recorded in `registry.py`).
 
