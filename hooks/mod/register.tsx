@@ -840,6 +840,10 @@ export const register: Register = on => {
     // Key-row separators: the terminal's `·` between plain presses; a desktop draws native
     // buttons, where `columnGap` is the separator.
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
+    // A hotkey presses only while the pane holds the keyboard (`isFocused`). The terminal
+    // hands it over on `/nav`; a desktop grants `focus` only over an empty composer, so there
+    // the pane says when its keys are not armed and what arms them (a click inside it).
+    const keysArmed = e.props.isFocused === true
 
     // The terminal shows a row between cards on its own; the desktop stacks their frames
     // edge to edge, so it gets one cell of gap down between stacked cards and one across
@@ -1049,6 +1053,11 @@ export const register: Register = on => {
             <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
           )}
         </Box>
+        {remote && !keysArmed ? (
+          <Box paddingX={1}>
+            <Text color={PALETTE.dim}>keys arm when the pane has the keyboard · click inside it, or use the buttons</Text>
+          </Box>
+        ) : null}
       </Box>
     )
   })

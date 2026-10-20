@@ -277,14 +277,14 @@ const NAV_CMD = {
   presentation: { isFullscreen: false, columns: 120 },
 }
 
-const navPane = ($: Engine, surface: (typeof SURFACES)[number], bodyColumns = 72) =>
+const navPane = ($: Engine, surface: (typeof SURFACES)[number], bodyColumns = 72, isFocused = true) =>
   $.ui.mount({
     plugin: PLUGIN,
     surface,
     component: 'Pane',
     requestId: 'nav',
     props: {
-      title: 'Navigator', isFocused: true, bodyColumns, placement: 'inline', // 72 is the pane's own default width
+      title: 'Navigator', isFocused, bodyColumns, placement: 'inline', // 72 is the pane's own default width
       scroll: { offset: 0, bodyRows: 20 }, view: {},
     },
   })
@@ -330,6 +330,7 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
       expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
     }
     expect(texts).not.toMatch(/TASK-80 {2,}/) // no padEnd label columns anywhere
+    expect(texts).not.toContain('keys arm when') // focused: no hint on either surface
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')
@@ -337,6 +338,17 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     await ui.press({ key: 'details' }) // state persists into the next surface's pass
     await ui.unmount()
   }
+})
+
+test('(f2) a remote pane without the keyboard says what arms its keys; the terminal never does', async ($, on) => {
+  world(on, {}, 10)
+  await $.command.run(NAV_CMD)
+  const desktop = await navPane($, 'desktop', 72, false)
+  expect((await desktop.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('keys arm when the pane has the keyboard')
+  await desktop.unmount()
+  const terminal = await navPane($, 'terminal', 72, false)
+  expect((await terminal.findAll({ type: 'Text' })).map(t => t.text).join('\n')).not.toContain('keys arm when')
+  await terminal.unmount()
 })
 
 test('(h) phase is sticky across turns and the leg clock counts turns', async ($, on) => {
