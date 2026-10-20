@@ -6,6 +6,12 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.11] — 2026-10-20
+
+`/nav` buttons carry no `hotkey` on remote surfaces: the desktop reports pane focus while the
+composer keeps the keys, so its key chips promised nothing (TASK-108). Terminal unchanged.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.11.md)
+
 ## [v8.4.10] — 2026-10-20
 
 One cell of gap between the side-by-side top `/nav` cards on remote surfaces, and a dim
