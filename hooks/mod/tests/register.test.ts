@@ -330,7 +330,8 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
       expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
     }
     expect(texts).not.toMatch(/TASK-80 {2,}/) // no padEnd label columns anywhere
-    expect(texts).not.toContain('keys arm when') // focused: no hint on either surface
+    if (surface === 'terminal') expect(texts).not.toContain('hotkeys work in the terminal')
+    else expect(texts).toContain('hotkeys work in the terminal only for now')
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')
@@ -340,14 +341,16 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
   }
 })
 
-test('(f2) a remote pane without the keyboard says what arms its keys; the terminal never does', async ($, on) => {
+test('(f2) a remote pane says hotkeys are terminal-only, focused or not; the terminal never does', async ($, on) => {
   world(on, {}, 10)
   await $.command.run(NAV_CMD)
-  const desktop = await navPane($, 'desktop', 72, false)
-  expect((await desktop.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('keys arm when the pane has the keyboard')
-  await desktop.unmount()
+  for (const focused of [false, true]) {
+    const desktop = await navPane($, 'desktop', 72, focused)
+    expect((await desktop.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('hotkeys work in the terminal only for now')
+    await desktop.unmount()
+  }
   const terminal = await navPane($, 'terminal', 72, false)
-  expect((await terminal.findAll({ type: 'Text' })).map(t => t.text).join('\n')).not.toContain('keys arm when')
+  expect((await terminal.findAll({ type: 'Text' })).map(t => t.text).join('\n')).not.toContain('hotkeys work in the terminal')
   await terminal.unmount()
 })
 

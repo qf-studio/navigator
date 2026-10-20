@@ -841,9 +841,9 @@ export const register: Register = on => {
     // buttons, where `columnGap` is the separator.
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
     // A hotkey presses only while the pane holds the keyboard (`isFocused`). The terminal
-    // hands it over on `/nav`; a desktop grants `focus` only over an empty composer, so there
-    // the pane says when its keys are not armed and what arms them (a click inside it).
-    const keysArmed = e.props.isFocused === true
+    // hands it over on `/nav`. Claude Code Desktop 3.1623 sets `isFocused` on a click inside
+    // the pane but fires no hotkey (claude-code#100966 is the same gap for Input), so a remote
+    // pane says the keys are terminal-only and its native buttons press by click.
 
     // The terminal shows a row between cards on its own; the desktop stacks their frames
     // edge to edge, so it gets one cell of gap down between stacked cards and one across
@@ -1053,9 +1053,9 @@ export const register: Register = on => {
             <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
           )}
         </Box>
-        {remote && !keysArmed ? (
+        {remote ? (
           <Box paddingX={1}>
-            <Text color={PALETTE.dim}>keys arm when the pane has the keyboard · click inside it, or use the buttons</Text>
+            <Text color={PALETTE.dim}>hotkeys work in the terminal only for now, click the buttons here</Text>
           </Box>
         ) : null}
       </Box>

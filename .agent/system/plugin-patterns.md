@@ -438,6 +438,18 @@ box of `│` and `─` outside a code fence in a proportional face. So the inten
 bullet list, one line per field (`skills/nav-brief/SKILL.md`), and the injected
 `NAV-BRIEF` context says so in both runtimes (`prompt_brief.py`, `prompt_brief.ts`).
 
+**Hotkeys are terminal-only today (2026-10-20).** A Button `hotkey` presses only while the
+pane holds the keyboard (`e.props.isFocused`). On the terminal `/nav` opens with `focus:
+true` and the keys work. In Claude Code Desktop 3.1623.0 on engine 2.1.299 a click inside the
+pane does set `isFocused` (the tree re-draws with it true), but no hotkey fires; the native
+buttons press by click. Nothing in the mod API changes this (`$.ui.focus` only moves the ring
+inside a site that already holds the keys), so the pane shows a dim "hotkeys: terminal only"
+line on remote surfaces and the docs say so. Upstream: issue draft in
+`.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`; related
+anthropics/claude-code#100966 (desktop Input never gets the keys), #99395 (first click only
+focuses), #102378 (hotkeys follow the input source). Re-test on each desktop release; drop
+the line once a desktop build fires the keys.
+
 **Testing**: `register.test.ts` mounts the pane on `terminal` and `desktop` and asserts the
 tree per surface (glyphs on one, an `Svg` and no `·` on the other, no padded label runs on
 either). The kit reads the tree, never the paint: a desktop screenshot is the acceptance
