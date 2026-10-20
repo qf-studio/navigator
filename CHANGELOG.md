@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.7] — 2026-10-20
+
+Two desktop pane fixes after the v8.4.6 screenshot (TASK-108): the trend `Svg` carries an
+intrinsic size and a 28-pixel height (an image without one fell back to 300 × 150 px and
+filled the card), and remote surfaces get one cell of gap between cards. Terminal unchanged.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.7.md)
+
 ## [v8.4.6] — 2026-10-20
 
 The `/nav` pane and the intent brief draw correctly on Claude Code Desktop (TASK-108): the
