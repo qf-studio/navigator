@@ -6,6 +6,12 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.9] — 2026-10-20
+
+The `/nav` pane's top-row gap is set only along the axis the row flows, so the stacked
+layout on the desktop no longer doubles its vertical gap (TASK-108). Terminal unchanged.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.9.md)
+
 ## [v8.4.8] — 2026-10-20
 
 Three cells of gap between the side-by-side top cards of the `/nav` pane on remote surfaces
