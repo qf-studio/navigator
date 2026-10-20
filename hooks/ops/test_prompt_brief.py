@@ -151,11 +151,13 @@ class ContradictionFieldTest(BriefTestBase):
     """TASK-72: optional TRIZ Contradiction row, gated by config."""
 
     V6_FIELDS = "  Goal | Scope | Approach | Limits | Verify | Won't do"
+    SHAPE = "Shape: a bullet list, one line per field (**Goal** ...), or a fenced text block"
 
     def test_default_injects_contradiction_row(self):
         self.stub_recall("")
         context = prompt_brief.run(make_ctx(AMBIGUOUS_PROMPT))["additional_context"]
         self.assertIn(self.V6_FIELDS + " | Contradiction", context)
+        self.assertIn(self.V6_FIELDS + " | Contradiction\n" + self.SHAPE, context)  # TASK-108
         self.assertIn('Contradiction: "improving X worsens Y" or "none".', context)
 
     def test_disabled_restores_v6_field_line(self):

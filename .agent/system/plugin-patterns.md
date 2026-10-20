@@ -412,6 +412,39 @@ per-mode phrase list.
 
 ---
 
+### Pattern: One Tree, Two Surfaces
+
+The `/nav` pane is one `ui.render` tree drawn on every surface Claude Code attaches:
+the terminal (Ink, a monospace grid) and the remote surfaces (Claude Code Desktop, VS Code,
+the phones), which draw the same tree over the wire as flex divs and styled spans in a
+proportional face. Anything sized in cells holds only on the terminal: a `padEnd` label
+column, a glyph gauge (`█▓░`), a braille trend (`⠀`–`⣿`), a `·` between plain presses.
+
+The hook branches on `e.surface` (a rendering fact, never policy) and on the surface's
+element table (`'Svg' in $.ui.resolve(e)`): the terminal keeps glyphs, a remote surface
+draws the gauge as a Box fill (`width` in percent, `backgroundColor`) and the trend as an
+`Svg` area (`ui/palette.ts` `areaSvg`, `gaugeFill`). Everything else is layout that is the
+same on both: a label column is `<Box width={TASK_LABEL} flexShrink={0}>`, a pressable
+row is a short `Button` beside a wrapped `Text` in a `flexGrow` Box, and the stacked
+layout (every sidebar) wraps rows instead of truncating them.
+
+Engine floor: `mono`, `tabular`, `weight` on Text and Button `children` are 2.1.295+/2.1.299
+props and the 2.1.287 engine refuses unknown Text props, so the pane uses none of them
+while `MIN_CC` is 2.1.287. `Svg`, Box `width`/`height`/`backgroundColor` and `e.surface`
+exist on both.
+
+Replies have the same split: the model writes them as markdown, and the desktop draws a
+box of `│` and `─` outside a code fence in a proportional face. So the intent brief is a
+bullet list, one line per field (`skills/nav-brief/SKILL.md`), and the injected
+`NAV-BRIEF` context says so in both runtimes (`prompt_brief.py`, `prompt_brief.ts`).
+
+**Testing**: `register.test.ts` mounts the pane on `terminal` and `desktop` and asserts the
+tree per surface (glyphs on one, an `Svg` and no `·` on the other, no padded label runs on
+either). The kit reads the tree, never the paint: a desktop screenshot is the acceptance
+artifact (`.agent/tasks/TASK-108-pane-desktop-surface.md`).
+
+---
+
 ## Testing Patterns
 
 ### Manual Testing Checklist

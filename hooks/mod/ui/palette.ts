@@ -127,3 +127,45 @@ export const percentColor = (percent: number | null): string =>
 
 export const compact = (n: number): string =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`
+
+// ---- remote surfaces (TASK-108) --------------------------------------------------------------
+// The desktop, VS Code and the phones draw Text in a proportional face, so a glyph gauge or a
+// braille area sized in cells wraps or floats there. Those surfaces carry `Svg` (the terminal
+// does not), and a Box `width` in percent fills the same on every surface. The pane branches
+// on `e.surface`: glyphs on the terminal, these on the rest.
+
+/** The filled share of a gauge, 0..100, for a Box `width={`${n}%`}`; 0 when unknown. */
+export const gaugeFill = (percent: number | null): number =>
+  percent === null ? 0 : Math.round(Math.min(100, Math.max(0, percent)))
+
+const AREA_W = 100
+
+/**
+ * An SVG area chart of the series for a remote surface: `viewBox` 100 × `height`, stretched to
+ * the slot (`width="100%"`, `preserveAspectRatio="none"`), min/max scaled like `brailleArea`.
+ * A flat or empty series draws a dim baseline. Deterministic: same input, same string.
+ */
+export const areaSvg = (values: readonly number[], color: string, height = 24): string => {
+  const valid = values.filter(v => Number.isFinite(v))
+  const flat = isFlat(valid)
+  const stroke = flat ? PALETTE.dim : color
+  const [top, bottom] = flat ? [PALETTE.dim, PALETTE.dim] : areaColors(color, 2)
+  const n = valid.length
+  const min = n === 0 ? 0 : Math.min(...valid)
+  const span = n === 0 ? 0 : Math.max(...valid) - min
+  const baseline = height - 1
+  const y = (v: number): number =>
+    span === 0 ? (v > 0 ? height / 2 : baseline) : baseline - ((v - min) / span) * (height - 2)
+  const x = (i: number): number => (n <= 1 ? AREA_W : (i / (n - 1)) * AREA_W)
+  const pts = n === 0 ? [[0, baseline], [AREA_W, baseline]] : valid.map((v, i) => [x(i), y(v)])
+  if (n === 1) pts.unshift([0, pts[0]![1]!])
+  const fmt = (v: number): string => (Math.round(v * 10) / 10).toString()
+  const line = pts.map(([px, py]) => `${fmt(px!)},${fmt(py!)}`).join(' ')
+  const area = `M0,${height} ${pts.map(([px, py]) => `L${fmt(px!)},${fmt(py!)}`).join(' ')} L${AREA_W},${height} Z`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${AREA_W} ${height}" width="100%" height="${height}" preserveAspectRatio="none">`
+    + `<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs>`
+    + `<path d="${area}" fill="url(#a)" opacity="0.6"/>`
+    + `<polyline points="${line}" fill="none" stroke="${stroke}" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+    + `</svg>`
+}

@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-19T20:59:16.025066+00:00",
+  "last_updated": "2026-10-20T08:56:46.352806+00:00",
   "stats": {
-    "total_nodes": 262,
-    "total_edges": 890,
+    "total_nodes": 263,
+    "total_edges": 896,
     "memory_count": 106
   },
   "nodes": {
@@ -991,6 +991,19 @@
           "context",
           "markers",
           "workflow"
+        ]
+      },
+      "TASK-108": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-108-pane-desktop-surface.md",
+        "title": "/nav pane and intent brief draw correctly on the desktop surface",
+        "status": "backlog",
+        "concepts": [
+          "testing",
+          "knowledge",
+          "markers",
+          "context",
+          "skills",
+          "deployment"
         ]
       }
     },
@@ -8213,6 +8226,36 @@
       "from": "mem-114",
       "to": "TASK-107",
       "type": "learned-from"
+    },
+    {
+      "from": "TASK-108",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-108",
+      "to": "knowledge",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-108",
+      "to": "markers",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-108",
+      "to": "context",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-108",
+      "to": "skills",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-108",
+      "to": "deployment",
+      "type": "implements"
     }
   ],
   "concept_index": {
@@ -8406,7 +8449,8 @@
       "mem-112",
       "mem-113",
       "TASK-107",
-      "mem-114"
+      "mem-114",
+      "TASK-108"
     ],
     "context": [
       "TASK-32",
@@ -8529,7 +8573,8 @@
       "TASK-83",
       "TASK-93",
       "TASK-100",
-      "TASK-107"
+      "TASK-107",
+      "TASK-108"
     ],
     "skills": [
       "TASK-32",
@@ -8658,7 +8703,8 @@
       "TASK-96",
       "TASK-97",
       "TASK-100",
-      "TASK-107"
+      "TASK-107",
+      "TASK-108"
     ],
     "session": [
       "TASK-32",
@@ -9041,7 +9087,8 @@
       "TASK-65",
       "TASK-69",
       "TASK-83",
-      "TASK-107"
+      "TASK-107",
+      "TASK-108"
     ],
     "deployment": [
       "TASK-11",
@@ -9126,7 +9173,8 @@
       "mem-104",
       "mem-105",
       "mem-111",
-      "TASK-107"
+      "TASK-107",
+      "TASK-108"
     ],
     "code quality": [
       "TASK-19",
@@ -9204,7 +9252,8 @@
       "TASK-83",
       "TASK-93",
       "TASK-95",
-      "TASK-100"
+      "TASK-100",
+      "TASK-108"
     ],
     "theory of mind": [
       "TASK-19",

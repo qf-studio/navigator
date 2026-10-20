@@ -299,8 +299,8 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
   for (const surface of SURFACES) {
     const ui = await navPane($, surface)
     const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
-    expect(texts).toContain('TASK-80   Typed judge, phase 2')
-    expect(texts).toContain('→ then    verify')
+    expect(texts).toContain('TASK-80\nTyped judge, phase 2')
+    expect(texts).toContain('→ then\nverify')
     expect(texts).toContain('3 legs left') // impl, verify, complete; no leg finished yet: no eta
     expect(texts).not.toContain('research') // passed legs stay out of the pane
     expect(texts).not.toContain('wire the band') // the reply's next line is not the route
@@ -315,8 +315,21 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     expect(texts).not.toContain('docs') // reads and the task list wait behind d
     expect(texts).not.toContain('TASK-15')
     const buttons = (await ui.findAll({ type: 'Button' })).map(b => b.text)
-    expect(buttons).toContain('● 2/4  impl') // the current leg is the press
+    expect(buttons).toContain('● 2/4') // the current leg is the press; its text is a Text beside it
+    expect(texts).toContain('impl')
     expect(buttons).toHaveLength(8) // leg + 2 memories + m c r d l
+    // TASK-108: cell-sized glyphs stay on the terminal; a remote surface draws the gauge as a
+    // Box fill and the trend as an Svg, and its key row has no `·` between native buttons.
+    const glyphs = /[█▓░\u2800-\u28ff]/
+    if (surface === 'terminal') {
+      expect(glyphs.test(texts)).toBe(true)
+      expect(texts).toContain('·')
+    } else {
+      expect(glyphs.test(texts)).toBe(false)
+      expect(texts).not.toContain('·')
+      expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
+    }
+    expect(texts).not.toMatch(/TASK-80 {2,}/) // no padEnd label columns anywhere
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')
@@ -483,10 +496,10 @@ test('(s) a task checklist becomes the route', async ($, on) => {
   }, 20)
   await $.command.run(NAV_CMD)
   const all = await texts($)
-  expect(all).toContain('→ then    ship')
+  expect(all).toContain('→ then\nship')
   expect(all).not.toContain('collect evidence')
   const ui = await navPane($, 'terminal')
-  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3  add surface')
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3')
   await ui.unmount()
 })
 
@@ -513,10 +526,11 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
   await $.command.run(NAV_CMD)
   const all = await texts($)
   expect(all).not.toContain('keep parity')
-  expect(all).toContain('→ then    Ship')
+  expect(all).toContain('→ then\nShip')
   expect(all).not.toContain('Baseline')
   const ui = await navPane($, 'terminal')
-  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3  Port the scorer')
+  expect((await ui.findAll({ type: 'Button' })).map(b => b.text)).toContain('● 2/3')
+  expect(all).toContain('Port the scorer')
   await ui.unmount()
 })
 
@@ -609,7 +623,7 @@ test('(t6) a turn that wrote under .agent/ reloads the task list and marker', as
   expect(await texts($)).not.toContain('fresh-2026-10-03') // nothing under .agent/ was written
   await $.tool.call({ tool: 'Write', file_path: `${AGENT}/tasks/TASK-80.md`, content: 'x' } as never)
   await complete($, 'wrote a doc\n')
-  expect(await texts($)).toContain('marker    fresh-2026-10-03')
+  expect(await texts($)).toContain('marker\nfresh-2026-10-03')
 })
 
 test('(t7) a mutating Bash that names .agent/ reloads the pane at turn end like Edit does (TASK-89)', async ($, on) => {
@@ -622,7 +636,7 @@ test('(t7) a mutating Bash that names .agent/ reloads the pane at turn end like 
   expect(await texts($)).not.toContain('fresh-2026-10-05')
   await $.tool.call({ tool: 'Bash', command: `cat > ${AGENT}/tasks/TASK-80.md <<'EOF'\nx\nEOF` } as never)
   await complete($, 'wrote through bash\n')
-  expect(await texts($)).toContain('marker    fresh-2026-10-05')
+  expect(await texts($)).toContain('marker\nfresh-2026-10-05')
 })
 
 test('(t8) git mv / git commit reload the pane too; other mutating Bash does not', async ($, on) => {
@@ -635,7 +649,7 @@ test('(t8) git mv / git commit reload the pane too; other mutating Bash does not
   expect(await texts($)).not.toContain('moved-2026-10-05')
   await $.tool.call({ tool: 'Bash', command: 'git mv a/TASK-81.md a/archive/TASK-81.md' } as never)
   await complete($, 'archived\n')
-  expect(await texts($)).toContain('marker    moved-2026-10-05')
+  expect(await texts($)).toContain('marker\nmoved-2026-10-05')
 })
 
 test('(t9) editing the active task doc moves the next card before the turn ends (TASK-89)', async ($, on) => {
@@ -645,11 +659,11 @@ test('(t9) editing the active task doc moves the next card before the turn ends 
   }
   world(on, files, 20)
   await $.command.run(NAV_CMD)
-  expect(await texts($)).toContain('→ then    add surface')
+  expect(await texts($)).toContain('→ then\nadd surface')
   files[`${CWD}/.agent/tasks/TASK-80-judge.md`] = '# TASK-80\n**Status**: 🚧 In Progress\n- [x] collect evidence\n- [ ] add surface\n- [ ] ship\n'
   await $.tool.call({ tool: 'Edit', file_path: `${CWD}/.agent/tasks/TASK-80-judge.md`, old_string: 'a', new_string: 'b' } as never)
   const mid = await texts($) // no turn.complete yet: the leg already advanced
-  expect(mid).toContain('→ then    ship')
+  expect(mid).toContain('→ then\nship')
   expect(mid).not.toContain('collect evidence')
 })
 
@@ -663,7 +677,7 @@ test('(t10) a subagent turn marks docs touched: the parent turn reloads the pane
     usage: { model: 'm', input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
   } as never)
   await complete($, 'agent finished\n')
-  expect(await texts($)).toContain('marker    agent-2026-10-05')
+  expect(await texts($)).toContain('marker\nagent-2026-10-05')
 })
 
 test('(t4) a non-loopback prometheus_url is never read', async ($, on) => {
@@ -719,7 +733,7 @@ test('(u4) stacked below 72 columns: the judge version takes its own line, the n
   const lines = (await narrow.findAll({ type: 'Text' })).map(t => t.text)
   expect(lines.filter(t => t === 'jev-1.13.0')).toHaveLength(1) // its own line
   expect(lines.join('\n')).toContain('judge  task · substantial · unclear')
-  expect(lines.join('\n')).toContain('TASK-80   Typed judge, phase 2') // not truncated
+  expect(lines.join('\n')).toContain('TASK-80\nTyped judge, phase 2') // not truncated
 })
 
 test('(u) the judge card: verdict in words, the effect, the axes it overrode; j opens the tally', async ($, on) => {

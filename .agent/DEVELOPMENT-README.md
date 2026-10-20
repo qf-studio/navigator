@@ -210,6 +210,11 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-108** 🚧 (2026-10-20) — `/nav` pane and intent brief draw correctly on Claude Code
+  Desktop: the hook branches on `e.surface` (Box-fill gauge, `Svg` trend on remote surfaces;
+  glyphs on the terminal), Box label columns and a short leg button on both, stacked rows
+  wrap; the brief is a bullet list and the injected `NAV-BRIEF` says so in both runtimes.
+  Pattern: `system/plugin-patterns.md` "One Tree, Two Surfaces".
 - **TASK-107** ✅ (v8.4.5, 2026-10-20) — the mod is clean under `claude plugin validate` on
   Claude Code 2.1.299: shared fail-open `.catch` on 14 gating hooks (breaker-counted), slash
   commands pass `prompt.submit` unscored, marketplace.json ignored fields dropped, README

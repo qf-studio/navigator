@@ -39,6 +39,7 @@ export const briefLines = (
   let fields = "  Goal | Scope | Approach | Limits | Verify | Won't do"
   if (contradiction) fields += ' | Contradiction'
   lines.push('', 'Render a one-screen INTENT BRIEF before writing any code:', fields)
+  lines.push('Shape: a bullet list, one line per field (**Goal** ...), or a fenced text block; no box-drawing glyphs (the desktop app draws replies in a proportional face).')
   if (contradiction) {
     lines.push('Contradiction: "improving X worsens Y" or "none". If declared, '
       + 'query prior resolutions before Approach (skill: nav-brief).')

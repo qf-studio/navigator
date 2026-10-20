@@ -5,7 +5,7 @@ import {
   paneLayout, parseRejects, recordPace, rejectsLast, rejectsLine, trailLine, withLabel,
 } from '../ui/nav'
 import type { NavJudge } from '../../../types'
-import { PALETTE, areaColors, brailleArea, dimHex, gradient, lerpHex, sparkColor } from '../ui/palette'
+import { PALETTE, areaColors, areaSvg, brailleArea, dimHex, gaugeFill, gradient, lerpHex, sparkColor } from '../ui/palette'
 import { isInProgress } from '../lib/tasks'
 
 describe('pane model', () => {
@@ -177,5 +177,28 @@ describe('in-progress predicate (TASK-91)', () => {
     expect(isInProgress('# Six in progress\n')).toBe(true)
     expect(isInProgress('no heading, in-progress soon\n')).toBe(true)
     expect(isInProgress('# Done\n')).toBe(false)
+  })
+})
+
+describe('remote-surface helpers (TASK-108)', () => {
+  test('gauge fill is the clamped rounded percent, 0 when unknown', () => {
+    expect(gaugeFill(null)).toBe(0)
+    expect(gaugeFill(-5)).toBe(0)
+    expect(gaugeFill(35.4)).toBe(35)
+    expect(gaugeFill(140)).toBe(100)
+  })
+  test('area svg: scaled to its min/max, stretched to the slot, flat series dim', () => {
+    const svg = areaSvg([0, 50, 100], PALETTE.accent, 24)
+    expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 24" width="100%" height="24" preserveAspectRatio="none">')).toBe(true)
+    expect(svg).toContain('points="0,23 50,12 100,1"') // bottom row is the baseline, top row 1
+    expect(svg).toContain(`stroke="${PALETTE.accent}"`)
+    expect(svg).toContain('L100,24 Z')
+    expect(areaSvg([0, 50, 100], PALETTE.accent, 24)).toBe(svg) // deterministic
+    const flat = areaSvg([7, 7, 7], PALETTE.accent)
+    expect(flat).toContain(`stroke="${PALETTE.dim}"`)
+    expect(flat).toContain('points="0,12 50,12 100,12"') // a flat positive series sits mid-height
+    expect(areaSvg([], PALETTE.accent)).toContain('points="0,23 100,23"') // empty: a baseline
+    expect(areaSvg([3], PALETTE.accent)).toContain('points="0,12 100,12"') // one value: a line across
+    expect(areaSvg([1, Number.NaN, 2], PALETTE.accent)).toContain('points="0,23 100,1"') // gaps skipped
   })
 })

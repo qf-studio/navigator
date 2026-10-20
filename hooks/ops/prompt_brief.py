@@ -92,6 +92,9 @@ def _brief_lines(result: dict, threshold: float, memories: str,
     if contradiction_field:
         fields += " | Contradiction"
     lines += ["", "Render a one-screen INTENT BRIEF before writing any code:", fields]
+    lines.append(
+        "Shape: a bullet list, one line per field (**Goal** ...), or a fenced text block; "
+        "no box-drawing glyphs (the desktop app draws replies in a proportional face).")
     if contradiction_field:
         lines.append(
             "Contradiction: \"improving X worsens Y\" or \"none\". If declared, "

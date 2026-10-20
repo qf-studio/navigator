@@ -5,7 +5,7 @@
 // them. Unloaded, the Python ops keep doing the same job.
 
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderNode } from 'claude-code'
 
 import type {
   NavActivity, NavDestination, NavHistory, NavJudge, NavOffRoute, NavPace, NavPane, NavReads, NavRejects,
@@ -43,7 +43,7 @@ import {
   PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, PROBE, buildTrip, parseMatrix, parseVector,
   isLoopback, perMinuteQuery, producedLine, tripQueries,
 } from './ui/trip'
-import { PALETTE, areaColors, brailleArea, compact, gauge, isFlat, percentColor } from './ui/palette'
+import { PALETTE, areaColors, areaSvg, brailleArea, compact, gauge, gaugeFill, isFlat, percentColor } from './ui/palette'
 
 const PLUGIN = 'navigator'
 const PANE = 'nav'
@@ -744,7 +744,13 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const table = $.ui.resolve(e)
+    const { Box, Text, Button } = table
+    // TASK-108: the terminal draws glyph gauges and braille trends in a monospace grid; the
+    // desktop, VS Code and the phones draw Text in a proportional face and carry `Svg`, so
+    // there the gauge is a Box fill and the trend an Svg area. Only the surface picks these.
+    const remote = e.surface !== 'terminal'
+    const Svg = 'Svg' in table ? table.Svg : null
     const { p, s, dest, route, here } = await navState($)
     const u = await read($, usage)
     const a = await readActivity($)
@@ -776,31 +782,70 @@ export const register: Register = on => {
     const cacheHit = t?.session.cacheHit ?? null
     const tally = judgeOpen ? judgeTally(await judgeSection($)) : []
     const panel = { borderStyle: 'round', borderColor: PALETTE.border, paddingX: 1 } as const
+    const cols = typeof e.props.bodyColumns === 'number' && e.props.bodyColumns > 0 ? e.props.bodyColumns : PANE_COLUMNS
+    const layout = paneLayout(cols, details)
+    const { narrow, ctxInner, sessionInner, gaugeWidth } = layout
+    // Wide terminal rows cut at the frame; the stacked layout (every sidebar) wraps instead.
+    const rowWrap = narrow ? 'wrap' : 'truncate-end'
+    const cardWidth = (wide: string, withDetails: string) => (narrow ? '100%' : details ? withDetails : wide)
+    const title = (text: string, color: string = PALETTE.accent) => (
+      <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
+    )
     // A trend is a braille area in a subdued gradient of the card's color; flat ones go dim.
-    const trend = (values: readonly number[], width: number, color: string, tail = '') =>
-      brailleArea(values, width, AREA_ROWS).map((row, i, rows) => (
+    // On a remote surface it is an Svg area of the same series (the braille rows float there).
+    const trend = (values: readonly number[], width: number, color: string, tail = '') => {
+      if (Svg !== null) {
+        const last = values[values.length - 1]
+        return [(
+          <Box flexDirection="row" alignItems="flex-end">
+            <Box flexGrow={1} flexShrink={1}>
+              <Svg source={areaSvg(values, color)} alt={`trend of ${values.length} points${last === undefined ? '' : `, last ${Math.round(last)}`}`} />
+            </Box>
+            {tail ? <Box flexShrink={0}><Text color={PALETTE.dim}>{tail}</Text></Box> : null}
+          </Box>
+        )]
+      }
+      return brailleArea(values, width, AREA_ROWS).map((row, i, rows) => (
         <Text wrap="truncate-end">
           <Text color={isFlat(values) ? PALETTE.dim : areaColors(color, AREA_ROWS)[i]}>{row}</Text>
           {i === rows.length - 1 && tail ? <Text color={PALETTE.dim}>{tail}</Text> : null}
         </Text>
       ))
-    const cols = typeof e.props.bodyColumns === 'number' && e.props.bodyColumns > 0 ? e.props.bodyColumns : PANE_COLUMNS
-    const layout = paneLayout(cols, details)
-    const { narrow, ctxInner, sessionInner, gaugeWidth } = layout
-    const cardWidth = (wide: string, withDetails: string) => (narrow ? '100%' : details ? withDetails : wide)
-    const title = (text: string, color: string = PALETTE.accent) => (
-      <Box marginBottom={1}><Text color={color}>{text}</Text></Box>
+    }
+    // The context gauge: glyph cells on the terminal, a Box fill elsewhere (block glyphs in a
+    // proportional face are wider than a cell and wrap the row).
+    const gaugeRow = remote ? (
+      <Box flexDirection="row" alignItems="center">
+        <Box flexShrink={0}><Text color={ctxColor} bold>{pct}</Text></Box>
+        <Box flexGrow={1} flexShrink={1} marginLeft={1} height={1} flexDirection="row">
+          <Box width={`${gaugeFill(percent)}%`} height={1} backgroundColor={ctxColor} />
+          <Box flexGrow={1} height={1} backgroundColor={PALETTE.border} />
+        </Box>
+      </Box>
+    ) : (
+      <Text wrap="truncate-end">
+        <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, gaugeWidth)}</Text>
+      </Text>
     )
-    const dimLabel = (text: string) => <Text color={PALETTE.dim}>{text.padEnd(TASK_LABEL)}</Text>
+    // A label column of TASK_LABEL cells before a body: the same on every surface, where a
+    // `padEnd` of spaces lines up only in a monospace face.
+    const labelRow = (label: RenderNode, body: RenderNode) => (
+      <Box flexDirection="row">
+        <Box width={TASK_LABEL} flexShrink={0}>{label}</Box>
+        <Box flexGrow={1} flexShrink={1}>{body}</Box>
+      </Box>
+    )
+    const dimLabel = (text: string) => <Text color={PALETTE.dim}>{text}</Text>
+    // Key-row separators: the terminal's `·` between plain presses; a desktop draws native
+    // buttons, where `columnGap` is the separator.
+    const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
 
     return (
       <Box flexDirection="column">
         <Box flexDirection={narrow ? 'column' : 'row'}>
           <Box {...panel} flexDirection="column" width={cardWidth('40%', '31%')}>
             {title('context')}
-            <Text wrap="truncate-end">
-              <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, gaugeWidth)}</Text>
-            </Text>
+            {gaugeRow}
             <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
               {lowFuel ? 'compact due' : a.lastTurnCommitted ? 'good moment to compact' : 'compact safe'}
             </Text>
@@ -824,9 +869,9 @@ export const register: Register = on => {
                   <Text color={PALETTE.dim}>{t.sessionSeen ? `  ${compact(t.session.tokens)}${cacheHit === null ? '' : ` · ${Math.round(cacheHit * 100)}% cache`}` : ''}</Text>
                 </Text>
                 {t.sessionSeen ? (
-                  <Text color={PALETTE.dim} wrap="truncate-end">{producedLine(t.session)}</Text>
+                  <Text color={PALETTE.dim} wrap={rowWrap}>{producedLine(t.session)}</Text>
                 ) : (
-                  <Text color={PALETTE.warning} wrap="truncate-end">this session not in prometheus · metrics SOP</Text>
+                  <Text color={PALETTE.warning} wrap={rowWrap}>this session not in prometheus · metrics SOP</Text>
                 )}
                 {trend(t.perMinute, sessionInner - 12, PALETTE.accent, '  tokens/min')}
               </Box>
@@ -841,7 +886,7 @@ export const register: Register = on => {
               </Text>
               <Text color={fanOutText(r) === 'fan-out ok' ? PALETTE.dim : PALETTE.warning}>{fanOutText(r)}</Text>
               <Text color={(rj?.today ?? 0) > 0 ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">{rejectsLine(rj)}</Text>
-              {rejectsLast(rj) === null ? null : <Text color={PALETTE.dim} wrap="truncate-end">{rejectsLast(rj)}</Text>}
+              {rejectsLast(rj) === null ? null : <Text color={PALETTE.dim} wrap={rowWrap}>{rejectsLast(rj)}</Text>}
             </Box>
           ) : null}
         </Box>
@@ -851,14 +896,14 @@ export const register: Register = on => {
             {title('rejects')}
             {rj === null || rj.tail.length === 0
               ? <Text color={PALETTE.dim}>no refusals logged ({REJECTS_PATH})</Text>
-              : rj.tail.map((line, i) => <Text key={`rj-${i}`} color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
+              : rj.tail.map((line, i) => <Text key={`rj-${i}`} color={PALETTE.dim} wrap={rowWrap}>{line}</Text>)}
           </Box>
         ) : null}
 
         {j === null ? null : (
           <Box {...panel} flexDirection="column">
             <Box flexDirection="row" justifyContent="space-between">
-              <Text wrap={narrow ? 'wrap' : 'truncate-end'}>
+              <Text wrap={rowWrap}>
                 <Text color={PALETTE.accent}>judge  </Text>
                 <Text color={PALETTE.label} bold>{j.verdict}</Text>
                 <Text color={PALETTE.dim}>  → {j.effect}</Text>
@@ -867,10 +912,10 @@ export const register: Register = on => {
               {narrow ? null : <Box marginLeft={2} flexShrink={0}><Text color={PALETTE.dim}>{j.model}</Text></Box>}
             </Box>
             {narrow ? <Text color={PALETTE.dim}>{j.model}</Text> : null}
-            {tally.map(line => <Text color={PALETTE.dim} wrap="truncate-end">{line}</Text>)}
+            {tally.map(line => <Text color={PALETTE.dim} wrap={rowWrap}>{line}</Text>)}
             {trail.length > 0 ? <Text> </Text> : null}
             {trail.slice(0, JUDGE_TRAIL_LINES).map((d, i) => (
-              <Text color={i === 0 ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{trailLine(d, cols - 4)}</Text>
+              <Text color={i === 0 ? PALETTE.label : PALETTE.dim} wrap={rowWrap}>{trailLine(d, cols - 4)}</Text>
             ))}
             {judgeOpen && j.label === undefined ? (
               <Box flexDirection="row" columnGap={3} marginTop={1}>
@@ -885,17 +930,20 @@ export const register: Register = on => {
           {title('next')}
           {dest === null ? (
             <Text color={PALETTE.dim} wrap="wrap">no destination · say what you're building, or mark a task in progress</Text>
-          ) : (
-            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>
-              <Text color={PALETTE.accent} bold>{(dest.taskId ?? 'brief').padEnd(TASK_LABEL)}</Text>
-              <Text color={PALETTE.label}>{dest.title}</Text>
-            </Text>
+          ) : labelRow(
+            <Text color={PALETTE.accent} bold>{dest.taskId ?? 'brief'}</Text>,
+            <Text color={PALETTE.label} wrap={rowWrap}>{dest.title}</Text>,
           )}
           {here !== null && legPrompt !== null ? (
             <Box flexDirection="row" justifyContent="space-between">
-              <Box flexDirection="row">
-                <Button key="leg" label={`● ${at}/${route.length}  ${here.label}`} hotkey="n"
-                  onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
+              <Box flexDirection="row" flexGrow={1} flexShrink={1}>
+                <Box flexShrink={0}>
+                  <Button key="leg" label={`● ${at}/${route.length}`} hotkey="n"
+                    onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
+                </Box>
+                <Box flexGrow={1} flexShrink={1} marginLeft={1}>
+                  <Text color={PALETTE.label} wrap={rowWrap}>{here.label}</Text>
+                </Box>
               </Box>
               <Box marginLeft={2} flexShrink={0}>
                 <Text color={PALETTE.dim}>
@@ -907,26 +955,26 @@ export const register: Register = on => {
           ) : arrived(route) ? (
             <Text color={PALETTE.success}>arrived · pick the next destination</Text>
           ) : s?.next ? (
-            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>{dimLabel('→ next')}<Text color={PALETTE.label}>{s.next}</Text></Text>
+            labelRow(dimLabel('→ next'), <Text color={PALETTE.label} wrap={rowWrap}>{s.next}</Text>)
           ) : null}
           {then === null ? null : (
             <Box flexDirection="row" justifyContent="space-between">
-              <Text wrap="truncate-end">{dimLabel('→ then')}<Text color={PALETTE.dim}>{then.label}</Text></Text>
+              <Box flexGrow={1} flexShrink={1}>
+                {labelRow(dimLabel('→ then'), <Text color={PALETTE.dim} wrap={rowWrap}>{then.label}</Text>)}
+              </Box>
               <Box marginLeft={2} flexShrink={0}>
                 <Text color={PALETTE.dim}>{etaText(legsLeft, pc)}</Text>
               </Box>
             </Box>
           )}
-          {p.marker === null ? null : (
-            <Text wrap={narrow ? 'wrap' : 'truncate-end'}>{dimLabel('marker')}<Text color={PALETTE.dim}>{p.marker}</Text></Text>
-          )}
+          {p.marker === null ? null : labelRow(dimLabel('marker'), <Text color={PALETTE.dim} wrap={rowWrap}>{p.marker}</Text>)}
         </Box>
 
         {isOff && detour !== null ? (
           <Box {...panel} borderColor={PALETTE.warning} flexDirection="column">
             {title('⚠ off route', PALETTE.warning)}
-            <Text wrap="truncate-end" color={PALETTE.label}>last {detour.count} prompts are about "{detour.topic}"</Text>
-            <Text wrap="truncate-end" color={PALETTE.dim}>
+            <Text wrap={rowWrap} color={PALETTE.label}>last {detour.count} prompts are about "{detour.topic}"</Text>
+            <Text wrap={rowWrap} color={PALETTE.dim}>
               destination is "{dest?.title ?? 'not set'}"{here ? ` (${here.label})` : ''}
             </Text>
             <Text> </Text>
@@ -944,14 +992,17 @@ export const register: Register = on => {
           {p.memories.length === 0 && <Text color={PALETTE.dim}>none for the open tasks</Text>}
           {p.memories.slice(0, MEMORY_LINES).map((m, i) => (
             <Box flexDirection="row">
-              <Button key={`mem-${i}`} label={chosen === m.text ? '●' : '▸'} plain
-                onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))} />
-              <Text wrap="truncate-end">
-                <Text> </Text>
-                <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
-                <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
-                <Text color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>  {m.text}</Text>
-              </Text>
+              <Box flexShrink={0}>
+                <Button key={`mem-${i}`} label={chosen === m.text ? '●' : '▸'} plain
+                  onPress={() => update($, pinned, () => (chosen === m.text ? null : m.text))} />
+              </Box>
+              <Box flexGrow={1} flexShrink={1} marginLeft={1}>
+                <Text wrap={rowWrap}>
+                  <Text color={PALETTE.accent} bold>{m.kind.toLowerCase()}</Text>
+                  <Text color={PALETTE.dim}>{m.percent === null ? '' : ` ${m.percent}%`}</Text>
+                  <Text color={chosen !== null && chosen !== m.text ? PALETTE.dim : PALETTE.label}>  {m.text}</Text>
+                </Text>
+              </Box>
             </Box>
           ))}
           <Text color={PALETTE.dim}>
@@ -964,7 +1015,7 @@ export const register: Register = on => {
             {title('tasks')}
             {p.tasks.length === 0 && <Text color={PALETTE.dim}>none marked in progress</Text>}
             {[...p.tasks].reverse().slice(0, 5).map(task => (
-              <Text wrap="truncate-end">
+              <Text wrap={rowWrap}>
                 <Text color={task.id === dest?.taskId ? PALETTE.success : PALETTE.dim}>{task.id === dest?.taskId ? '● ' : '○ '}</Text>
                 <Text color={task.id === dest?.taskId ? PALETTE.label : PALETTE.dim}>{task.id}</Text>
                 <Text color={PALETTE.dim}>{task.title ? `  ${task.title}` : ''}</Text>
@@ -976,15 +1027,15 @@ export const register: Register = on => {
         <Box flexDirection="row" flexWrap="wrap" columnGap={2} paddingX={1}>
           <Button key="marker" label="marker" hotkey="m" plain
             onPress={() => $.prompt.submit({ text: 'Create context marker checkpoint', asUser: true })} />
-          <Text color={PALETTE.dim}>·</Text>
+          {dot()}
           <Button key="compact" label="compact" hotkey="c" plain onPress={() => $.session.compact()} />
-          <Text color={PALETTE.dim}>·</Text>
+          {dot()}
           <Button key="refresh" label="refresh" hotkey="r" plain onPress={() => Promise.all([refreshPane($), refreshTrip($).catch(() => {})])} />
-          <Text color={PALETTE.dim}>·</Text>
+          {dot()}
           <Button key="details" label="details" hotkey="d" plain onPress={() => update($, showDetails, v => !v)} />
-          <Text color={PALETTE.dim}>·</Text>
+          {dot()}
           <Button key="rejects" label="rejects" hotkey="l" plain onPress={() => update($, showRejects, v => !v)} />
-          {j === null ? null : <Text color={PALETTE.dim}>·</Text>}
+          {j === null ? null : dot()}
           {j === null ? null : (
             <Button key="judge" label="judge" hotkey="j" plain onPress={() => update($, showJudge, v => !v)} />
           )}

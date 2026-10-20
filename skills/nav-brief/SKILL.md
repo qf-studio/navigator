@@ -41,19 +41,25 @@ Use the template below. Pre-fill every field you can from the injected
 `## Relevant Memories` section and current session context; mark assumptions
 explicitly.
 
+The brief is a bullet list, one line per field. Claude Code Desktop draws
+replies in a proportional face, so a box of `│` and `─` outside a code fence
+falls apart there (TASK-108). Never draw box glyphs in the reply itself.
+
 ```
-┌─ BRIEF: <short title> ──────────────────────────────┐
-│ Goal      <outcome, one line>                       │
-│ Scope     <files/dirs/endpoints — concrete>         │
-│           NOT <adjacent things left untouched>      │
-│ Approach  <how — cite memory if pre-filled>         │
-│ Limits    <numbers, constraints — mark ASSUMED>     │
-│ Verify    <how completion will be proven>           │
-│ Won't do  <explicit non-goals>                      │
-│ Contradict <improving X worsens Y — or "none">      │
-└─────────────────────────────────────────────────────┘
+**BRIEF: <short title>**
+- **Goal** <outcome, one line>
+- **Scope** <files/dirs/endpoints — concrete>; NOT <adjacent things left untouched>
+- **Approach** <how — cite memory if pre-filled>
+- **Limits** <numbers, constraints — mark ASSUMED>
+- **Verify** <how completion will be proven>
+- **Won't do** <explicit non-goals>
+- **Contradict** <improving X worsens Y — or "none">
+
 Confirm / edit? (open questions: <0-2>)
 ```
+
+A fenced `text` block holding the older box form is the one alternative: inside
+a fence both surfaces draw a monospace grid, so the box keeps its edges.
 
 Rules:
 - **Max 2 open questions.** Ask only what you cannot infer or safely assume;
