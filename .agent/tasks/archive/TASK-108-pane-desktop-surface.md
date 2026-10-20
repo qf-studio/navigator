@@ -1,6 +1,6 @@
 # TASK-108: /nav pane and intent brief draw correctly on the desktop surface
 
-**Status**: ✅ Completed — 2026-10-20; released in v8.4.6 (cb8a244) + v8.4.7 (95ec927: trend Svg intrinsic size, card gap) + v8.4.8 (9c7e441: column gap between top cards) + v8.4.9 (210ebba: gap per axis) + v8.4.10 (eaf0b41: one-cell column gap; ac73bc5: hotkey-focus hint) + v8.4.11 (ef90d09: no hotkey props on remote surfaces, desktop keeps the keys with the composer); first desktop screenshot verified gauge, labels, leg press, memories, key row
+**Status**: ✅ Completed — 2026-10-20; released in v8.4.6–v8.4.11 (cb8a244, 95ec927, 9c7e441, 210ebba, eaf0b41, ac73bc5, ef90d09). Desktop verified by screenshots: gauge, Svg trends, label columns, gaps, chip-free buttons. Left upstream: desktop pane hotkeys (the composer keeps the keys; draft in `research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`, not filed).
 **Priority**: Medium
 **Source**: three screenshots of 2026-10-20 (terminal pane, desktop chat brief, desktop sidebar
 pane); `.agent/research/claude-code-mods-2026-10-19/claude-code.d.ts-2.1.299.txt` (line
