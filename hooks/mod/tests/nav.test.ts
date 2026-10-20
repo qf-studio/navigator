@@ -189,7 +189,8 @@ describe('remote-surface helpers (TASK-108)', () => {
   })
   test('area svg: scaled to its min/max, stretched to the slot, flat series dim', () => {
     const svg = areaSvg([0, 50, 100], PALETTE.accent, 24)
-    expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 24" width="100%" height="24" preserveAspectRatio="none">')).toBe(true)
+    // Absolute intrinsic size: an image without one is drawn 300 × 150 px on the desktop.
+    expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 24" width="1600" height="28" preserveAspectRatio="none">')).toBe(true)
     expect(svg).toContain('points="0,23 50,12 100,1"') // bottom row is the baseline, top row 1
     expect(svg).toContain(`stroke="${PALETTE.accent}"`)
     expect(svg).toContain('L100,24 Z')

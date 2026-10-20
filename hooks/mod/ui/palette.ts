@@ -139,11 +139,17 @@ export const gaugeFill = (percent: number | null): number =>
   percent === null ? 0 : Math.round(Math.min(100, Math.max(0, percent)))
 
 const AREA_W = 100
+/** Intrinsic markup width: wider than any slot, so the surface clamps it to the slot. */
+const AREA_PX_W = 1600
+/** Drawn height in CSS pixels: about one text row of the desktop's pane. */
+export const AREA_PX_H = 28
 
 /**
  * An SVG area chart of the series for a remote surface: `viewBox` 100 × `height`, stretched to
- * the slot (`width="100%"`, `preserveAspectRatio="none"`), min/max scaled like `brailleArea`.
- * A flat or empty series draws a dim baseline. Deterministic: same input, same string.
+ * the slot (`preserveAspectRatio="none"`), min/max scaled like `brailleArea`. The markup
+ * carries absolute `width`/`height`: the desktop draws an Svg as an image, and an image whose
+ * markup has no intrinsic size falls back to 300 × 150 CSS px (a chart as tall as the card,
+ * v8.4.6). A flat or empty series draws a dim baseline. Deterministic: same input, same string.
  */
 export const areaSvg = (values: readonly number[], color: string, height = 24): string => {
   const valid = values.filter(v => Number.isFinite(v))
@@ -162,7 +168,7 @@ export const areaSvg = (values: readonly number[], color: string, height = 24): 
   const fmt = (v: number): string => (Math.round(v * 10) / 10).toString()
   const line = pts.map(([px, py]) => `${fmt(px!)},${fmt(py!)}`).join(' ')
   const area = `M0,${height} ${pts.map(([px, py]) => `L${fmt(px!)},${fmt(py!)}`).join(' ')} L${AREA_W},${height} Z`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${AREA_W} ${height}" width="100%" height="${height}" preserveAspectRatio="none">`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${AREA_W} ${height}" width="${AREA_PX_W}" height="${AREA_PX_H}" preserveAspectRatio="none">`
     + `<defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1">`
     + `<stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs>`
     + `<path d="${area}" fill="url(#a)" opacity="0.6"/>`

@@ -43,7 +43,7 @@ import {
   PER_MINUTE_SPAN_SEC, PER_MINUTE_STEP_SEC, PROBE, buildTrip, parseMatrix, parseVector,
   isLoopback, perMinuteQuery, producedLine, tripQueries,
 } from './ui/trip'
-import { PALETTE, areaColors, areaSvg, brailleArea, compact, gauge, gaugeFill, isFlat, percentColor } from './ui/palette'
+import { AREA_PX_H, PALETTE, areaColors, areaSvg, brailleArea, compact, gauge, gaugeFill, isFlat, percentColor } from './ui/palette'
 
 const PLUGIN = 'navigator'
 const PANE = 'nav'
@@ -799,7 +799,8 @@ export const register: Register = on => {
         return [(
           <Box flexDirection="row" alignItems="flex-end">
             <Box flexGrow={1} flexShrink={1}>
-              <Svg source={areaSvg(values, color)} alt={`trend of ${values.length} points${last === undefined ? '' : `, last ${Math.round(last)}`}`} />
+              <Svg source={areaSvg(values, color)} height={AREA_PX_H}
+                alt={`trend of ${values.length} points${last === undefined ? '' : `, last ${Math.round(last)}`}`} />
             </Box>
             {tail ? <Box flexShrink={0}><Text color={PALETTE.dim}>{tail}</Text></Box> : null}
           </Box>
@@ -840,9 +841,11 @@ export const register: Register = on => {
     // buttons, where `columnGap` is the separator.
     const dot = () => (remote ? null : <Text color={PALETTE.dim}>·</Text>)
 
+    // The terminal shows a row between cards on its own; the desktop stacks their frames
+    // edge to edge, so it gets one cell of gap (a number is the same on every surface).
     return (
-      <Box flexDirection="column">
-        <Box flexDirection={narrow ? 'column' : 'row'}>
+      <Box flexDirection="column" rowGap={remote ? 1 : 0}>
+        <Box flexDirection={narrow ? 'column' : 'row'} rowGap={remote ? 1 : 0}>
           <Box {...panel} flexDirection="column" width={cardWidth('40%', '31%')}>
             {title('context')}
             {gaugeRow}
