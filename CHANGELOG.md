@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.5] — 2026-10-20
+
+The mod is clean under `claude plugin validate` on Claude Code 2.1.299: one shared fail-open
+`.catch` (`failOpen`) on all 14 gating hooks, counted toward the runner's breaker; slash
+commands (`e.command` on `prompt.submit`) pass the gate, brief, tier-1 and reply-mode ops
+unscored; `marketplace.json` drops the two ignored fields; README leads with the one-step
+`/plugin install navigator --marketplace qf-studio/navigator` (TASK-107). Behaviour for the
+person is unchanged; floor stays Claude Code 2.1.287.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.5.md)
+
 ## [v8.4.4] — 2026-10-16
 
 `nav-onboard` runs as its SKILL.md documents, and its exercises never touch the repo: the

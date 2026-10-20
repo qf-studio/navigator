@@ -1,6 +1,6 @@
 # TASK-107: Mod clean under `claude plugin validate` on Claude Code 2.1.299
 
-**Status**: ✅ Completed — 2026-10-19 (unreleased; no version bump)
+**Status**: ✅ Completed — 2026-10-19; released in v8.4.5 (2026-10-20)
 **Priority**: Medium
 **Source**: `.agent/research/claude-code-mods-2026-10-19/findings.md` §1, §2, §6 (mem-108..113)
 **Owner**: Navigator maintainers
