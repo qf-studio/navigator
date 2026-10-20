@@ -443,13 +443,14 @@ pane holds the keyboard (`e.props.isFocused`). On the terminal `/nav` opens with
 true` and the keys work. In Claude Code Desktop 3.1623.0 on engine 2.1.299 a click inside the
 pane sets `isFocused` (the tree re-draws with it true), but the composer keeps the real
 keyboard: the pressed letter lands in the prompt box and no hotkey fires. The plugin cannot
-detect this (the prop says focused); the native buttons press by click. Nothing in the mod API changes this (`$.ui.focus` only moves the ring
-inside a site that already holds the keys), so the pane shows a dim "hotkeys: terminal only"
-line on remote surfaces and the docs say so. Upstream: issue draft in
-`.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`; related
-anthropics/claude-code#100966 (desktop Input never gets the keys), #99395 (first click only
-focuses), #102378 (hotkeys follow the input source). Re-test on each desktop release; drop
-the line once a desktop build fires the keys.
+detect this (the prop says focused); the native buttons press by click. Nothing in the mod
+API changes this (`$.ui.focus` only moves the ring inside a site that already holds the keys).
+The desktop draws a key chip for every `hotkey`, so the pane passes no `hotkey` prop on remote
+surfaces (`hk()` in the pane hook): plain native buttons, no chip that promises a key.
+Upstream: issue draft in `.agent/research/claude-code-mods-2026-10-19/issue-desktop-pane-hotkeys.md`;
+related anthropics/claude-code#100966 (desktop Input never gets the keys), #99395 (first click
+only focuses), #102378 (hotkeys follow the input source). Re-test on each desktop release;
+restore the props once a desktop build fires the keys.
 
 **Testing**: `register.test.ts` mounts the pane on `terminal` and `desktop` and asserts the
 tree per surface (glyphs on one, an `Svg` and no `·` on the other, no padded label runs on
