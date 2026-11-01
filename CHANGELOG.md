@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.12] — 2026-11-01
+
+nav-sync-claude keeps a project's own CLAUDE.md layout: fenced code blocks no longer end a
+section, every  section comes back in source order, the runtime paragraph is replaced
+in place under any header, and a file without  gets no placeholders (TASK-109).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.12.md)
+
 ## [v8.4.11] — 2026-10-20
 
 `/nav` buttons carry no `hotkey` on remote surfaces: the desktop reports pane focus while the

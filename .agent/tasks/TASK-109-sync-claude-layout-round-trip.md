@@ -1,6 +1,6 @@
 # TASK-109: nav-sync-claude — layout round trip for files without the template's shape
 
-**Status**: ✅ Implemented — 2026-11-01
+**Status**: ✅ Released in v8.4.12 — 2026-11-01
 **Priority**: High
 **Owner**: Navigator maintainers
 **Follows**: TASK-105 (faithful extract + generate, v8.4.3)
