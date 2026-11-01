@@ -93,18 +93,25 @@ PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_H
 python3 "$PLUGIN_DIR/skills/nav-sync-claude/functions/claude_updater.py" extract CLAUDE.md > /tmp/nav-customizations.json
 ```
 
-This extracts, verbatim (multi-line values and bullets keep their line breaks):
-- **Project name** (from title)
-- **Project description** and **Core Principle** (from Context section)
-- **Tech stack** (languages, frameworks)
-- **Code standards** (every bullet the project lists, template defaults included;
-  a default the project removed stays removed)
-- **Forbidden actions** (every bullet, same rule)
-- **PM tool configuration** (Linear, GitHub, Jira, etc.)
-- **Custom sections** (every `##` header not in the template) with the standard
-  section each one precedes, so generate puts it back in the same place
+This records the file's layout verbatim, with fenced code blocks kept whole (a
+`# comment` inside a bash block is not a header):
+- **title**: the first `#` header as written; **project_name** is the part before
+  ` - Claude Code Configuration` when the title has that shape, else the whole title
+- **preamble**: the text between the title and the first `##` header
+- **sections**: every `##` section in order, `{"header", "body"}`, bodies byte for byte
+  (`###` subsections, fences and `---` rules included)
+- **navigator_section**: the section Navigator owns — `## Navigator` when present, else
+  the section whose body carries the `**Navigator runtime**` paragraph; empty when none
+- **has_context**: whether a `## Context` section exists
 - **source_dir**: the directory CLAUDE.md was read from (the project root for
   the liveness guard)
+
+The flat lists stay for readers of the JSON and for hand-written customizations without
+a `sections` layout: **description**, **core_principle** and **tech_stack** (from
+Context), **code_standards** and **forbidden_actions** (every bullet, template defaults
+included; a default the project removed stays removed), **pm_tool**, and
+**custom_sections** with **custom_section_anchors** (every `##` header the lists do not
+render, with the standard section each one precedes).
 
 ### Step 4: Generate Updated CLAUDE.md
 
@@ -279,6 +286,7 @@ python3 claude_updater.py generate \
 ```json
 {
   "project_name": "MyApp",
+  "title": "MyApp - Claude Code Configuration",
   "description": "Brief project description",
   "tech_stack": ["Next.js", "TypeScript", "PostgreSQL"],
   "core_principle": "API-first design with type safety",
@@ -292,23 +300,49 @@ python3 claude_updater.py generate \
   "custom_section_anchors": {
     "Deployment": "Forbidden Actions"
   },
+  "has_context": true,
+  "preamble": "",
+  "sections": [
+    {"header": "Context", "body": "Brief project description\n\n**Tech Stack**: ..."},
+    {"header": "Navigator", "body": "**Navigator runtime**: ..."},
+    {"header": "Deployment", "body": "Custom deployment instructions..."},
+    {"header": "Forbidden Actions", "body": "- ❌ No Claude Code mentions in commits/code"}
+  ],
+  "navigator_section": "Navigator",
   "source_dir": "/path/to/project"
 }
 ```
 
-**Generate mode** (the project's content inside the installed template's structure; a
-round trip on an already-current file changes only the two stamp lines):
+**Generate mode** with a `sections` layout (what extract records): the project's own
+title, preamble and sections come back in their own order, bodies byte for byte, and
+only Navigator-owned text changes. A round trip on an already-current file changes only
+the two stamp lines.
 1. Loads template
-2. Replaces `[Project Name]` with `project_name`
-3. Replaces `[Brief project description]` with `description` (line breaks kept)
-4. Replaces `[List your technologies...]` with `tech_stack`
-5. Replaces the `**Core Principle**` placeholder with `core_principle` (multi-line)
-6. Replaces the template's code-standards list and its `[Customize ...]` placeholder
+2. Writes the title as recorded (a title without ` - Claude Code Configuration` stays)
+3. Writes the preamble and every section in source order
+4. `## Navigator` takes the template's body; a section that carries the
+   `**Navigator runtime**` paragraph under another name (`## Navigator Integration`)
+   keeps its header and every other line and gets the template's paragraph in place
+5. Adds a template section the project lacks after the template section that precedes
+   it: `## Context` only as the two stamp lines when the file has no stamps anywhere
+   (no description or tech-stack placeholders), `## Navigator` only when no section
+   carries the runtime paragraph, the standards and forbidden sections with the
+   template's defaults (`## Code Standards` counts as the standards section)
+6. Stamps `**Last Updated**` (today) and `**Navigator Version**` (installed plugin)
+   wherever the file keeps them
+
+**Generate mode** without a `sections` layout (hand-written JSON): the template's
+structure around the flat lists, as before.
+1. Replaces `[Project Name]` with `project_name`
+2. Replaces `[Brief project description]` with `description` (line breaks kept)
+3. Replaces `[List your technologies...]` with `tech_stack`
+4. Replaces the `**Core Principle**` placeholder with `core_principle` (multi-line)
+5. Replaces the template's code-standards list and its `[Customize ...]` placeholder
    with `code_standards` (an empty list keeps the template's)
-7. Replaces the template's forbidden-actions list with `forbidden_actions`; the
+6. Replaces the template's forbidden-actions list with `forbidden_actions`; the
    `[Add project-specific violations here]` marker stays only when the project had it
-8. Inserts each custom section before its anchor section (end of file without one)
-9. Stamps `**Last Updated**` (today) and `**Navigator Version**` (installed plugin)
+7. Inserts each custom section before its anchor section (end of file without one)
+8. Stamps the two lines as above
 
 ### functions/config_migrator.py
 

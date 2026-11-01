@@ -267,28 +267,87 @@ def get_template_path(bundled_template_dir: str, version: Optional[str] = None) 
 # Extract / generate
 #
 # Model: the project's CLAUDE.md is the truth for everything the template
-# leaves to the project (Context fields, the standards and forbidden lists,
-# custom sections). `extract` records those verbatim — multi-line bullets,
-# template defaults the project kept, the position of each custom section —
-# and `generate` renders the installed template's structure around them.
-# A round trip on an already-current file therefore changes only the two
-# stamp lines (**Last Updated**, **Navigator Version**).
+# leaves to the project. `extract` records the file's layout verbatim: the
+# title, the preamble, and every `##` section in order, with fenced code
+# blocks kept whole (a `# comment` inside a bash block is not a header).
+# `generate` renders that layout back and replaces only the text Navigator
+# owns: the `## Navigator` body or the `**Navigator runtime**` paragraph
+# wherever the project keeps it, plus the two stamp lines (**Last Updated**,
+# **Navigator Version**). Template sections the project lacks are added;
+# nothing the project wrote is dropped, renamed or re-ordered. A round trip on
+# an already-current file therefore changes only the two stamp lines.
+#
+# The flat lists (`code_standards`, `forbidden_actions`, `custom_sections`,
+# `custom_section_anchors`) stay in the JSON for readers of the extract output
+# and for hand-written customizations without a `sections` layout, which
+# `generate` renders through the template as before (TASK-105).
 # ---------------------------------------------------------------------------
 
 VIOLATIONS_MARKER = "[Add project-specific violations here]"
 STANDARDS_PLACEHOLDER = "[Customize for your project's framework and patterns]"
 DESCRIPTION_PLACEHOLDER = "[Brief project description - explain what this project does]"
 TECH_STACK_PLACEHOLDER = "[List your technologies, e.g., Next.js, TypeScript, PostgreSQL]"
+RUNTIME_PARAGRAPH_PREFIX = "**Navigator runtime"
+STAMP_FIELDS = ("Last Updated", "Navigator Version")
 
-# Sections the template owns. Any other `##` header is a custom section.
+# Sections whose content `generate` renders itself from the flat lists (the
+# legacy path). Any other `##` header is a custom section in that path. "Code
+# Standards" is the pre-v7 name of the standards section.
 STANDARD_SECTIONS = [
-    "Context", "Navigator", "Quick Start", "Code Standards",
+    "Context", "Navigator", "Code Standards",
     "Project-Specific Code Standards", "Forbidden Actions",
-    "Documentation Structure", "Project Management",
-    "Configuration", "Commit Guidelines", "Success Metrics",
 ]
 
-_TOP_HEADER_RE = re.compile(r'^#{1,2}\s', re.MULTILINE)
+# A project that keeps a template section under an older name has that
+# section; the layout path adds no second copy under the template's name.
+SECTION_ALIASES = {"Project-Specific Code Standards": ("Code Standards",)}
+
+_FENCE_RE = re.compile(r'^\s{0,3}(`{3,}|~{3,})')
+_HEADER_LINE_RE = re.compile(r'^(#{1,2})\s+(.*?)\s*$')
+
+
+def _scan_headers(content: str) -> List[Tuple[int, str, int, int]]:
+    """`(level, title, line_start, line_end)` for every `#`/`##` header line
+    outside fenced code blocks. `line_end` is the offset just past the line's
+    newline (or the end of the text)."""
+    headers = []
+    fence = None
+    offset = 0
+    for line in content.splitlines(keepends=True):
+        bare = line.rstrip('\r\n')
+        fence_match = _FENCE_RE.match(bare)
+        if fence is None and fence_match:
+            fence = fence_match.group(1)[0]
+        elif fence is not None and fence_match and fence_match.group(1)[0] == fence \
+                and not bare.strip()[len(fence_match.group(1)):].strip():
+            fence = None
+        elif fence is None:
+            match = _HEADER_LINE_RE.match(bare)
+            if match:
+                headers.append((len(match.group(1)), match.group(2),
+                                offset, offset + len(line)))
+        offset += len(line)
+    return headers
+
+
+def _trim_blank_lines(text: str) -> str:
+    """Drop leading and trailing blank lines; keep every other byte."""
+    lines = text.split('\n')
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return '\n'.join(lines)
+
+
+def _section_bodies(content: str) -> List[Tuple[int, str, str]]:
+    """`(level, title, body)` for every header; a body runs to the next header."""
+    headers = _scan_headers(content)
+    bodies = []
+    for index, (level, title, _start, end) in enumerate(headers):
+        next_start = headers[index + 1][2] if index + 1 < len(headers) else len(content)
+        bodies.append((level, title, _trim_blank_lines(content[end:next_start])))
+    return bodies
 
 
 def _header_match(content: str, header: str) -> Optional[re.Match]:
@@ -299,22 +358,18 @@ def _header_match(content: str, header: str) -> Optional[re.Match]:
 
 def extract_section(content: str, header: str,
                     next_headers: Optional[List[str]] = None) -> Optional[str]:
-    """Body of the section under `header`, up to the next `#`/`##` header.
+    """Body of the first `#`/`##` section titled `header` (case-insensitive),
+    up to the next `#`/`##` header outside fenced code blocks.
 
     `next_headers` is accepted for backward compatibility and ignored: a
     section ends at the next top-level header whatever its name, so an
     unknown custom section is never swallowed into the one before it.
     """
-    match = _header_match(content, header)
-    if not match:
-        return None
-
-    start = match.end()
-    next_match = _TOP_HEADER_RE.search(content, start)
-    end = next_match.start() if next_match else len(content)
-
-    section = content[start:end].strip()
-    return section if section else None
+    wanted = header.strip().lower()
+    for _level, title, body in _section_bodies(content):
+        if title.lower() == wanted:
+            return body if body.strip() else None
+    return None
 
 
 def _is_bullet(stripped: str) -> bool:
@@ -369,6 +424,29 @@ def _field_value(context: str, field: str) -> str:
     return ''
 
 
+def _runtime_paragraph_span(body: str) -> Optional[Tuple[int, int]]:
+    """Offsets of the `**Navigator runtime...**:` paragraph inside `body`
+    (from its first line up to the next blank line), or None."""
+    match = re.search(r'^' + re.escape(RUNTIME_PARAGRAPH_PREFIX) + r'.*?\*\*:',
+                      body, re.MULTILINE)
+    if not match:
+        return None
+    end = body.find('\n\n', match.start())
+    return match.start(), (len(body) if end == -1 else end)
+
+
+def _navigator_section_title(sections: List[Dict[str, str]]) -> str:
+    """Title of the section Navigator owns: `## Navigator` when present, else
+    the first section whose body carries the runtime paragraph; '' if none."""
+    for section in sections:
+        if section["header"].lower() == "navigator":
+            return section["header"]
+    for section in sections:
+        if _runtime_paragraph_span(section["body"]) is not None:
+            return section["header"]
+    return ""
+
+
 def extract_customizations(claude_md_path: str) -> Dict:
     """Extract project-specific customizations from CLAUDE.md"""
 
@@ -378,6 +456,7 @@ def extract_customizations(claude_md_path: str) -> Dict:
 
     customizations: Dict = {
         "project_name": "",
+        "title": "",
         "description": "",
         "tech_stack": [],
         "core_principle": "",
@@ -387,19 +466,42 @@ def extract_customizations(claude_md_path: str) -> Dict:
         "pm_tool": "none",
         "custom_sections": {},
         "custom_section_anchors": {},
+        "has_context": False,
+        "preamble": "",
+        "sections": [],
+        "navigator_section": "",
         "source_dir": str(source.parent),
     }
 
-    # Extract project name (first # header). The dash needs whitespace on
-    # both sides so a hyphenated project name survives.
-    title_match = re.search(
-        r'^#\s+(.+?)\s+-\s+Claude Code Configuration', content, re.MULTILINE)
-    if title_match:
-        customizations["project_name"] = title_match.group(1).strip()
+    # Title: the first `#` header, verbatim. The project name is the part
+    # before " - Claude Code Configuration" when the title has that shape
+    # (the dash needs whitespace on both sides so a hyphenated project name
+    # survives), else the whole title.
+    headers = _scan_headers(content)
+    h1 = next((h for h in headers if h[0] == 1), None)
+    if h1:
+        customizations["title"] = h1[1]
+        title_match = re.match(r'^(.+?)\s+-\s+Claude Code Configuration$', h1[1])
+        customizations["project_name"] = (
+            title_match.group(1).strip() if title_match else h1[1])
+
+    # Layout: the preamble (between the title and the first `##`) and every
+    # `##` section in order, bodies verbatim.
+    level2 = [h for h in headers if h[0] == 2]
+    preamble_start = h1[3] if h1 else 0
+    preamble_end = level2[0][2] if level2 else len(content)
+    customizations["preamble"] = _trim_blank_lines(content[preamble_start:preamble_end])
+    customizations["sections"] = [
+        {"header": title, "body": body}
+        for level, title, body in _section_bodies(content) if level == 2
+    ]
+    customizations["navigator_section"] = _navigator_section_title(
+        customizations["sections"])
 
     # Context: description (every line before the first `**` field, minus
     # placeholders, line breaks kept), tech stack, core principle.
     context = extract_section(content, "Context")
+    customizations["has_context"] = context is not None
     if context:
         desc_lines = []
         for line in context.split('\n'):
@@ -450,17 +552,17 @@ def extract_customizations(claude_md_path: str) -> Dict:
             if tool in ['linear', 'github', 'jira', 'gitlab']:
                 customizations["pm_tool"] = tool
 
-    # Custom sections: every `##` header the template does not own, with the
-    # standard section that follows it as the anchor for re-insertion.
-    headers = [h.strip() for h in re.findall(r'^##\s+(.+?)\s*$', content, re.MULTILINE)]
-    for index, header in enumerate(headers):
-        if header in STANDARD_SECTIONS:
+    # Legacy view of the custom sections: every `##` header the lists above
+    # do not render (nor the section that carries the runtime paragraph),
+    # with the standard section that follows it as the anchor.
+    titles = [s["header"] for s in customizations["sections"]]
+    owned = set(STANDARD_SECTIONS) | {customizations["navigator_section"]}
+    for index, section in enumerate(customizations["sections"]):
+        header, body = section["header"], section["body"]
+        if header in owned or not body.strip():
             continue
-        section_content = extract_section(content, header)
-        if not section_content:
-            continue
-        customizations["custom_sections"][header] = section_content
-        anchor = next((h for h in headers[index + 1:] if h in STANDARD_SECTIONS), None)
+        customizations["custom_sections"][header] = body
+        anchor = next((h for h in titles[index + 1:] if h in STANDARD_SECTIONS), None)
         customizations["custom_section_anchors"][header] = anchor
 
     return customizations
@@ -468,14 +570,15 @@ def extract_customizations(claude_md_path: str) -> Dict:
 
 def _replace_section_body(text: str, header: str, body: str) -> str:
     """Replace the body under `## header` (up to the next header) with `body`."""
-    match = re.search(r'^##\s+' + re.escape(header) + r'[ \t]*$', text, re.MULTILINE)
-    if not match:
-        return text
-    start = match.end()
-    next_match = _TOP_HEADER_RE.search(text, start)
-    if next_match:
-        return text[:start] + '\n\n' + body + '\n\n' + text[next_match.start():]
-    return text[:start] + '\n\n' + body + '\n'
+    headers = _scan_headers(text)
+    for index, (level, title, _start, end) in enumerate(headers):
+        if level != 2 or title != header:
+            continue
+        if index + 1 < len(headers):
+            next_start = headers[index + 1][2]
+            return text[:end] + '\n' + body + '\n\n' + text[next_start:]
+        return text[:end] + '\n' + body + '\n'
+    return text
 
 
 def _replace_field_line(text: str, field: str, value: str) -> str:
@@ -490,11 +593,12 @@ def _insert_custom_sections(text: str, sections: Dict[str, str],
     for name, body in sections.items():
         block = f"## {name}\n\n{body}\n\n"
         anchor = anchors.get(name)
-        match = None
+        anchor_start = None
         if anchor:
-            match = re.search(r'^##\s+' + re.escape(anchor) + r'[ \t]*$', text, re.MULTILINE)
-        if match:
-            text = text[:match.start()] + block + text[match.start():]
+            anchor_start = next((start for level, title, start, _end in _scan_headers(text)
+                                 if level == 2 and title == anchor), None)
+        if anchor_start is not None:
+            text = text[:anchor_start] + block + text[anchor_start:]
         else:
             text = text.rstrip('\n') + '\n\n' + block.rstrip('\n') + '\n'
     return text
@@ -508,17 +612,8 @@ def stamp_lines(text: str, version: Optional[str], today: str) -> str:
     return text
 
 
-def generate_updated_claude_md(customizations: Dict, template_path: str, output_path: str,
-                               version: Optional[str] = None,
-                               today: Optional[str] = None):
-    """Generate CLAUDE.md: the installed template's structure around the
-    project's own content. `version` defaults to the plugin this script
-    ships with; `today` to the local date (both injectable for tests)."""
-
-    with open(template_path, 'r', encoding='utf-8') as f:
-        template = f.read()
-
-    # Context fields
+def _render_from_lists(customizations: Dict, template: str) -> str:
+    """Legacy path: the template's structure around the flat lists."""
     if customizations.get("project_name"):
         template = template.replace('[Project Name]', customizations["project_name"])
 
@@ -547,7 +642,6 @@ def generate_updated_claude_md(customizations: Dict, template_path: str, output_
             body += f"\n\n{VIOLATIONS_MARKER}"
         template = _replace_section_body(template, "Forbidden Actions", body)
 
-    # Update PM tool
     if customizations.get("pm_tool", "none") != "none":
         template = template.replace(
             '**Configured Tool**: [Linear / GitHub Issues / Jira / GitLab / None]',
@@ -564,15 +658,109 @@ def generate_updated_claude_md(customizations: Dict, template_path: str, output_
         template = _insert_custom_sections(
             template, customizations["custom_sections"],
             customizations.get("custom_section_anchors") or {})
+    return template
 
-    template = stamp_lines(
-        template,
+
+def _render_from_layout(customizations: Dict, template: str) -> str:
+    """Layout path: the project's title, preamble and sections in their own
+    order; only Navigator-owned text comes from the template."""
+    template_sections = [
+        (title, body) for level, title, body in _section_bodies(template) if level == 2]
+    template_bodies = dict(template_sections)
+    template_navigator = template_bodies.get("Navigator", "")
+    template_paragraph = template_navigator
+    span = _runtime_paragraph_span(template_navigator)
+    if span:
+        template_paragraph = template_navigator[span[0]:span[1]]
+
+    title = customizations.get("title") or ""
+    if not title:
+        template_h1 = next((h for h in _scan_headers(template) if h[0] == 1), None)
+        title = template_h1[1] if template_h1 else "[Project Name] - Claude Code Configuration"
+        if customizations.get("project_name"):
+            title = title.replace("[Project Name]", customizations["project_name"])
+
+    blocks: List[Tuple[str, str]] = []  # (header or '' for the preamble, body)
+    if customizations.get("preamble"):
+        blocks.append(("", customizations["preamble"]))
+
+    owner = customizations.get("navigator_section") or ""
+    for section in customizations.get("sections") or []:
+        header, body = section["header"], section["body"]
+        if header.lower() == "navigator" and template_navigator:
+            body = template_navigator
+        elif header == owner and template_paragraph:
+            span = _runtime_paragraph_span(body)
+            if span:
+                body = body[:span[0]] + template_paragraph + body[span[1]:]
+        blocks.append((header, body))
+
+    present = {header.lower() for header, _body in blocks if header}
+    for owned, aliases in SECTION_ALIASES.items():
+        if any(alias.lower() in present for alias in aliases):
+            present.add(owned.lower())
+    has_stamps = any(
+        re.search(r'^\*\*' + re.escape(f) + r'\*\*:', body, re.MULTILINE)
+        for _h, body in blocks for f in STAMP_FIELDS)
+
+    def insert_after_owned(header: str, body: str) -> None:
+        """Add a template section the project lacks, right after the last
+        template section that precedes it in template order and is present;
+        at the top when none is."""
+        order = [t for t, _b in template_sections]
+        preceding = {t.lower() for t in order[:order.index(header)]}
+        for owned, aliases in SECTION_ALIASES.items():
+            if owned.lower() in preceding:
+                preceding.update(a.lower() for a in aliases)
+        position = 1 if blocks and not blocks[0][0] else 0  # after the preamble
+        for index, (h, _b) in enumerate(blocks):
+            if h and h.lower() in preceding:
+                position = index + 1
+        blocks.insert(position, (header, body))
+
+    for header, body in template_sections:
+        if header.lower() in present:
+            continue
+        if header == "Context":
+            if has_stamps:
+                continue  # the project keeps its stamps elsewhere; no placeholders
+            body = '\n'.join(f"**{f}**: " for f in STAMP_FIELDS)
+        elif header == "Navigator" and owner:
+            continue  # the runtime paragraph lives in the project's own section
+        insert_after_owned(header, body)
+        present.add(header.lower())
+
+    parts = [f"# {title}"]
+    for header, body in blocks:
+        parts.append(f"## {header}\n\n{body}" if header else body)
+    return '\n\n'.join(parts) + '\n'
+
+
+def generate_updated_claude_md(customizations: Dict, template_path: str, output_path: str,
+                               version: Optional[str] = None,
+                               today: Optional[str] = None):
+    """Generate CLAUDE.md. With a `sections` layout (what `extract` records)
+    the project's own layout is rendered and only Navigator-owned text is
+    replaced; without one the template's structure is rendered around the
+    flat lists. `version` defaults to the plugin this script ships with;
+    `today` to the local date (both injectable for tests)."""
+
+    with open(template_path, 'r', encoding='utf-8') as f:
+        template = f.read()
+
+    if customizations.get("sections"):
+        text = _render_from_layout(customizations, template)
+    else:
+        text = _render_from_lists(customizations, template)
+
+    text = stamp_lines(
+        text,
         version if version is not None else installed_plugin_version(),
         today if today is not None else datetime.now().date().isoformat(),
     )
 
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(template)
+        f.write(text)
 
 
 def resolve_project_root(explicit: Optional[str], customizations: Dict) -> Path:

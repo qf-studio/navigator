@@ -210,6 +210,13 @@ Other threads:
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
   `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+- **TASK-109** ✅ (2026-11-01, unreleased) — nav-sync-claude keeps a project's own layout:
+  extract records the title, preamble and every `##` section in order with fenced blocks
+  whole (a `# comment` in a bash block is not a header); generate renders them back and
+  replaces only the `**Navigator runtime**` paragraph (in place, under any header) and
+  the two stamp lines; a file without `## Context` gets no placeholders. Seen on the Pilot
+  CLAUDE.md (98 changed lines → stamps only)
+  (`tasks/TASK-109-sync-claude-layout-round-trip.md`).
 - **TASK-108** ✅ (v8.4.6–v8.4.11, 2026-10-20) — `/nav` pane and intent brief draw correctly on Claude Code
   Desktop: the hook branches on `e.surface` (Box-fill gauge, `Svg` trend on remote surfaces;
   glyphs on the terminal), Box label columns and a short leg button on both, stacked rows

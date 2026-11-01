@@ -24,6 +24,7 @@ so the generate runs below use the project as cwd.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -402,12 +403,288 @@ class FaithfulRoundTripTests(unittest.TestCase):
         ])
 
     def test_extract_is_stable_across_a_second_sync(self):
-        generated = self.generate()
+        # Same stamps as the fixture, so the recorded layout is byte-identical.
+        generated = self.generate(version="8.0.0", today="2026-01-01")
         again = self.project / "again.md"
         again.write_text(generated, encoding="utf-8")
         second = claude_updater.extract_customizations(str(again))
         first = dict(self.customizations, source_dir=None)
         self.assertEqual(dict(second, source_dir=None), first)
+
+
+# ---------------------------------------------------------------------------
+# Layout round trip (defects seen 2026-11-01 on a Navigator 8.4.11 project
+# CLAUDE.md that never had the template's shape): no "## Context", a title
+# without " - Claude Code Configuration", a preamble, custom sections with
+# fenced bash blocks whose `# comment` lines look like headers, a `###`
+# after such a block, a section whose body is only a fence, template-owned
+# names the template no longer has ("Quick Start", "Code Standards"), the
+# runtime paragraph and the stamps inside a custom-named section, and
+# sections in an order the template does not use.
+# ---------------------------------------------------------------------------
+
+RUNTIME_PARAGRAPH = NAVIGATOR_SECTION.split("\n\n")[0]
+
+WORKFLOW_BODY = """**Navigator plans. Pilot executes.** Interactive sessions follow this pipeline.
+
+### Quick Commands
+
+```bash
+# Plan a feature (Navigator)
+/nav-task "feature"
+# Hand off to Pilot
+#   "dispatch TASK-XX to Pilot"        # uses H1 as title
+gh issue create --label pilot
+```
+
+### Rules (interactive sessions)
+
+1. Never run `pilot` locally.
+2. Review Pilot's PR before merge.
+
+---"""
+
+QUICK_START_BODY = """```bash
+# Build
+go build ./...
+# Run
+./pilot
+```"""
+
+LAYOUT_CLAUDE_MD = """# Pilot: AI That Ships Your Tickets
+
+**Navigator plans. Pilot executes.**
+
+## Who is reading this file?
+
+- Interactive sessions: a human is present. Ask before destructive actions.
+- Pilot executor sessions: `PILOT_EXECUTOR` is set. Never ask; never push.
+
+## ⚠️ WORKFLOW: Navigator + Pilot Pipeline (interactive sessions only)
+
+{workflow}
+
+## Quick Start
+
+{quick_start}
+
+## Code Standards
+
+- Go 1.22, `gofmt`, no `interface{{}}` without justification
+- Line length: 100
+
+## Navigator Integration
+
+This project uses Navigator for planning, Pilot for execution:
+
+```bash
+/nav-start              # Start session, load context
+```
+
+{runtime}
+
+**Last Updated**: 2026-10-17
+**Navigator Version**: 8.4.4
+
+## Forbidden Actions
+
+- ❌ No Claude Code mentions in commits/code
+- ❌ Never commit secrets/API keys/.env files
+
+## Current Status
+
+See `.agent/tasks/` for open work.
+""".format(workflow=WORKFLOW_BODY, quick_start=QUICK_START_BODY, runtime=RUNTIME_PARAGRAPH)
+
+OLD_RUNTIME_PARAGRAPH = (
+    "**Navigator runtime (v7+)**: workflow enforcement lives in the plugin's hook\n"
+    "runtime, not in prose in this file. Load docs on demand (Pilot-executor sessions).")
+
+
+def _changed_lines(before: str, after: str):
+    import difflib
+    return [
+        line for line in difflib.unified_diff(
+            before.splitlines(), after.splitlines(), lineterm="", n=0)
+        if line[:1] in "+-" and not line.startswith(("+++", "---"))
+    ]
+
+
+class LayoutRoundTripTests(unittest.TestCase):
+    """extract + generate on a file that never had the template's shape."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.project = Path(tmp.name)
+
+    def extract(self, text: str) -> dict:
+        source = self.project / "CLAUDE.md"
+        source.write_text(text, encoding="utf-8")
+        return claude_updater.extract_customizations(str(source))
+
+    def generate(self, customizations: dict, **kwargs) -> str:
+        out = self.project / "out.md"
+        kwargs.setdefault("version", "8.4.12")
+        kwargs.setdefault("today", "2026-11-01")
+        claude_updater.generate_updated_claude_md(
+            customizations, str(TEMPLATE_PATH), str(out), **kwargs)
+        return out.read_text(encoding="utf-8")
+
+    def test_title_without_the_template_suffix_is_the_project_name(self):
+        # Defect 1: the title became "[Project Name] - Claude Code Configuration".
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        self.assertEqual(got["title"], "Pilot: AI That Ships Your Tickets")
+        self.assertEqual(got["project_name"], "Pilot: AI That Ships Your Tickets")
+        self.assertFalse(got["has_context"])
+        self.assertEqual(got["preamble"], "**Navigator plans. Pilot executes.**")
+        generated = self.generate(got)
+        self.assertTrue(generated.startswith("# Pilot: AI That Ships Your Tickets\n"))
+        for placeholder in ("[Project Name]", claude_updater.DESCRIPTION_PLACEHOLDER,
+                            claude_updater.TECH_STACK_PLACEHOLDER,
+                            "[Key architectural principle", "## Context"):
+            self.assertNotIn(placeholder, generated)
+
+    def test_fenced_blocks_and_subsections_stay_in_their_section(self):
+        # Defects 2 and 3: a `# comment` inside a bash fence ended the section.
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        bodies = {s["header"]: s["body"] for s in got["sections"]}
+        self.assertEqual(
+            bodies["⚠️ WORKFLOW: Navigator + Pilot Pipeline (interactive sessions only)"],
+            WORKFLOW_BODY)
+        self.assertEqual(bodies["Quick Start"], QUICK_START_BODY)
+        self.assertEqual(
+            got["custom_sections"]["Quick Start"], QUICK_START_BODY)
+        generated = self.generate(got)
+        self.assertIn(WORKFLOW_BODY, generated)
+        self.assertIn("## Quick Start\n\n" + QUICK_START_BODY + "\n", generated)
+        self.assertIn("## Code Standards\n\n- Go 1.22", generated)
+
+    def test_runtime_paragraph_in_a_custom_named_section_is_recognized(self):
+        # Defect 4: the template's "## Navigator" was added beside the
+        # project's "## Navigator Integration", runtime text twice.
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        self.assertEqual(got["navigator_section"], "Navigator Integration")
+        self.assertNotIn("Navigator Integration", got["custom_sections"])
+        generated = self.generate(got)
+        self.assertEqual(generated.count("**Navigator runtime**:"), 1)
+        self.assertEqual(generated.count("## Navigator"), 1)
+        self.assertNotIn("\n## Navigator\n", generated)
+        self.assertNotIn("## Project-Specific Code Standards", generated)
+
+    def test_sections_keep_their_source_order(self):
+        # Defect 5: custom sections were re-anchored to the template's order.
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        generated = self.generate(got)
+        headers = [h.strip() for h in re.findall(r"^## (.+?)\s*$", generated, re.MULTILINE)]
+        self.assertEqual(headers, [
+            "Who is reading this file?",
+            "⚠️ WORKFLOW: Navigator + Pilot Pipeline (interactive sessions only)",
+            "Quick Start", "Code Standards", "Navigator Integration",
+            "Forbidden Actions", "Current Status",
+        ])
+
+    def test_round_trip_changes_only_the_stamp_lines(self):
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        generated = self.generate(got)
+        self.assertEqual(_changed_lines(LAYOUT_CLAUDE_MD, generated), [
+            "-**Last Updated**: 2026-10-17",
+            "-**Navigator Version**: 8.4.4",
+            "+**Last Updated**: 2026-11-01",
+            "+**Navigator Version**: 8.4.12",
+        ])
+
+    def test_cli_round_trip_matches_the_function(self):
+        source = self.project / "CLAUDE.md"
+        source.write_text(LAYOUT_CLAUDE_MD, encoding="utf-8")
+        _write_state_file(self.project, datetime.now(tz=timezone.utc))
+        extracted = subprocess.run(
+            [sys.executable, SCRIPT, "extract", "CLAUDE.md"],
+            capture_output=True, text=True, env=_env_without_hook_vars(),
+            cwd=str(self.project))
+        self.assertEqual(extracted.returncode, 0, extracted.stderr)
+        customizations = self.project / "c.json"
+        customizations.write_text(extracted.stdout)
+        out = self.project / "preview.md"
+        result = subprocess.run(
+            [sys.executable, SCRIPT, "generate",
+             "--customizations", str(customizations), "--template", str(TEMPLATE_PATH),
+             "--output", str(out), "--stamp-version", "8.4.12",
+             "--stamp-date", "2026-11-01"],
+            capture_output=True, text=True, env=_env_without_hook_vars(),
+            cwd=str(self.project))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(_changed_lines(LAYOUT_CLAUDE_MD, out.read_text())), 4)
+
+    def test_outdated_runtime_paragraph_is_replaced_in_place(self):
+        # The paragraph is the one piece of prose Navigator owns: an older
+        # wording is replaced with the installed template's, the section's
+        # header and every other line stay.
+        outdated = LAYOUT_CLAUDE_MD.replace(RUNTIME_PARAGRAPH, OLD_RUNTIME_PARAGRAPH)
+        got = self.extract(outdated)
+        self.assertEqual(got["navigator_section"], "Navigator Integration")
+        generated = self.generate(got)
+        self.assertIn("## Navigator Integration\n\n", generated)
+        self.assertIn(RUNTIME_PARAGRAPH + "\n\n**Last Updated**: 2026-11-01\n", generated)
+        self.assertNotIn("(v7+)", generated)
+        self.assertEqual(
+            sorted(_changed_lines(outdated, generated)),
+            sorted(["-" + line for line in OLD_RUNTIME_PARAGRAPH.splitlines()]
+                   + ["-**Last Updated**: 2026-10-17", "-**Navigator Version**: 8.4.4"]
+                   + ["+" + line for line in RUNTIME_PARAGRAPH.splitlines()]
+                   + ["+**Last Updated**: 2026-11-01", "+**Navigator Version**: 8.4.12"]))
+
+    def test_exact_navigator_section_takes_the_template_body(self):
+        text = LAYOUT_CLAUDE_MD.replace("## Navigator Integration", "## Navigator")
+        got = self.extract(text)
+        self.assertEqual(got["navigator_section"], "Navigator")
+        generated = self.generate(got)
+        self.assertIn("## Navigator\n\n" + NAVIGATOR_SECTION + "\n", generated)
+        self.assertNotIn("/nav-start              # Start session", generated)
+        self.assertEqual(generated.count("## Navigator"), 1)
+
+    def test_file_without_runtime_paragraph_or_stamps_gets_them_without_placeholders(self):
+        text = "\n".join([
+            "# Widgets", "", "## Build", "", "```bash", "# make it", "make", "```", "",
+            "## Forbidden Actions", "", "- ❌ Never push to main", "",
+        ])
+        got = self.extract(text)
+        self.assertEqual(got["navigator_section"], "")
+        generated = self.generate(got)
+        self.assertTrue(generated.startswith(
+            "# Widgets\n\n## Context\n\n**Last Updated**: 2026-11-01\n"
+            "**Navigator Version**: 8.4.12\n\n## Navigator\n\n"))
+        self.assertIn("## Build\n\n```bash\n# make it\nmake\n```\n", generated)
+        self.assertIn("## Forbidden Actions\n\n- ❌ Never push to main\n", generated)
+        self.assertNotIn("[", generated.split("## Navigator")[0])
+        headers = re.findall(r"^## (.+?)\s*$", generated, re.MULTILINE)
+        self.assertEqual(headers, [
+            "Context", "Navigator", "Project-Specific Code Standards",
+            "Build", "Forbidden Actions"])
+
+    def test_extract_is_stable_across_a_second_sync(self):
+        got = self.extract(LAYOUT_CLAUDE_MD)
+        generated = self.generate(got, version="8.4.4", today="2026-10-17")
+        self.assertEqual(generated, LAYOUT_CLAUDE_MD)
+        again = self.project / "again.md"
+        again.write_text(generated, encoding="utf-8")
+        second = claude_updater.extract_customizations(str(again))
+        self.assertEqual(dict(second, source_dir=None), dict(got, source_dir=None))
+
+
+class FenceAwareHeaderTests(unittest.TestCase):
+    def test_comment_lines_inside_fences_are_not_headers(self):
+        text = "# T\n\n## A\n\n```bash\n# not a header\n## nor this\n```\n\n## B\n\nb\n"
+        titles = [t for _l, t, _s, _e in claude_updater._scan_headers(text)]
+        self.assertEqual(titles, ["T", "A", "B"])
+        self.assertEqual(claude_updater.extract_section(text, "A"),
+                         "```bash\n# not a header\n## nor this\n```")
+
+    def test_tilde_fences_and_unclosed_fence(self):
+        text = "# T\n\n## A\n\n~~~\n# x\n~~~\n\n## B\n\n```\n# y\n"
+        titles = [t for _l, t, _s, _e in claude_updater._scan_headers(text)]
+        self.assertEqual(titles, ["T", "A", "B"])
+        self.assertEqual(claude_updater.extract_section(text, "B"), "```\n# y")
 
 
 class StampTests(unittest.TestCase):
