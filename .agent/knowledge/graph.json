@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-10-20T15:26:57.500026+00:00",
+  "last_updated": "2026-11-01T18:19:06.106949+00:00",
   "stats": {
-    "total_nodes": 268,
-    "total_edges": 896,
-    "memory_count": 111
+    "total_nodes": 273,
+    "total_edges": 899,
+    "memory_count": 114
   },
   "nodes": {
     "tasks": {
@@ -1897,6 +1897,16 @@
         "name": "Templates",
         "aliases": [],
         "domain": "general"
+      },
+      "markdown": {
+        "name": "Markdown",
+        "aliases": [],
+        "domain": "general"
+      },
+      "claude.md": {
+        "name": "Claude.Md",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3497,6 +3507,45 @@
         "contradiction": "one brief shape vs two reply surfaces",
         "separation": "condition",
         "principle": "shape that both surfaces draw"
+      },
+      "mem-120": {
+        "type": "pitfall",
+        "summary": "A markdown header regex such as ^#{1,2}\\s matches '# comment' lines inside fenced bash blocks: nav-sync-claude cut every custom CLAUDE.md section at its first fence (Pilot file, 2026-11-01, 98 changed lines). Scan headers with a fence state machine (``` and ~~~, same char closes) before any section logic; _scan_headers in claude_updater.py is the one scanner since v8.4.12.",
+        "path": "memories/pitfalls/mem-120.md",
+        "confidence": 0.95,
+        "concepts": [
+          "nav-sync-claude",
+          "markdown",
+          "claude.md"
+        ],
+        "created": "2026-11-01",
+        "last_validated": "2026-11-01"
+      },
+      "mem-121": {
+        "type": "pattern",
+        "summary": "nav-sync-claude model since v8.4.12: the project's CLAUDE.md is the truth for its layout. extract records title, preamble and every ## section in source order, bodies verbatim; generate renders them back and replaces only Navigator-owned text: the ## Navigator body, or the **Navigator runtime** paragraph in place under any header, plus the two stamp lines wherever they are. Template sections the project lacks are added after the one that precedes them; no Context placeholders when the file has no ## Context. A section list that mirrors the template (STANDARD_SECTIONS) is wrong by construction: names the template no longer renders (Quick Start, Code Standards) silently drop.",
+        "path": "memories/patterns/mem-121.md",
+        "confidence": 0.95,
+        "concepts": [
+          "nav-sync-claude",
+          "claude.md",
+          "templates"
+        ],
+        "created": "2026-11-01",
+        "last_validated": "2026-11-01"
+      },
+      "mem-122": {
+        "type": "learning",
+        "summary": "A sync tool's round-trip test must use a fixture that never had the template's shape, not only a template-shaped one: TASK-105 passed byte-for-byte on an acme-style file while the Pilot file (no ## Context, colon title, preamble, fences, ### subsections, runtime paragraph under ## Navigator Integration) lost 98 lines. Keep LayoutRoundTripTests beside FaithfulRoundTripTests and smoke-run the real local project files (pilot*, navigator-site) before a release.",
+        "path": "memories/learnings/mem-122.md",
+        "confidence": 0.95,
+        "concepts": [
+          "nav-sync-claude",
+          "testing",
+          "claude.md"
+        ],
+        "created": "2026-11-01",
+        "last_validated": "2026-11-01"
       }
     },
     "files": {}
@@ -8324,6 +8373,21 @@
       "from": "TASK-108",
       "to": "deployment",
       "type": "implements"
+    },
+    {
+      "from": "mem-120",
+      "to": "TASK-109",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-121",
+      "to": "TASK-109",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-122",
+      "to": "TASK-109",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -8518,7 +8582,8 @@
       "mem-113",
       "TASK-107",
       "mem-114",
-      "TASK-108"
+      "TASK-108",
+      "mem-122"
     ],
     "context": [
       "TASK-32",
@@ -9758,13 +9823,25 @@
       "mem-097"
     ],
     "nav-sync-claude": [
-      "mem-107"
+      "mem-107",
+      "mem-120",
+      "mem-121",
+      "mem-122"
     ],
     "claude-md": [
       "mem-107"
     ],
     "templates": [
-      "mem-107"
+      "mem-107",
+      "mem-121"
+    ],
+    "markdown": [
+      "mem-120"
+    ],
+    "claude.md": [
+      "mem-120",
+      "mem-121",
+      "mem-122"
     ]
   }
 }

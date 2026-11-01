@@ -216,7 +216,7 @@ Other threads:
   replaces only the `**Navigator runtime**` paragraph (in place, under any header) and
   the two stamp lines; a file without `## Context` gets no placeholders. Seen on the Pilot
   CLAUDE.md (98 changed lines → stamps only)
-  (`tasks/TASK-109-sync-claude-layout-round-trip.md`).
+  (`tasks/archive/TASK-109-sync-claude-layout-round-trip.md`).
 - **TASK-108** ✅ (v8.4.6–v8.4.11, 2026-10-20) — `/nav` pane and intent brief draw correctly on Claude Code
   Desktop: the hook branches on `e.surface` (Box-fill gauge, `Svg` trend on remote surfaces;
   glyphs on the terminal), Box label columns and a short leg button on both, stacked rows
