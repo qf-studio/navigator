@@ -126,6 +126,12 @@ EVENT_OPS: dict[str, list[OpSpec]] = {
         # for that sub-channel) — the advisory redesign is a v7.x follow-up,
         # not TASK-61.
         OpSpec("read_guard", "gates", "Read", "read_guard_hook", 1000),
+        # task_doc_guard (GH-40) — same deny-only channel as read_guard
+        #   (mem-035/mem-054: exit 2 + sentinel stderr, no advisory stdout).
+        #   The Skill matcher is the recorder branch: a /nav-task call sets
+        #   state['skills'].nav_task_ran, the gate's session signal.
+        OpSpec("task_doc_guard", "gates", "Write|Edit|Bash|Skill",
+               "task_doc_guard_hook", 1000),
     ],
     "PostToolUse": [
         # jit_memory (TASK-62 Phase 3) — mem-050 (S1 PASS, CC 2.1.205):

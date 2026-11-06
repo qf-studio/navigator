@@ -10,9 +10,9 @@ const HOUR = 3600
 const DAY = 24 * HOUR
 export const SECTION_TTLS: Record<string, number> = {
   session: DAY, turn: 2 * HOUR, reads: 2 * HOUR, completion: 2 * HOUR, brief: 2 * HOUR,
-  jit: DAY, tier1: 30 * DAY, profile: 30 * DAY, compact: 30 * DAY, judge: 30 * DAY,
+  jit: DAY, skills: DAY, tier1: 30 * DAY, profile: 30 * DAY, compact: 30 * DAY, judge: 30 * DAY,
 }
-const SESSION_SCOPED = new Set(['session', 'turn', 'reads', 'completion', 'brief', 'jit'])
+const SESSION_SCOPED = new Set(['session', 'turn', 'reads', 'completion', 'brief', 'jit', 'skills'])
 const MAX_OP_ERRORS = 20
 
 export type RuntimeState = Json & { meta: Json & { sections: Record<string, number> } }

@@ -119,6 +119,10 @@ export const CONFIG_DEFAULTS = {
       "research/"
     ]
   },
+  "task_doc_guard_hook": {
+    "enabled": true,
+    "strict_block": true
+  },
   "knowledge_graph": {
     "enabled": true,
     "auto_capture_corrections": true,

@@ -21,6 +21,26 @@ Navigator settings stored in `.agent/.nav-config.json`:
 
 Created automatically by `/nav:init`, customizable anytime.
 
+Hook toggles live in the same file, one block per hook; each block takes `enabled` and, for
+gates, `strict_block`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `task_doc_guard_hook.enabled` | `true` | Turns the task-doc gate (below) on or off |
+| `task_doc_guard_hook.strict_block` | `true` | `true` blocks (exit 2); `false` prints an advisory and lets the write through |
+
+### Task doc guard (`task_doc_guard_hook`)
+
+A `PreToolUse` gate (`hooks/ops/task_doc_guard.py`, matcher `Write|Edit|Bash|Skill`) that
+blocks a hand-written task doc. When `Write` or `Edit` targets a file that does not exist yet
+directly under `.agent/tasks/` and is named `<task_prefix>-<n>*.md` (prefix from
+`.agent/.nav-config.json`, default `TASK`), or a `Bash` command redirects (`>`, `>>`, heredoc),
+`tee`s, `cp`s or `mv`s into such a path, the call is refused with a message that names the file
+and says to run `/nav-task`, unless `/nav-task` already ran in this session. The `Skill` branch
+records that signal (`state['skills'].nav_task_ran`, session-scoped) when a skill whose name ends
+in `nav-task` is invoked. Editing an existing doc, writing outside `.agent/tasks/` (including
+`.agent/tasks/archive/`) and the Pilot executor are never blocked.
+
 ---
 
 ## Project Management Integration

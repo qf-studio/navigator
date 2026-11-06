@@ -117,6 +117,10 @@ Copy from plugin's `templates/` directory to `.agent/`:
     "enabled": true,
     "check_interval_hours": 1,
     "curl_fallback": false
+  },
+  "task_doc_guard_hook": {
+    "enabled": true,
+    "strict_block": true
   }
 }
 ```
@@ -169,6 +173,7 @@ The plugin registers the following hooks automatically when the plugin is instal
 4. **Stop** — silent workflow-state writer; records whether WORKFLOW CHECK / NAVIGATOR_STATUS appeared (v6.11.0+)
 5. **UserPromptSubmit** — prompt_gate + prompt_brief ops (Loop/Task mode trigger detection + optional strict_block gate; intent-brief injection)
 6. **PreToolUse(Read)** — read_guard op (bulk-read circuit breaker)
+6b. **PreToolUse(Write|Edit|Bash|Skill)** — task_doc_guard op (blocks a hand-written `.agent/tasks/TASK-*.md` unless `/nav-task` ran this session; GH-40)
 7. **PostToolUse(Edit|Write|Bash)** — token monitor (warns at 70% / 85% context usage)
 8. **PostToolUse(Edit|Write)** — task→graph sync and profile correction sync (v6.11.0+)
 
@@ -187,7 +192,8 @@ The plugin registers the following hooks automatically when the plugin is instal
   "workflow_state_hook":   { "enabled": false },
   "task_graph_sync_hook":  { "enabled": false },
   "profile_sync_hook":     { "enabled": false },
-  "workflow_enforcer_hook":{ "enabled": false }
+  "workflow_enforcer_hook":{ "enabled": false },
+  "task_doc_guard_hook":   { "enabled": false }
 }
 ```
 

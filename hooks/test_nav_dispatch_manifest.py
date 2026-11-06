@@ -9,7 +9,7 @@ template. Three concerns:
    plus the six TASK-62 events that survived the validate-or-drop gate
    (SubagentStart, PostToolUseFailure, TaskCreated, TaskCompleted,
    ConfigChange, Setup — all accepted by `claude plugin validate` on CC
-   2.1.205), with the contract matchers (PreToolUse: Read; PostToolUse:
+   2.1.205), with the contract matchers (PreToolUse: Read|Write|Edit|Bash|Skill; PostToolUse:
    Edit|Write|MultiEdit|NotebookEdit; no matcher on any TASK-62 event) and
    timeouts (SessionStart 10, PostToolUse 10, PreCompact 30, PostCompact 10
    — the v6 allowances — all others 5, including every TASK-62 event).
@@ -72,7 +72,7 @@ EXPECTED_TIMEOUTS = {
 }
 DEFAULT_TIMEOUT = 5
 EXPECTED_MATCHERS = {
-    "PreToolUse": "Read",
+    "PreToolUse": "Read|Write|Edit|Bash|Skill",
     "PostToolUse": "Edit|Write|MultiEdit|NotebookEdit",
 }
 # Fail-OPEN shell guard: missing dispatcher file -> exit 0 silently (stdin
