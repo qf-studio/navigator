@@ -110,6 +110,20 @@ class OriginAndArchiveTest(unittest.TestCase):
         self.assertEqual(task_id, "TASK-10")
         self.assertIn("note:", err)
 
+    def test_origin_without_tasks_dir_is_empty_not_a_failure(self):
+        self.push_to_main("README.md")
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        task_id, err = self.next_id()
+        self.assertEqual(task_id, "TASK-06")
+        self.assertEqual(err, "")
+
+    def test_fetch_never_prompts_for_credentials(self):
+        self.git(self.repo, "remote", "set-url", "origin", "https://127.0.0.1:9/none/none.git")
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        task_id, err = self.next_id()
+        self.assertEqual(task_id, "TASK-06")
+        self.assertIn("note:", err)
+
     def test_fetch_failure_falls_back_with_note(self):
         self.git(self.repo, "remote", "set-url", "origin", str(self.origin) + "-missing")
         (self.agent / "tasks" / "TASK-05-a.md").write_text("#")

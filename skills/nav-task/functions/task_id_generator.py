@@ -53,29 +53,33 @@ def _local_names(tasks_dir):
 def _origin_names(agent_dir):
     """
     File names under origin/main's tasks/ and tasks/archive/, or None (with a stderr
-    note) when the fetch or the read fails. Never raises.
+    note) when the fetch or the read fails. Never raises, never prompts, never hangs:
+    every git call has a timeout and GIT_TERMINAL_PROMPT=0. An origin/main without a
+    tasks/ directory yet (the repo's first task) is an empty list, not a failure.
     """
     cwd = agent_dir if os.path.isdir(agent_dir) else os.path.dirname(os.path.abspath(agent_dir))
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+
+    def git(*args, cwd=cwd, check=False, timeout=10):
+        return subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True,
+                              text=True, check=check, timeout=timeout)
+
     try:
-        fetch = subprocess.run(["git", "fetch", "-q", "origin"], cwd=cwd, capture_output=True,
-                               text=True, check=False, timeout=30)
+        fetch = git("fetch", "-q", "origin", timeout=30)
         if fetch.returncode != 0:
             raise RuntimeError(fetch.stderr.strip() or "git fetch failed")
+        if git("rev-parse", "--verify", "-q", "origin/main").returncode != 0:
+            raise RuntimeError("origin/main not found")
         # agent_dir need not be named .agent: ask git where it sits in the repo.
-        prefix = subprocess.run(["git", "rev-parse", "--show-prefix"], cwd=cwd,
-                                capture_output=True, text=True, check=True).stdout.strip()
+        prefix = git("rev-parse", "--show-prefix", check=True).stdout.strip()
         if cwd != agent_dir:
             prefix += os.path.basename(os.path.abspath(agent_dir)) + "/"
-        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=cwd,
-                             capture_output=True, text=True, check=True).stdout.strip()
+        top = git("rev-parse", "--show-toplevel", check=True).stdout.strip()
         names = []
         for sub in ("tasks", "tasks/archive"):
-            proc = subprocess.run(["git", "ls-tree", "--name-only", f"origin/main:{prefix}{sub}"],
-                                  cwd=top, capture_output=True, text=True, check=False)
+            proc = git("ls-tree", "--name-only", f"origin/main:{prefix}{sub}", cwd=top)
             if proc.returncode == 0:
                 names += [os.path.basename(n) for n in proc.stdout.splitlines()]
-            elif sub == "tasks":
-                raise RuntimeError(proc.stderr.strip() or "git ls-tree failed")
         return names
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"note: could not read origin/main task IDs ({exc}); "
