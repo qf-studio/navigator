@@ -46,22 +46,39 @@ TEST_DIRS := \
 SHELL_TESTS := \
 	tests/test-check-version.sh
 
-# Test target - run all Python unit tests (per-directory discovery) + shell tests
+# Test target - run all Python unit tests (per-directory discovery) + shell tests.
+# Each suite's output is kept; on failure the run ends with a FAILED SUITES block that
+# names every red suite and its FAIL:/ERROR: lines, so a reader who sees only the last
+# 20 lines (Pilot's quality gate) still learns what broke.
 test:
 	@echo "Running unit tests..."
-	@fail=0; \
+	@fail=0; failed=""; log=$$(mktemp -d); \
 	for d in $(TEST_DIRS); do \
 		if ls $$d/test_*.py >/dev/null 2>&1; then \
 			echo "--- $$d ---"; \
-			( cd $$d && python3 -m unittest discover -p "test_*.py" ) || fail=1; \
+			out="$$log/$$(echo $$d | tr / _).log"; \
+			( cd $$d && python3 -m unittest discover -p "test_*.py" ) >"$$out" 2>&1; rc=$$?; \
+			cat "$$out"; \
+			if [ $$rc -ne 0 ]; then fail=1; failed="$$failed $$d"; fi; \
 		fi; \
 	done; \
 	for t in $(SHELL_TESTS); do \
 		echo "--- $$t ---"; \
-		bash $$t || fail=1; \
+		out="$$log/$$(echo $$t | tr / _).log"; \
+		bash $$t >"$$out" 2>&1; rc=$$?; \
+		cat "$$out"; \
+		if [ $$rc -ne 0 ]; then fail=1; failed="$$failed $$t"; fi; \
 	done; \
-	if [ $$fail -ne 0 ]; then echo "TESTS FAILED"; exit 1; fi; \
-	echo "All unit tests passed."
+	if [ $$fail -ne 0 ]; then \
+		echo ""; echo "=== FAILED SUITES ==="; \
+		for f in $$failed; do \
+			echo "--- $$f ---"; \
+			grep -E "^(FAIL|ERROR): |^(ImportError|ModuleNotFoundError|SyntaxError|TypeError|AssertionError)" \
+				"$$log/$$(echo $$f | tr / _).log" | head -12; \
+		done; \
+		echo "TESTS FAILED in:$$failed"; rm -rf "$$log"; exit 1; \
+	fi; \
+	rm -rf "$$log"; echo "All unit tests passed."
 
 
 # Claude Code mod (v8 runtime, TASK-84): hooks/hooks.json -> hooks/mod/register.tsx.
