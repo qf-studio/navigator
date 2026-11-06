@@ -49,10 +49,12 @@ SHELL_TESTS := \
 # Test target - run all Python unit tests (per-directory discovery) + shell tests.
 # Each suite's output is kept; on failure the run ends with a FAILED SUITES block that
 # names every red suite and its FAIL:/ERROR: lines, so a reader who sees only the last
-# 20 lines (Pilot's quality gate) still learns what broke.
+# 20 lines (Pilot's quality gate) still learns what broke. Everything is written to
+# stderr: the gate captures stderr only (headers, the summary and a shell test's
+# failure were invisible on 2026-11-06 — GH-40/GH-41 retried blind).
 test:
-	@echo "Running unit tests..."
-	@fail=0; failed=""; log=$$(mktemp -d); \
+	@exec 1>&2; echo "Running unit tests..."; \
+	fail=0; failed=""; log=$$(mktemp -d); \
 	for d in $(TEST_DIRS); do \
 		if ls $$d/test_*.py >/dev/null 2>&1; then \
 			echo "--- $$d ---"; \
