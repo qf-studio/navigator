@@ -168,6 +168,7 @@ DEFAULTS = {
         "enabled": False,
         "continue_enabled": False,  # mem-051: continue:true is a no-op; ships OFF permanently
         "max_continues": 2,
+        "require_marker_after_task_doc": True,  # GH-41: exit signal can't skip the marker
     },
     "reject_log": {
         "enabled": True,  # TASK-88: observes refusals, never blocks — may ship on
