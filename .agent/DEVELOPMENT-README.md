@@ -193,6 +193,13 @@ Other threads:
   Pre-flight pitfall: a backticked repo path that is not on `origin/main` (gitignored runtime
   files such as the reject log or the context-markers dir) holds the task "prerequisite not
   on main"; write such paths in prose (#41 held 13:59Z, cleared by `gh issue edit` 14:04Z).
+  Second blind-retry round (GH-40 + GH-41 each failed three gate passes and lost their
+  branches, 14:30–15:18Z): the gate shows the last 20 lines of stderr only, so `make test`
+  now writes everything to stderr and ends with a FAILED SUITES block (10dcd18, b053b3b);
+  the red suite was the hooks p95 timing test on a box at load 7–13 (bare interpreter start
+  63 ms vs 25–30 locally), now budgeted by measured host slowdown (4341008). GH-40's lost
+  work is backed up on `origin/pilot/GH-40-wip` (d0fdd96, passes `make test` on 3.9 + 3.14).
+  Box config still lists Navigator under `owner: alekspetrov` (search API 422s; REST fine).
   In-session `make test` still needs `env -u NAVIGATOR_MOD_OWNS` (mod-owned ops skip the
   Python dispatcher in `hooks/ops` tests).
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
