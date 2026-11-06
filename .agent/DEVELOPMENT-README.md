@@ -200,8 +200,14 @@ Other threads:
   63 ms vs 25–30 locally), now budgeted by measured host slowdown (4341008). GH-40's lost
   work is backed up on `origin/pilot/GH-40-wip` (d0fdd96, passes `make test` on 3.9 + 3.14).
   Box config still lists Navigator under `owner: alekspetrov` (search API 422s; REST fine).
-  In-session `make test` still needs `env -u NAVIGATOR_MOD_OWNS` (mod-owned ops skip the
-  Python dispatcher in `hooks/ops` tests).
+  #40 ✅ merged f858d54 (PR #45 from the wip backup + reviewer commit: the recorder also fires
+  on `/nav-task` typed as a slash command — CC 2.1.299 delivers it as `e.command`, never a
+  Skill call, so the gate would have blocked the doc `/nav-task` was writing; second registry
+  row on UserPromptSubmit, `prompt_brief` budget 2000→1900). `make test` now runs suites in
+  parallel (`TEST_JOBS`, 34 s→17 s locally; the box hit Pilot's 5-min test-gate cap) and
+  scrubs NAVIGATOR_MOD_OWNS / PILOT_EXECUTOR / CLAUDE_PROJECT_DIR / CLAUDE_USER_MESSAGE per
+  suite (4f379ac, 0e5a7e9): in-session `env -u` is no longer needed. #41: Pilot re-run passed
+  the gates 16:00Z; pre-PR review REQUEST-CHANGES (3 blocking) → fix round in progress.
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
   config override `.nav-config.local.json` + `nav-features --local` (#30), per-person
   onboarding state under `~/.config/navigator/onboarding/<repo-id>/` (#31),
