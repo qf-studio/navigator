@@ -1085,6 +1085,27 @@ class MarkerAfterTaskDocTest(StopCompletionTestBase):
         self.assertIsNone(result)
         self.assertFalse((self.tmp / ".agent" / ".nav-rejects.jsonl").exists())
 
+    def test_cap_with_reject_log_disabled_writes_nothing(self):
+        cfg = pm_cfg()
+        cfg["reject_log"] = {"enabled": False}
+        _, result = self.run_turn([self.DOC], cfg=cfg, state={"completion": {"held_count": 2}})
+        self.assertIsNone(result)
+        self.assertFalse((self.tmp / ".agent" / ".nav-rejects.jsonl").exists())
+
+    def test_marker_written_in_forced_continuation_is_recorded(self):
+        _, blocked = self.run_turn([self.DOC])
+        self.assertEqual(blocked["decision"], "block")
+        ctx, result = self.run_turn([self.MARKER], state=None)
+        ctx2 = self.make_ctx(turn_with_tools([self.MARKER], closing="done"),
+                             cfg=pm_cfg(), state={"session": {"task_doc_touched": True}},
+                             payload_extra={"cwd": str(self.tmp), "stop_hook_active": True})
+        self.assertIsNone(stop_completion.run(ctx2))
+        self.assertIs(ctx2.state["session"]["marker_written"], True)
+        # the next mutating turn, exit signal and no new marker write, now stops
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}],
+                                  state=ctx2.state)
+        self.assertIsNone(result)
+
     def test_config_off_restores_exit_signal_behaviour(self):
         _, result = self.run_turn(
             [self.DOC], cfg=pm_cfg(require_marker_after_task_doc=False))

@@ -730,6 +730,8 @@ def _log_marker_bypass(ctx, session: dict) -> None:
     """The cap let a turn end with a task doc written and no marker: leave a trace."""
     if session.get("marker_bypass_logged"):
         return
+    if not config.get(ctx.config, "reject_log.enabled", True):
+        return
     session["marker_bypass_logged"] = True
     try:
         stamp = datetime.fromtimestamp(float(ctx.now), timezone.utc)
@@ -789,8 +791,6 @@ def run(ctx):
     if ctx.pilot_executor:
         return None
     payload = ctx.payload
-    if payload.get("stop_hook_active"):
-        return None  # already inside a Stop chain (harness belt, mem-051)
 
     # Both kill switches must be truthy; both seed OFF (config.DEFAULTS), so
     # a missing block means off. The registry config gate covers .enabled
@@ -798,6 +798,11 @@ def run(ctx):
     if not config.get(ctx.config, "stop_completion.enabled", False):
         return None
     if not config.get(ctx.config, "stop_completion.continue_enabled", False):
+        return None
+    if payload.get("stop_hook_active"):
+        # Already inside a Stop chain (harness belt, mem-051). The forced
+        # continuation's own marker/task-doc writes are still session evidence.
+        _record_session_evidence(ctx, _turn_scan(payload)[2])
         return None
 
     stored = ctx.state.get("completion")

@@ -208,7 +208,8 @@ VERSION_CONFIGS: Dict[str, Dict[str, Any]] = {
         "stop_completion": {
             "enabled": False,
             "continue_enabled": False,
-            "max_continues": 2
+            "max_continues": 2,
+            "require_marker_after_task_doc": True
         },
         "jit_memory": {
             "enabled": False
