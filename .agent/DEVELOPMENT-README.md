@@ -185,7 +185,14 @@ Other threads:
   `pilot-needs-human` the same morning: `make test` was red on Python 3.9 (the box's and
   macOS system Python; CI pinned 3.12) — `code_analyzer.py` `str | Path` at import time and
   the stdlib-purity guard asserting `sys.stdlib_module_names`. Fixed on main 2026-11-06
-  (future annotations, skip below 3.10, CI matrix 3.9 + 3.12); #42 re-armed by cycling `pilot`.
+  (future annotations, skip below 3.10, CI matrix 3.9 + 3.12, the 3.9 leg on ubuntu-24.04).
+  #42 ✅ merged 39d5b08 (PR #44, squash; reviewer added GIT_TERMINAL_PROMPT=0 + timeouts).
+  #41 and #40 re-armed 2026-11-06 14:00Z. Re-arm recipe for a Pilot task past the repick cap:
+  remove `pilot-needs-human`, add `pilot-retry-ready` (label created in this repo that day) —
+  a label event must postdate the stall, and the sweep waits out a backoff of up to 16 min.
+  Pre-flight pitfall: a backticked repo path that is not on `origin/main` (gitignored runtime
+  files such as the reject log or the context-markers dir) holds the task "prerequisite not
+  on main"; write such paths in prose (#41 held 13:59Z, cleared by `gh issue edit` 14:04Z).
   In-session `make test` still needs `env -u NAVIGATOR_MOD_OWNS` (mod-owned ops skip the
   Python dispatcher in `hooks/ops` tests).
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
