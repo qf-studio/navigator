@@ -47,38 +47,40 @@ SHELL_TESTS := \
 	tests/test-check-version.sh
 
 # Test target - run all Python unit tests (per-directory discovery) + shell tests.
-# Each suite's output is kept; on failure the run ends with a FAILED SUITES block that
-# names every red suite and its FAIL:/ERROR: lines, so a reader who sees only the last
-# 20 lines (Pilot's quality gate) still learns what broke. Everything is written to
-# stderr: the gate captures stderr only (headers, the summary and a shell test's
-# failure were invisible on 2026-11-06 — GH-40/GH-41 retried blind).
+# Suites run in parallel (TEST_JOBS, default 4) with each suite's output captured, then
+# echoed in TEST_DIRS order; on failure the run ends with a FAILED SUITES block that names
+# every red suite and its FAIL:/ERROR: lines. Everything is written to stderr: Pilot's
+# quality gate shows the last 20 lines of stderr only, and its test gate has a 5-minute
+# cap — the sequential run took 4m49-5m18 on the loaded founder box on 2026-11-06, so
+# GH-40/GH-41 retried blind and then timed out.
+TEST_JOBS ?= 4
 test:
-	@exec 1>&2; echo "Running unit tests..."; \
+	@exec 1>&2; echo "Running unit tests ($(TEST_JOBS) jobs)..."; \
 	fail=0; failed=""; log=$$(mktemp -d); \
-	for d in $(TEST_DIRS); do \
+	printf '%s\n' $(TEST_DIRS) | xargs -P $(TEST_JOBS) -I{} sh -c 'd={}; out="$$0/$$(echo $$d | tr / _).log"; \
 		if ls $$d/test_*.py >/dev/null 2>&1; then \
-			echo "--- $$d ---"; \
-			out="$$log/$$(echo $$d | tr / _).log"; \
-			( cd $$d && python3 -m unittest discover -p "test_*.py" ) >"$$out" 2>&1; rc=$$?; \
-			cat "$$out"; \
-			if [ $$rc -ne 0 ]; then fail=1; failed="$$failed $$d"; fi; \
-		fi; \
+			( cd $$d && python3 -m unittest discover -p "test_*.py" ) >"$$out" 2>&1 || echo "$$d" >>"$$0/.failed"; \
+		fi' "$$log"; \
+	for d in $(TEST_DIRS); do \
+		out="$$log/$$(echo $$d | tr / _).log"; \
+		[ -f "$$out" ] || continue; \
+		echo "--- $$d ---"; cat "$$out"; \
 	done; \
 	for t in $(SHELL_TESTS); do \
 		echo "--- $$t ---"; \
 		out="$$log/$$(echo $$t | tr / _).log"; \
-		bash $$t >"$$out" 2>&1; rc=$$?; \
+		bash $$t >"$$out" 2>&1 || echo "$$t" >>"$$log/.failed"; \
 		cat "$$out"; \
-		if [ $$rc -ne 0 ]; then fail=1; failed="$$failed $$t"; fi; \
 	done; \
-	if [ $$fail -ne 0 ]; then \
+	if [ -s "$$log/.failed" ]; then \
+		failed=$$(cat "$$log/.failed" | tr '\n' ' '); \
 		echo ""; echo "=== FAILED SUITES ==="; \
 		for f in $$failed; do \
 			echo "--- $$f ---"; \
 			grep -E "^(FAIL|ERROR): |^(ImportError|ModuleNotFoundError|SyntaxError|TypeError|AssertionError)" \
 				"$$log/$$(echo $$f | tr / _).log" | head -12; \
 		done; \
-		echo "TESTS FAILED in:$$failed"; rm -rf "$$log"; exit 1; \
+		echo "TESTS FAILED in: $$failed"; rm -rf "$$log"; exit 1; \
 	fi; \
 	rm -rf "$$log"; echo "All unit tests passed."
 
