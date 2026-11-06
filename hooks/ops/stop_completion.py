@@ -51,9 +51,10 @@ import importlib.util
 import json
 import re
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
-from nav_hook_lib import config, hio, memory, sentinels, signals, transcript
+from nav_hook_lib import config, hio, memory, rejects, sentinels, signals, transcript
 
 try:  # package context (runtime imports ops.stop_completion)
     from . import stop_state
@@ -642,7 +643,7 @@ def _derive_indicators(evidence: dict, cfg, payload: dict) -> dict:
       tests_passing    a turn Bash command ran the suite and did NOT error.
       docs_updated     a turn touched a ``*.md`` file (Edit/Write path, or a
                        mutating Bash command that names one — TASK-95).
-      marker_created   a turn touched a path under ``/.context-markers/``.
+      marker_created   a turn touched a file under ``/.context-markers/`` (not ``.active``).
       ticket_closed    True only when no PM tool is configured
                        (project_management == 'none' → nothing to close). With
                        a PM configured this stays best-effort False: closing a
@@ -664,11 +665,84 @@ def _derive_indicators(evidence: dict, cfg, payload: dict) -> dict:
              and not _bash_readonly(command or "")
              for command, is_error in evidence.get("bash", ())):
         indicators["docs_updated"] = True
-    if any(isinstance(p, str) and "/.context-markers/" in p for p in paths):
+    if _marker_evidence(evidence):
         indicators["marker_created"] = True
     if config.get(cfg, "project_management", "none") == "none":
         indicators["ticket_closed"] = True
     return indicators
+
+
+_TASK_DOC_RE = re.compile(r"(^|/)\.agent/tasks/[A-Za-z]+-\d+(-[^/]*)?\.md$")
+_DISPATCH_RE = re.compile(r"nav-dispatch-legs\.py")
+_MARKER_DIR = "/.context-markers/"
+
+
+def _is_marker_path(path) -> bool:
+    """A real marker file under the context-markers dir; the ``.active`` pointer is not one."""
+    if not isinstance(path, str) or _MARKER_DIR not in path:
+        return False
+    return path.rsplit("/", 1)[-1] not in ("", ".active")
+
+
+def _task_doc_evidence(evidence: dict) -> bool:
+    """GH-41: the turn wrote a task doc or ran the dispatch script for real."""
+    for path in evidence.get("file_paths", ()):
+        if isinstance(path, str) and _TASK_DOC_RE.search(path):
+            return True
+    for command, _is_error in evidence.get("bash", ()):
+        if _DISPATCH_RE.search(command or "") and "--dry-run" not in (command or ""):
+            return True
+    return False
+
+
+def _marker_evidence(evidence: dict) -> bool:
+    if any(_is_marker_path(p) for p in evidence.get("file_paths", ())):
+        return True
+    return any(not is_error and _MARKER_DIR in (command or "")
+               and re.search(r"\.context-markers/(?!\.active\b)[^\s'\"]+", command or "")
+               and not _bash_readonly(command or "")
+               for command, is_error in evidence.get("bash", ()))
+
+
+def _record_session_evidence(ctx, evidence: dict) -> dict:
+    """Fold this turn's task-doc/marker evidence into ``state['session']`` (session-scoped)."""
+    found = {"task_doc_touched": _task_doc_evidence(evidence),
+             "marker_written": _marker_evidence(evidence)}
+    session = ctx.state.get("session")
+    if not isinstance(session, dict):
+        if not any(found.values()):
+            return {}
+        session = {}
+        ctx.state["session"] = session
+    for key, value in found.items():
+        if value:
+            session[key] = True
+    return session
+
+
+def _marker_required(ctx, session: dict) -> bool:
+    return (bool(session.get("task_doc_touched")) and not session.get("marker_written")
+            and bool(config.get(ctx.config, "stop_completion.require_marker_after_task_doc",
+                                True)))
+
+
+def _log_marker_bypass(ctx, session: dict) -> None:
+    """The cap let a turn end with a task doc written and no marker: leave a trace."""
+    if session.get("marker_bypass_logged"):
+        return
+    if not config.get(ctx.config, "reject_log.enabled", True):
+        return
+    session["marker_bypass_logged"] = True
+    try:
+        stamp = datetime.fromtimestamp(float(ctx.now), timezone.utc)
+        stamp = stamp.strftime("%Y-%m-%dT%H:%M:%S.") + f"{stamp.microsecond // 1000:03d}Z"
+        agent_dir = hio.project_root(ctx.payload) / ".agent"
+        rejects.append(agent_dir, rejects.line(
+            stamp, getattr(ctx, "session_id", None), "Stop", "stop_completion", None,
+            {"reason": "stop_completion.marker_bypassed",
+             "evidence": {"task_doc_touched": True, "marker_created": False}}))
+    except Exception:
+        pass
 
 
 def _max_continues(cfg) -> int:
@@ -685,6 +759,14 @@ def _held_count(completion: dict) -> int:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return 0
     return int(value)
+
+
+MARKER_REASON = (
+    "Navigator stop_completion: a task doc was written this session; write the "
+    "context marker (nav-marker) before exit. An exit signal does not end the "
+    "turn while marker_created is unmet. This forced continuation is single-shot "
+    "for this turn."
+)
 
 
 def _reason(met: int, unmet: list) -> str:
@@ -709,8 +791,6 @@ def run(ctx):
     if ctx.pilot_executor:
         return None
     payload = ctx.payload
-    if payload.get("stop_hook_active"):
-        return None  # already inside a Stop chain (harness belt, mem-051)
 
     # Both kill switches must be truthy; both seed OFF (config.DEFAULTS), so
     # a missing block means off. The registry config gate covers .enabled
@@ -718,6 +798,11 @@ def run(ctx):
     if not config.get(ctx.config, "stop_completion.enabled", False):
         return None
     if not config.get(ctx.config, "stop_completion.continue_enabled", False):
+        return None
+    if payload.get("stop_hook_active"):
+        # Already inside a Stop chain (harness belt, mem-051). The forced
+        # continuation's own marker/task-doc writes are still session evidence.
+        _record_session_evidence(ctx, _turn_scan(payload)[2])
         return None
 
     stored = ctx.state.get("completion")
@@ -736,16 +821,21 @@ def run(ctx):
         _record_digest(ctx, digest)
     if completion.get("stop_fuse"):
         return None  # single-shot per turn; re-armed by the stop_state barrel
+    text, tools, evidence = _turn_scan(payload)
+    session = _record_session_evidence(ctx, evidence)
     held = _held_count(completion)
     if held >= _max_continues(ctx.config):
+        if _marker_required(ctx, session):
+            _log_marker_bypass(ctx, session)
         return None  # continue-counter cap (belt under the fuse)
 
-    text, tools, evidence = _turn_scan(payload)
     if not _turn_mutating(tools, evidence, prev_digest, digest):
         return None  # mem-037: never continue a non-mutating turn (TASK-70/71)
 
+    marker_required = _marker_required(ctx, session)
     clean = sentinels.strip_all(text)  # mem-034: never scan unstripped text
-    if any(sig.get("type") == "exit" for sig in signals.parse(clean)):
+    exit_seen = any(sig.get("type") == "exit" for sig in signals.parse(clean))
+    if exit_seen and not marker_required:
         return None  # explicit completion signal wins
 
     # Observable turn evidence (TASK-65) OR'd with any explicit state
@@ -757,8 +847,10 @@ def run(ctx):
         name: bool(state_ind.get(name)) or bool(derived.get(name))
         for name in INDICATOR_VOCABULARY
     }
+    if session.get("marker_written"):
+        filtered["marker_created"] = True
     satisfied, met = _evaluate_heuristics(filtered)
-    if satisfied:
+    if satisfied and not marker_required:
         return None
 
     # Emit: consume the fuse + count the hold BEFORE returning the block.
@@ -767,21 +859,24 @@ def run(ctx):
     completion["stop_fuse"] = True
     completion["held_count"] = held + 1
     completion["signal"] = {
-        "exit_seen": False,
+        "exit_seen": exit_seen,
         "heuristics_met": met,
         "held_at": ctx.now,
     }
     unmet = [name for name in INDICATOR_VOCABULARY if not filtered.get(name)]
     # Channel shape from the spike-proven emitter (mem-051): decision:block
     # + reason; continue:true is never used (it is a no-op).
-    doc = json.loads(signals.stop_block(_reason(met, unmet)))
+    reason = MARKER_REASON if marker_required else _reason(met, unmet)
+    doc = json.loads(signals.stop_block(reason))
     return {
         "decision": doc["decision"],
         "reason": doc["reason"],
         # TASK-88 reject log: what the gate saw, so an over-fire shows in one grep.
         "reject": {
-            "reason": f"mutating turn, {met}/{len(INDICATOR_VOCABULARY)} indicators met, "
-                      "no exit signal",
+            "reason": ("task doc written, marker_created unmet"
+                       if marker_required else
+                       f"mutating turn, {met}/{len(INDICATOR_VOCABULARY)} indicators met, "
+                       "no exit signal"),
             "evidence": {
                 "met": met,
                 "unmet": unmet,

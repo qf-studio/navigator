@@ -1008,5 +1008,109 @@ class DispatchCompositionTest(StopCompletionTestBase):
                 (project / ".agent" / ".nav-runtime-state.json").unlink()
 
 
+class MarkerAfterTaskDocTest(StopCompletionTestBase):
+    """GH-41: an exit signal cannot end the gate while a task doc is unmarked."""
+
+    DOC = {"name": "Write", "input": {"file_path": "/r/.agent/tasks/TASK-12-thing.md"}}
+    MARKER = {"name": "Write",
+              "input": {"file_path": "/r/.agent/.context-markers/m1.md"}}
+    ACTIVE = {"name": "Write",
+              "input": {"file_path": "/r/.agent/.context-markers/.active"}}
+
+    def run_turn(self, steps, closing="done\n" + EXIT_LINE, cfg=None, state=None):
+        (self.tmp / ".agent").mkdir(exist_ok=True)
+        ctx = self.make_ctx(turn_with_tools(steps, closing=closing),
+                            cfg=cfg or pm_cfg(), state=state,
+                            payload_extra={"cwd": str(self.tmp)})
+        return ctx, stop_completion.run(ctx)
+
+    def test_task_doc_without_marker_blocks_despite_exit_signal(self):
+        ctx, result = self.run_turn([self.DOC])
+        self.assertEqual(result["decision"], "block")
+        self.assertIn("a task doc was written this session; write the context marker "
+                      "(nav-marker) before exit", result["reason"])
+        self.assertIs(ctx.state["session"]["task_doc_touched"], True)
+        self.assertEqual(ctx.state["completion"]["held_count"], 1)
+
+    def test_task_doc_with_marker_and_exit_signal_stops(self):
+        _, result = self.run_turn([self.DOC, self.MARKER])
+        self.assertIsNone(result)
+
+    def test_active_pointer_is_not_a_marker(self):
+        _, result = self.run_turn([self.DOC, self.ACTIVE])
+        self.assertEqual(result["decision"], "block")
+        self.assertIn("nav-marker", result["reason"])
+
+    def test_marker_from_earlier_turn_in_session_counts(self):
+        state = {"session": {"task_doc_touched": True, "marker_written": True}}
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}],
+                                  state=state)
+        self.assertIsNone(result)
+
+    def test_task_doc_from_earlier_turn_still_gates_exit(self):
+        state = {"session": {"task_doc_touched": True}}
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}],
+                                  state=state)
+        self.assertEqual(result["decision"], "block")
+
+    def test_no_task_doc_exit_signal_stops(self):
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}])
+        self.assertIsNone(result)
+
+    def test_real_dispatch_counts_dry_run_does_not(self):
+        real = {"name": "Bash", "input": {"command": "python3 nav-dispatch-legs.py all"}}
+        dry = {"name": "Bash",
+               "input": {"command": "python3 nav-dispatch-legs.py all --dry-run"}}
+        edit = {"name": "Edit", "input": {"file_path": "a.py"}}
+        _, result = self.run_turn([edit, real])
+        self.assertEqual(result["decision"], "block")
+        _, result = self.run_turn([edit, dry])
+        self.assertIsNone(result)
+
+    def test_cap_reached_stops_and_logs_marker_bypassed(self):
+        state = {"completion": {"held_count": 2}}
+        ctx, result = self.run_turn([self.DOC], state=state)
+        self.assertIsNone(result)
+        log = (self.tmp / ".agent" / ".nav-rejects.jsonl").read_text()
+        self.assertIn("stop_completion.marker_bypassed", log)
+        self.assertEqual(len(log.strip().splitlines()), 1)
+        self.run_turn([self.DOC], state=ctx.state)   # logged once per session
+        self.assertEqual(
+            len((self.tmp / ".agent" / ".nav-rejects.jsonl").read_text().splitlines()), 1)
+
+    def test_cap_without_task_doc_logs_nothing(self):
+        state = {"completion": {"held_count": 2}}
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}],
+                                  state=state)
+        self.assertIsNone(result)
+        self.assertFalse((self.tmp / ".agent" / ".nav-rejects.jsonl").exists())
+
+    def test_cap_with_reject_log_disabled_writes_nothing(self):
+        cfg = pm_cfg()
+        cfg["reject_log"] = {"enabled": False}
+        _, result = self.run_turn([self.DOC], cfg=cfg, state={"completion": {"held_count": 2}})
+        self.assertIsNone(result)
+        self.assertFalse((self.tmp / ".agent" / ".nav-rejects.jsonl").exists())
+
+    def test_marker_written_in_forced_continuation_is_recorded(self):
+        _, blocked = self.run_turn([self.DOC])
+        self.assertEqual(blocked["decision"], "block")
+        ctx, result = self.run_turn([self.MARKER], state=None)
+        ctx2 = self.make_ctx(turn_with_tools([self.MARKER], closing="done"),
+                             cfg=pm_cfg(), state={"session": {"task_doc_touched": True}},
+                             payload_extra={"cwd": str(self.tmp), "stop_hook_active": True})
+        self.assertIsNone(stop_completion.run(ctx2))
+        self.assertIs(ctx2.state["session"]["marker_written"], True)
+        # the next mutating turn, exit signal and no new marker write, now stops
+        _, result = self.run_turn([{"name": "Edit", "input": {"file_path": "a.py"}}],
+                                  state=ctx2.state)
+        self.assertIsNone(result)
+
+    def test_config_off_restores_exit_signal_behaviour(self):
+        _, result = self.run_turn(
+            [self.DOC], cfg=pm_cfg(require_marker_after_task_doc=False))
+        self.assertIsNone(result)
+
+
 if __name__ == "__main__":
     unittest.main()

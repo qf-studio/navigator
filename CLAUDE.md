@@ -433,7 +433,8 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
   "auto_update": { "enabled": true, "check_interval_hours": 1, "curl_fallback": false },
   "dispatcher": { "enabled": true },
   "tier1": { "enabled": false, "rules": {} },
-  "stop_completion": { "enabled": false, "continue_enabled": false, "max_continues": 2 },
+  "stop_completion": { "enabled": false, "continue_enabled": false, "max_continues": 2,
+                       "require_marker_after_task_doc": true },
   "reject_log": { "enabled": true },
   "deep_research": { "enabled": false },
   "judge": { "enabled": false, "model": "jev-latest", "timeout_ms": 1500 }

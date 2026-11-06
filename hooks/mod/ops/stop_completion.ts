@@ -6,6 +6,8 @@ import { getPath } from '../lib/config'
 import { stripAll } from '../lib/sentinels'
 import { bashReadonly } from '../lib/stop-bash'
 import { B, NWS, WS, isDict, pyInt, pyStrip, pyTruthy } from '../lib/stop-py'
+import { appendReject, rejectLine } from '../lib/rejects'
+import { isoUtc } from '../lib/state'
 import { sha256Hex } from '../lib/stop-sha256'
 import { parseSignals } from '../lib/stop-signals'
 import { type Evidence, turnScan } from '../lib/stop-transcript'
@@ -121,6 +123,53 @@ const recordDigest = (ctx: OpCtx, digest: string): void => {
   }
 }
 
+const TASK_DOC_RE = /(^|\/)\.agent\/tasks\/[A-Za-z]+-\d+(-[^/]*)?\.md$/u
+const DISPATCH_RE = /nav-dispatch-legs\.py/u
+const MARKER_DIR = '/.context-markers/'
+const MARKER_CMD_RE = /\.context-markers\/(?!\.active\b)[^\s'"]+/u
+
+const isMarkerPath = (path: string): boolean =>
+  path.includes(MARKER_DIR) && !['', '.active'].includes(path.slice(path.lastIndexOf('/') + 1))
+
+const taskDocEvidence = (evidence: Evidence): boolean =>
+  evidence.file_paths.some(p => TASK_DOC_RE.test(p))
+  || evidence.bash.some(([command]) => DISPATCH_RE.test(command || '') && !(command || '').includes('--dry-run'))
+
+const markerEvidence = (evidence: Evidence): boolean =>
+  evidence.file_paths.some(isMarkerPath)
+  || evidence.bash.some(([command, isError]) => !isError && (command || '').includes(MARKER_DIR)
+    && MARKER_CMD_RE.test(command || '') && !bashReadonly(command || ''))
+
+/** Fold this turn's task-doc/marker evidence into state.session (session-scoped). */
+const recordSessionEvidence = (ctx: OpCtx, evidence: Evidence): Json => {
+  const found: Record<string, boolean> = {
+    task_doc_touched: taskDocEvidence(evidence), marker_written: markerEvidence(evidence),
+  }
+  let session = ctx.state.session
+  if (!isDict(session)) {
+    if (!Object.values(found).some(Boolean)) return {}
+    session = {}
+    ctx.state.session = session
+  }
+  for (const [key, value] of Object.entries(found)) if (value) (session as Json)[key] = true
+  return session as Json
+}
+
+const markerRequired = (ctx: OpCtx, session: Json): boolean =>
+  pyTruthy(session.task_doc_touched) && !pyTruthy(session.marker_written)
+  && pyTruthy(getPath(ctx.config, 'stop_completion.require_marker_after_task_doc', true))
+
+const logMarkerBypass = async (ctx: OpCtx, session: Json): Promise<void> => {
+  if (pyTruthy(session.marker_bypass_logged)) return
+  session.marker_bypass_logged = true
+  if (getPath(ctx.config, 'reject_log.enabled', true) !== true) return
+  const line = rejectLine(isoUtc(ctx.now), ctx.sessionId, 'Stop', 'stop_completion', null, {
+    reason: 'stop_completion.marker_bypassed',
+    evidence: { task_doc_touched: true, marker_created: false },
+  })
+  await appendReject(ctx.io, ctx.root, line).catch(() => false)
+}
+
 const deriveIndicators = async (ctx: OpCtx, evidence: Evidence): Promise<Record<string, boolean>> => {
   const ind: Record<string, boolean> = {}
   if (await gitClean(ctx, evidence.file_paths)) ind.code_committed = true
@@ -133,7 +182,7 @@ const deriveIndicators = async (ctx: OpCtx, evidence: Evidence): Promise<Record<
   if (evidence.file_paths.some(p => p.endsWith('.md'))) ind.docs_updated = true
   else if (evidence.bash.some(([command, isError]) =>
     !isError && MD_PATH_RE.test(command || '') && !bashReadonly(command || ''))) ind.docs_updated = true
-  if (evidence.file_paths.some(p => p.includes('/.context-markers/'))) ind.marker_created = true
+  if (markerEvidence(evidence)) ind.marker_created = true
   if (getPath(ctx.config, 'project_management', 'none') === 'none') ind.ticket_closed = true
   return ind
 }
@@ -148,6 +197,12 @@ const heldCount = (completion: Json): number => {
   return typeof v === 'number' ? Math.trunc(v) : 0
 }
 
+export const MARKER_REASON =
+  'Navigator stop_completion: a task doc was written this session; write the '
+  + 'context marker (nav-marker) before exit. An exit signal does not end the '
+  + 'turn while marker_created is unmet. This forced continuation is single-shot '
+  + 'for this turn.'
+
 export const reasonText = (met: number, unmet: readonly string[]): string =>
   'Navigator stop_completion: this turn mutated the codebase but looks '
   + `unfinished — ${met}/${INDICATOR_VOCABULARY.length} completion indicators met `
@@ -161,9 +216,12 @@ export const reasonText = (met: number, unmet: readonly string[]): string =>
 const run = async (ctx: OpCtx): Promise<OpResult | null> => {
   if (ctx.pilotExecutor) return null
   const payload = ctx.payload
-  if (pyTruthy(payload.stop_hook_active)) return null
   if (!pyTruthy(getPath(ctx.config, 'stop_completion.enabled', false))) return null
   if (!pyTruthy(getPath(ctx.config, 'stop_completion.continue_enabled', false))) return null
+  if (pyTruthy(payload.stop_hook_active)) {
+    recordSessionEvidence(ctx, (await turnScan(ctx.io, payload))[2])
+    return null
+  }
 
   const stored = ctx.state.completion
   const completion: Json = isDict(stored) ? stored : {}
@@ -178,32 +236,41 @@ const run = async (ctx: OpCtx): Promise<OpResult | null> => {
     recordDigest(ctx, digest)
   }
   if (pyTruthy(completion.stop_fuse)) return null
-  const held = heldCount(completion)
-  if (held >= maxContinues(ctx.config)) return null
-
   const [text, tools, evidence] = await turnScan(ctx.io, payload)
+  const session = recordSessionEvidence(ctx, evidence)
+  const held = heldCount(completion)
+  if (held >= maxContinues(ctx.config)) {
+    if (markerRequired(ctx, session)) await logMarkerBypass(ctx, session)
+    return null
+  }
+
   if (!turnMutating(tools, evidence, prevDigest, digest, ctx.bashAllReadOnly === true)) return null
-  if (parseSignals(stripAll(text)).some(sig => sig.type === 'exit')) return null
+  const required = markerRequired(ctx, session)
+  const exitSeen = parseSignals(stripAll(text)).some(sig => sig.type === 'exit')
+  if (exitSeen && !required) return null
 
   const stateInd = isDict(completion.indicators) ? completion.indicators : {}
   const derived = await deriveIndicators(ctx, evidence)
   const filtered: Record<string, boolean> = {}
   for (const name of INDICATOR_VOCABULARY) filtered[name] = pyTruthy(stateInd[name]) || pyTruthy(derived[name])
+  if (pyTruthy(session.marker_written)) filtered.marker_created = true
   // exit_gate.evaluate_exit(filtered, exit_signal=False, min_heuristics=2)
   const met = INDICATOR_VOCABULARY.filter(name => filtered[name]).length
-  if (met >= MIN_HEURISTICS) return null
+  if (met >= MIN_HEURISTICS && !required) return null
 
   attach()
   completion.stop_fuse = true
   completion.held_count = held + 1
-  completion.signal = { exit_seen: false, heuristics_met: met, held_at: ctx.now }
+  completion.signal = { exit_seen: exitSeen, heuristics_met: met, held_at: ctx.now }
   const unmet = INDICATOR_VOCABULARY.filter(name => !filtered[name])
   return {
     decision: 'block',
-    reason: reasonText(met, unmet),
+    reason: required ? MARKER_REASON : reasonText(met, unmet),
     // TASK-88 reject log: what the gate saw, so an over-fire shows in one grep.
     reject: {
-      reason: `mutating turn, ${met}/${INDICATOR_VOCABULARY.length} indicators met, no exit signal`,
+      reason: required
+        ? 'task doc written, marker_created unmet'
+        : `mutating turn, ${met}/${INDICATOR_VOCABULARY.length} indicators met, no exit signal`,
       evidence: { met, unmet, mutating_tools: [...tools].filter(t => TASK_ACTION_TOOLS.has(t)).sort() },
     },
   }

@@ -143,7 +143,8 @@ export const CONFIG_DEFAULTS = {
   "stop_completion": {
     "enabled": false,
     "continue_enabled": false,
-    "max_continues": 2
+    "max_continues": 2,
+    "require_marker_after_task_doc": true
   },
   "reject_log": {
     "enabled": true
