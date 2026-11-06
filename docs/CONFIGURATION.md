@@ -28,6 +28,7 @@ gates, `strict_block`:
 |---|---|---|
 | `task_doc_guard_hook.enabled` | `true` | Turns the task-doc gate (below) on or off |
 | `task_doc_guard_hook.strict_block` | `true` | `true` blocks (exit 2); `false` prints an advisory and lets the write through |
+| `stop_completion.require_marker_after_task_doc` | `true` | With the completion gate on (`stop_completion.enabled` + `.continue_enabled`), an exit signal does not end a turn while a task doc was written or dispatched this session and no context marker was created; `false` restores the plain exit-signal rule (GH-41) |
 
 ### Task doc guard (`task_doc_guard_hook`)
 

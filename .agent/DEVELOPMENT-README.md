@@ -206,8 +206,12 @@ Other threads:
   row on UserPromptSubmit, `prompt_brief` budget 2000→1900). `make test` now runs suites in
   parallel (`TEST_JOBS`, 34 s→17 s locally; the box hit Pilot's 5-min test-gate cap) and
   scrubs NAVIGATOR_MOD_OWNS / PILOT_EXECUTOR / CLAUDE_PROJECT_DIR / CLAUDE_USER_MESSAGE per
-  suite (4f379ac, 0e5a7e9): in-session `env -u` is no longer needed. #41: Pilot re-run passed
-  the gates 16:00Z; pre-PR review REQUEST-CHANGES (3 blocking) → fix round in progress.
+  suite (4f379ac, 0e5a7e9): in-session `env -u` is no longer needed. #41 ✅ merged f4f7612
+  (PR #46: Pilot's re-run passed the gates 16:00Z, its pre-PR review fixed 3 blocking defects
+  incl. the missing mod port; reviewer added the config-sample line). All three shipped
+  2026-11-06; unreleased on main → next: 8.4.13 (3.9 floor, parallel hermetic make test,
+  task_doc_guard, marker gate, origin-aware task IDs) + docs-site sync. Open on the Pilot
+  side: box config owner `alekspetrov` → `qf-studio` for Navigator and ai-coding-summit.
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
   config override `.nav-config.local.json` + `nav-features --local` (#30), per-person
   onboarding state under `~/.config/navigator/onboarding/<repo-id>/` (#31),
