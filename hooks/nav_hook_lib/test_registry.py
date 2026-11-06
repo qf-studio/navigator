@@ -75,8 +75,9 @@ ALL_EVENTS = V6_EVENTS | TASK62_EVENTS
 # The eight TASK-61 rows + every landed TASK-62 row, in order.
 EXPECTED_ROWS = {
     "SessionStart": ["session_start"],
-    "UserPromptSubmit": ["prompt_gate", "prompt_tier1", "prompt_modes", "prompt_brief"],
-    "PreToolUse": ["read_guard"],
+    "UserPromptSubmit": ["task_doc_guard", "prompt_gate", "prompt_tier1", "prompt_modes",
+                         "prompt_brief"],
+    "PreToolUse": ["read_guard", "task_doc_guard"],
     "PostToolUse": ["jit_memory", "graph_sync", "profile_sync"],
     "Stop": ["stop_completion", "stop_state"],
     "PreCompact": ["compact_marker"],
@@ -97,6 +98,7 @@ EXPECTED_CONFIG_KEYS = {
     "prompt_modes": "reply_modes",
     "prompt_brief": "brief_hook",
     "read_guard": "read_guard_hook",
+    "task_doc_guard": "task_doc_guard_hook",
     "graph_sync": "task_graph_sync_hook",
     "profile_sync": "profile_sync_hook",
     "stop_completion": "stop_completion",
@@ -118,7 +120,7 @@ V7_OFF_CONFIG_KEYS = {
 }
 # adhd_mode (TASK-82) seeds enabled=True too: the block only makes the toggle
 # available; injection waits for the person's own switch (seeded off).
-V7_ON_CONFIG_KEYS = {"config_guard", "setup_hook", "reply_modes"}
+V7_ON_CONFIG_KEYS = {"config_guard", "setup_hook", "reply_modes", "task_doc_guard_hook"}
 V7_CONFIG_KEYS = V7_OFF_CONFIG_KEYS | V7_ON_CONFIG_KEYS
 
 EXPECTED_PHASES = {
@@ -128,6 +130,7 @@ EXPECTED_PHASES = {
     "prompt_modes": "responders",
     "prompt_brief": "injectors",
     "read_guard": "gates",
+    "task_doc_guard": "gates",
     "graph_sync": "recorders",
     "profile_sync": "recorders",
     "stop_completion": "gates",
@@ -306,6 +309,7 @@ class MatcherTest(unittest.TestCase):
         # events (matchers only apply to Pre/PostToolUse payloads).
         expected = {
             ("PreToolUse", "read_guard"): "Read",
+            ("PreToolUse", "task_doc_guard"): "Write|Edit|Bash|Skill",
             ("PostToolUse", "jit_memory"): MUTATING_MATCHER,
             ("PostToolUse", "graph_sync"): MUTATING_MATCHER,
             ("PostToolUse", "profile_sync"): MUTATING_MATCHER,

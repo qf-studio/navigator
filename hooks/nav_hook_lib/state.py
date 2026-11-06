@@ -15,6 +15,7 @@ per-hook files. Section mapping (every v6 state file is representable):
     session identity                  -> session {id, ...}
     loop / stop-completion bookkeeping -> completion
     jit_memory injection dedupe       -> jit
+    which skills ran (GH-40)          -> skills (nav_task_ran; session-scoped)
     Tier-1 telemetry (hits/false pos) -> tier1  (TASK-62; cumulative, so it
                                                  survives session boundaries
                                                  like profile — /nav:stats
@@ -95,6 +96,7 @@ KNOWN_SECTIONS = (
     "completion",
     "brief",
     "jit",
+    "skills",
     "tier1",
     "profile",
     "compact",
@@ -114,6 +116,7 @@ SECTION_TTLS_SECONDS = {
     "completion": 2 * _HOUR,
     "brief": 2 * _HOUR,
     "jit": 1 * _DAY,
+    "skills": 1 * _DAY,  # which skills ran this session (GH-40)
     "tier1": 30 * _DAY,
     "profile": 30 * _DAY,
     "compact": 30 * _DAY,
@@ -124,7 +127,7 @@ SECTION_TTLS_SECONDS = {
 # session_id passed by the caller. profile/compact/tier1 deliberately
 # excluded — see module docstring (tier1 carries cumulative telemetry).
 SESSION_SCOPED_SECTIONS = frozenset(
-    {"session", "turn", "reads", "completion", "brief", "jit"}
+    {"session", "turn", "reads", "completion", "brief", "jit", "skills"}
 )
 
 # meta.op_errors is bounded so a chronically failing op cannot grow the

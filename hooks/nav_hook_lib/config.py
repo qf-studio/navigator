@@ -146,6 +146,10 @@ DEFAULTS = {
             "research/",
         ],
     },
+    "task_doc_guard_hook": {
+        "enabled": True,
+        "strict_block": True,
+    },
     "knowledge_graph": {
         "enabled": True,
         "auto_capture_corrections": True,

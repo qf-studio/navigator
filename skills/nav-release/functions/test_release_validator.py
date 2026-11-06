@@ -87,7 +87,8 @@ class VerifyModTest(unittest.TestCase):
         self.assertEqual(problems, [])
 
     def test_real_repo_mod_owns_every_registry_op(self):
-        """v8.0 parity contract: every Python op has a mod twin and is owned by it."""
+        """v8.0 parity contract: every Python op has a mod twin and is owned by it
+        (bar the documented Python-only ops)."""
         import re
         root = Path(__file__).resolve().parents[3]
         owns = (root / "hooks" / "mod" / "owns.ts").read_text()
@@ -95,7 +96,11 @@ class VerifyModTest(unittest.TestCase):
         owned = set(re.findall(r"'([a-z0-9_]+)'", block))
         registry = set(re.findall(r'OpSpec\(\s*"([a-z0-9_]+)"',
                                   (root / "hooks" / "nav_hook_lib" / "registry.py").read_text()))
-        self.assertEqual(owned, registry)
+        # GH-40: task_doc_guard is Python-only until its TS twin lands; the Python
+        # dispatcher runs every op the mod does not announce in NAVIGATOR_MOD_OWNS.
+        python_only = {"task_doc_guard"}
+        self.assertEqual(owned, registry - python_only)
+        self.assertTrue(python_only <= registry)
 
 
 def _make_root(tmp: Path, hook_names, manifest_hooks):

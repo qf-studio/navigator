@@ -54,6 +54,7 @@ Each behavior is an op with a config off-switch in `.agent/.nav-config.json`:
 | Reply modes (ADHD shape, STE sentences) | prompt_modes | `prompt.submit` | `reply_modes.enabled`; per mode `<key>_mode.enabled`, `<key> mode on/off` or `<key>_mode.on` |
 | Intent briefs on ambiguous prompts | prompt_brief | `prompt.submit` | `brief_hook.enabled` |
 | Repeated-Read guard | read_guard | `tool.call` (Read) | `read_guard_hook.enabled`, `.strict_block` |
+| Hand-written task doc guard (GH-40) | task_doc_guard | `classic.PreToolUse` (Write/Edit/Bash/Skill) + `classic.UserPromptSubmit`, Python-only | `task_doc_guard_hook.enabled`, `.strict_block` |
 | Session context injection | session_start | `classic.SessionStart` | `session_start_hook.enabled` |
 | Workflow/loop state recording | stop_state | `classic.Stop` | `workflow_state_hook.enabled` |
 | Completion gate (forced continuation) | stop_completion | `classic.Stop` | `stop_completion.continue_enabled` |

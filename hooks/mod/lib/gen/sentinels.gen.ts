@@ -15,6 +15,13 @@ export const TAGS = {
     "status": "current",
     "source": "hooks/ops/read_guard.py"
   },
+  "nav-task-doc-guard-block": {
+    "open": "<nav-task-doc-guard-block>",
+    "close": "</nav-task-doc-guard-block>",
+    "kind": "block",
+    "status": "current",
+    "source": "hooks/ops/task_doc_guard.py"
+  },
   "nav-session-start-injected:v1": {
     "open": "<!-- nav-session-start-injected:v1 -->",
     "close": null,

@@ -30,6 +30,7 @@ import sentinels
 FIXTURE_TAGS = {
     "nav-workflow-block": "<nav-workflow-block>",
     "nav-read-guard-block": "<nav-read-guard-block>",
+    "nav-task-doc-guard-block": "<nav-task-doc-guard-block>",
     "nav-session-start-injected:v1": "<!-- nav-session-start-injected:v1 -->",
     # Tier-1 answers (ops/prompt_tier1.py) are intentionally UNWRAPPED — a block
     # reason renders as plain text, so a marker would show literally; Tier-1 is
