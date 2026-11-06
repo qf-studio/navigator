@@ -40,7 +40,10 @@ python3 "$PLUGIN_DIR/skills/nav-task/functions/task_id_generator.py" \
 ```
 
 - `task_id_source: local` (solo repos) — next sequential `{task_prefix}-NN` from
-  `.agent/tasks/` (last is TASK-05 → TASK-06). `--title` is ignored.
+  `.agent/tasks/` (last is TASK-05 → TASK-06). `--title` is ignored. The number is
+  the max over the working tree, `tasks/archive/` and `origin/main` (fetched first; a
+  failing fetch falls back to the local two with a note). Open remote branches are not
+  scanned: when two sessions plan at once, the second to push renumbers.
 - `task_id_source: github` (team repos, GH-32) — creates the GitHub issue first via
   `gh issue create` and returns `GH-<n>`; the doc is `.agent/tasks/GH-<n>-{slug}.md`.
   Issue numbers are allocated by GitHub, so two contributors branching at once can

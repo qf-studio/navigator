@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for task_id_generator.py — local counter and GitHub-issue IDs (GH-32)."""
 
+import io
 import json
 import os
 import stat
@@ -49,6 +50,73 @@ class LocalCounterTest(unittest.TestCase):
         self.assertEqual(read_task_id_source(str(self.agent)), GITHUB)
         cfg.write_text(json.dumps({"task_id_source": "jira"}))
         self.assertEqual(read_task_id_source(str(self.agent)), LOCAL)
+
+
+class OriginAndArchiveTest(unittest.TestCase):
+    """GH-42: IDs come from the tree, the archive and origin/main."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.origin, self.repo = root / "origin.git", root / "repo"
+        self.git(root, "init", "-q", "--bare", "-b", "main", str(self.origin))
+        self.git(root, "clone", "-q", str(self.origin), str(self.repo))
+        self.git(self.repo, "checkout", "-q", "-b", "main")
+        self.agent = self.repo / ".agent"
+        (self.agent / "tasks" / "archive").mkdir(parents=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @staticmethod
+    def git(cwd, *args):
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],
+                       cwd=cwd, check=True, capture_output=True)
+
+    def push_to_main(self, relpath):
+        """Commit a task doc and push it, then drop it from the working tree."""
+        path = self.repo / relpath
+        path.write_text("#")
+        self.git(self.repo, "add", "-A")
+        self.git(self.repo, "commit", "-q", "-m", "x")
+        self.git(self.repo, "push", "-q", "origin", "main")
+        self.git(self.repo, "rm", "-q", "-f", relpath)
+        self.git(self.repo, "commit", "-q", "-m", "rm")
+
+    def next_id(self):
+        err = io.StringIO()
+        with mock.patch("sys.stderr", err):
+            return get_next_task_id(str(self.agent)), err.getvalue()
+
+    def test_origin_main_number_wins(self):
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        self.push_to_main(".agent/tasks/TASK-07-b.md")
+        self.assertEqual(self.next_id()[0], "TASK-08")
+
+    def test_archive_numbers_stay_taken(self):
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        (self.agent / "tasks" / "archive" / "TASK-09-old.md").write_text("#")
+        self.assertEqual(self.next_id()[0], "TASK-10")
+
+    def test_origin_archive_number_counts(self):
+        self.push_to_main(".agent/tasks/archive/TASK-11-old.md")
+        self.assertEqual(self.next_id()[0], "TASK-12")
+
+    def test_no_remote_falls_back_with_note(self):
+        self.git(self.repo, "remote", "remove", "origin")
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        (self.agent / "tasks" / "archive" / "TASK-09-old.md").write_text("#")
+        task_id, err = self.next_id()
+        self.assertEqual(task_id, "TASK-10")
+        self.assertIn("note:", err)
+
+    def test_fetch_failure_falls_back_with_note(self):
+        self.git(self.repo, "remote", "set-url", "origin", str(self.origin) + "-missing")
+        (self.agent / "tasks" / "TASK-05-a.md").write_text("#")
+        (self.agent / "tasks" / "archive" / "TASK-09-old.md").write_text("#")
+        task_id, err = self.next_id()
+        self.assertEqual(task_id, "TASK-10")
+        self.assertIn("note:", err)
 
 
 class GitHubIdTest(unittest.TestCase):

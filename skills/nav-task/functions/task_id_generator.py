@@ -4,9 +4,9 @@ Task ID generation for nav-task.
 
 Two sources (``task_id_source`` in .agent/.nav-config.json, default ``local``):
 
-- ``local``  — next sequential ``{prefix}-NN`` from the files in ``.agent/tasks/``.
-  Fine for a solo repo; two contributors branching at the same time can both
-  mint the same number (GH-32).
+- ``local``  — next sequential ``{prefix}-NN`` from the files in ``.agent/tasks/``,
+  its ``archive/`` and ``origin/main`` (GH-42). Two sessions planning at the same
+  time can still mint the same number; the second to push renumbers (GH-32).
 - ``github`` — create the GitHub issue first (``gh issue create``) and use its
   number: ``GH-<n>``. Issue numbers are allocated by GitHub, so no two branches
   can produce the same ID. Pilot already addresses tasks as ``GH-<n>``.
@@ -36,9 +36,62 @@ GITHUB_PREFIX = "GH"
 DEFAULT_BODY = "Task doc will be added under .agent/tasks/ by nav-task."
 
 
+def _numbers_in(names, prefix):
+    pattern = re.compile(rf"{re.escape(prefix)}-(\d+)(?:-.*)?\.md")
+    return [int(m.group(1)) for m in map(pattern.match, names) if m]
+
+
+def _local_names(tasks_dir):
+    """File names in tasks/ and tasks/archive/ (archived numbers stay taken)."""
+    names = []
+    for directory in (tasks_dir, os.path.join(tasks_dir, "archive")):
+        if os.path.isdir(directory):
+            names += [n for n in os.listdir(directory) if n != "archive"]
+    return names
+
+
+def _origin_names(agent_dir):
+    """
+    File names under origin/main's tasks/ and tasks/archive/, or None (with a stderr
+    note) when the fetch or the read fails. Never raises.
+    """
+    cwd = agent_dir if os.path.isdir(agent_dir) else os.path.dirname(os.path.abspath(agent_dir))
+    try:
+        fetch = subprocess.run(["git", "fetch", "-q", "origin"], cwd=cwd, capture_output=True,
+                               text=True, check=False, timeout=30)
+        if fetch.returncode != 0:
+            raise RuntimeError(fetch.stderr.strip() or "git fetch failed")
+        # agent_dir need not be named .agent: ask git where it sits in the repo.
+        prefix = subprocess.run(["git", "rev-parse", "--show-prefix"], cwd=cwd,
+                                capture_output=True, text=True, check=True).stdout.strip()
+        if cwd != agent_dir:
+            prefix += os.path.basename(os.path.abspath(agent_dir)) + "/"
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=cwd,
+                             capture_output=True, text=True, check=True).stdout.strip()
+        names = []
+        for sub in ("tasks", "tasks/archive"):
+            proc = subprocess.run(["git", "ls-tree", "--name-only", f"origin/main:{prefix}{sub}"],
+                                  cwd=top, capture_output=True, text=True, check=False)
+            if proc.returncode == 0:
+                names += [os.path.basename(n) for n in proc.stdout.splitlines()]
+            elif sub == "tasks":
+                raise RuntimeError(proc.stderr.strip() or "git ls-tree failed")
+        return names
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        print(f"note: could not read origin/main task IDs ({exc}); "
+              "using the working tree and archive only", file=sys.stderr)
+        return None
+
+
 def get_next_task_id(agent_dir=".agent", prefix="TASK"):
     """
-    Scan tasks/ directory and return next available {prefix}-XX ID.
+    Return the next available {prefix}-XX ID: max + 1 over the working tree's
+    tasks/, tasks/archive/, and origin/main's tasks/ and tasks/archive/ (read with
+    ``git ls-tree`` after ``git fetch -q origin``). A failing fetch or a missing
+    remote falls back to the two local sources with a stderr note, never an error.
+
+    Residual race: open remote branches are not scanned, so when two sessions plan
+    at the same time the second one to push renumbers.
 
     Args:
         agent_dir: Path to .agent directory (default: .agent)
@@ -48,28 +101,10 @@ def get_next_task_id(agent_dir=".agent", prefix="TASK"):
         str: Next task ID (e.g., "TASK-10")
     """
     tasks_dir = os.path.join(agent_dir, "tasks")
-
-    if not os.path.exists(tasks_dir):
-        return f"{prefix}-01"
-
-    # Find all task files matching TASK-XX.md or TASK-XX-name.md
-    task_pattern = re.compile(rf"{re.escape(prefix)}-(\d+)(?:-.*)?\.md")
-    task_numbers = []
-
-    for filename in os.listdir(tasks_dir):
-        if filename == "archive":  # Skip archive directory
-            continue
-
-        match = task_pattern.match(filename)
-        if match:
-            task_numbers.append(int(match.group(1)))
-
-    if not task_numbers:
-        return f"{prefix}-01"
-
-    # Get next sequential number
-    next_num = max(task_numbers) + 1
-    return f"{prefix}-{next_num:02d}"
+    names = _local_names(tasks_dir)
+    names += _origin_names(agent_dir) or []
+    numbers = _numbers_in(names, prefix)
+    return f"{prefix}-{max(numbers, default=0) + 1:02d}"
 
 
 def read_task_id_source(agent_dir=".agent"):
