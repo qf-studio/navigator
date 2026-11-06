@@ -96,6 +96,13 @@ EVENT_OPS: dict[str, list[OpSpec]] = {
         OpSpec("session_start", "injectors", None, "session_start_hook", 8000),
     ],
     "UserPromptSubmit": [
+        # task_doc_guard (GH-40) recorder branch: a slash command (`/nav-task`,
+        #   `/navigator:nav-task`) reaches the runtime as a prompt line and never
+        #   as a Skill tool call (CC 2.1.299 sets e.command on prompt.submit;
+        #   TASK-107), so the session signal is recorded here too. Same phase as
+        #   the PreToolUse row (the registry keeps one phase per op); it never
+        #   blocks a prompt.
+        OpSpec("task_doc_guard", "gates", None, "task_doc_guard_hook", 100),
         OpSpec("prompt_gate", "gates", None, "workflow_enforcer_hook", 1500),
         # prompt_tier1 (TASK-62 Phase 1) — mem-053 (S4 PASS, CC 2.1.205):
         #   UserPromptSubmit block-as-answer WORKS with zero model invocation
@@ -117,7 +124,9 @@ EVENT_OPS: dict[str, list[OpSpec]] = {
         #   only); every personal switch seeds off, so nothing is injected by
         #   default.
         OpSpec("prompt_modes", "responders", None, "reply_modes", 200),
-        OpSpec("prompt_brief", "injectors", None, "brief_hook", 2000),
+        # 1900 (was 2000) so the five UserPromptSubmit budgets fit the 4500 ms
+        # soft deadline with the task_doc_guard recorder row above.
+        OpSpec("prompt_brief", "injectors", None, "brief_hook", 1900),
     ],
     "PreToolUse": [
         # read_guard stays deny-only regardless of mem-054 (S5, CC 2.1.205):

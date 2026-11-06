@@ -10,6 +10,11 @@ heredoc and skipped the recall. This op closes that:
     ``nav-task`` (``nav-task``, ``navigator:nav-task``), set
     ``state['skills'].nav_task_ran = true``. ``skills`` is session-scoped
     (state.SESSION_SCOPED_SECTIONS), so a new session starts with it false.
+  - ``UserPromptSubmit`` branch (recorder, same op, second registry row): a
+    skill run as a slash command (``/nav-task …``, ``/navigator:nav-task …``)
+    arrives as the prompt line and never as a Skill tool call (CC 2.1.299
+    sets ``e.command`` on ``prompt.submit``; TASK-107), so the same signal is
+    recorded from the prompt.
   - ``Write``/``Edit`` branch: the gate fires when ``tool_input.file_path`` is a
     NEW file (does not exist yet) directly under ``.agent/tasks/`` whose name
     matches ``^{task_prefix}-\\d+.*\\.md$``.
@@ -39,6 +44,8 @@ from nav_hook_lib import config, hio, sentinels
 
 SKILL_SUFFIX = "nav-task"
 MAX_NAME_CHARS = 120
+# `/nav-task`, `/navigator:nav-task`, `/nav-task Add X`; not `/nav-task-foo`.
+_SLASH_NAV_TASK = re.compile(r"^\s*/(?:[\w-]+:)?nav-task(?=\s|$)")
 
 # Heredoc bodies are data, not commands: a `> .agent/tasks/TASK-1.md` line
 # inside one must not trip the Bash scan. Drops from the line after the
@@ -132,16 +139,25 @@ def _target_task_doc(payload, root: Path, pattern) -> str | None:
     return None
 
 
-def _record_skill(ctx) -> None:
-    tool_input = ctx.payload.get("tool_input")
-    skill = tool_input.get("skill") if isinstance(tool_input, dict) else None
-    if not isinstance(skill, str) or not skill.strip().endswith(SKILL_SUFFIX):
-        return
+def _mark_nav_task_ran(ctx) -> None:
     skills = ctx.state.get("skills")
     if not isinstance(skills, dict):
         skills = {}
     skills["nav_task_ran"] = True
     ctx.state["skills"] = skills
+
+
+def _record_skill(ctx) -> None:
+    tool_input = ctx.payload.get("tool_input")
+    skill = tool_input.get("skill") if isinstance(tool_input, dict) else None
+    if isinstance(skill, str) and skill.strip().endswith(SKILL_SUFFIX):
+        _mark_nav_task_ran(ctx)
+
+
+def _record_prompt(ctx) -> None:
+    prompt = ctx.payload.get("prompt") or ctx.payload.get("user_message") or ""
+    if isinstance(prompt, str) and _SLASH_NAV_TASK.match(prompt):
+        _mark_nav_task_ran(ctx)
 
 
 def _safe_name(name: str) -> str:
@@ -170,6 +186,9 @@ def run(ctx):
         return None  # PILOT passthrough: the executor writes its own task docs
 
     payload = ctx.payload
+    if getattr(ctx, "event", None) == "UserPromptSubmit":
+        _record_prompt(ctx)
+        return None
     tool = payload.get("tool_name")
     if tool == "Skill":
         _record_skill(ctx)

@@ -38,8 +38,10 @@ directly under `.agent/tasks/` and is named `<task_prefix>-<n>*.md` (prefix from
 `tee`s, `cp`s or `mv`s into such a path, the call is refused with a message that names the file
 and says to run `/nav-task`, unless `/nav-task` already ran in this session. The `Skill` branch
 records that signal (`state['skills'].nav_task_ran`, session-scoped) when a skill whose name ends
-in `nav-task` is invoked. Editing an existing doc, writing outside `.agent/tasks/` (including
-`.agent/tasks/archive/`) and the Pilot executor are never blocked.
+in `nav-task` is invoked; a `UserPromptSubmit` row of the same op records it when the prompt is
+the slash command (`/nav-task …`, `/navigator:nav-task …`), which never reaches the Skill tool.
+Editing an existing doc, writing outside `.agent/tasks/` (including `.agent/tasks/archive/`) and
+the Pilot executor are never blocked.
 
 ---
 

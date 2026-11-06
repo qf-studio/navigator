@@ -75,7 +75,8 @@ ALL_EVENTS = V6_EVENTS | TASK62_EVENTS
 # The eight TASK-61 rows + every landed TASK-62 row, in order.
 EXPECTED_ROWS = {
     "SessionStart": ["session_start"],
-    "UserPromptSubmit": ["prompt_gate", "prompt_tier1", "prompt_modes", "prompt_brief"],
+    "UserPromptSubmit": ["task_doc_guard", "prompt_gate", "prompt_tier1", "prompt_modes",
+                         "prompt_brief"],
     "PreToolUse": ["read_guard", "task_doc_guard"],
     "PostToolUse": ["jit_memory", "graph_sync", "profile_sync"],
     "Stop": ["stop_completion", "stop_state"],

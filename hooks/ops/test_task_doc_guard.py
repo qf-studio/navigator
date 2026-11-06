@@ -74,9 +74,12 @@ class TaskDocGuardTestBase(unittest.TestCase):
     def skill_payload(self, skill="navigator:nav-task", session_id=SESSION_ID):
         return self.payload("Skill", session_id=session_id, skill=skill)
 
-    def ctx(self, payload, state=None, pilot=False):
+    def prompt_payload(self, prompt, session_id=SESSION_ID):
+        return {"cwd": str(self.root), "session_id": session_id, "prompt": prompt}
+
+    def ctx(self, payload, state=None, pilot=False, event="PreToolUse"):
         return types.SimpleNamespace(
-            event="PreToolUse",
+            event=event,
             payload=payload,
             config=config.load(self.root),
             state=state if state is not None else {},
@@ -171,6 +174,43 @@ class GateTest(TaskDocGuardTestBase):
         self.assertEqual(result["reject"]["evidence"], {"tool": "Write", "file": NEW_DOC})
 
 
+class SlashCommandTest(TaskDocGuardTestBase):
+    """A skill run as a slash command is a prompt line, not a Skill tool call."""
+
+    def record(self, prompt, st):
+        return self.run_op(self.prompt_payload(prompt), state=st, event="UserPromptSubmit")
+
+    def test_slash_nav_task_sets_the_signal(self):
+        for prompt in ("/nav-task", "/nav-task Add rate limiting", "/navigator:nav-task x",
+                       "  /nav-task\n"):
+            with self.subTest(prompt=prompt):
+                st = {}
+                self.assertSilent(self.record(prompt, st))
+                self.assertTrue(st["skills"]["nav_task_ran"])
+                self.assertSilent(self.run_op(self.write_payload(), state=st))
+
+    def test_other_prompts_do_not(self):
+        for prompt in ("/nav-start", "/nav-task-foo", "run nav-task please",
+                       "write .agent/tasks/TASK-99-x.md by hand", "", "/navigator:nav-brief"):
+            with self.subTest(prompt=prompt):
+                st = {}
+                self.assertSilent(self.record(prompt, st))
+                self.assertNotIn("skills", st)
+
+    def test_malformed_prompt_payloads_are_silent(self):
+        for payload in ({"cwd": str(self.root)}, {"cwd": str(self.root), "prompt": 7}):
+            with self.subTest(payload=payload):
+                st = {}
+                self.assertSilent(self.run_op(payload, state=st, event="UserPromptSubmit"))
+                self.assertEqual(st, {})
+
+    def test_pilot_executor_records_nothing_from_prompts(self):
+        st = {}
+        self.assertIsNone(self.run_op(self.prompt_payload("/nav-task"), state=st, pilot=True,
+                                      event="UserPromptSubmit"))
+        self.assertEqual(st, {})
+
+
 class BashTest(TaskDocGuardTestBase):
     PATH = f".agent/tasks/{NEW_DOC}"
 
@@ -256,6 +296,14 @@ class DispatchSessionScopeTest(TaskDocGuardTestBase):
 
     def test_skill_then_write_in_the_same_session_passes(self):
         self.assertEqual(self.dispatch(self.skill_payload()).exit_code, 0)
+        st = state.load(self.root / ".agent", session_id=SESSION_ID, now=NOW)
+        self.assertTrue(st["skills"]["nav_task_ran"])
+        self.assertEqual(self.dispatch(self.write_payload()).exit_code, 0)
+
+    def test_slash_command_prompt_then_write_in_the_same_session_passes(self):
+        res = runtime.dispatch("UserPromptSubmit", self.prompt_payload("/navigator:nav-task x"),
+                               now=NOW)
+        self.assertEqual(res.exit_code, 0)
         st = state.load(self.root / ".agent", session_id=SESSION_ID, now=NOW)
         self.assertTrue(st["skills"]["nav_task_ran"])
         self.assertEqual(self.dispatch(self.write_payload()).exit_code, 0)
