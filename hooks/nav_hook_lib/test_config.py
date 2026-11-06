@@ -284,9 +284,12 @@ class StdlibPurityGuardTest(unittest.TestCase):
     anything else must be in sys.stdlib_module_names.
     """
 
+    @unittest.skipUnless(
+        hasattr(sys, "stdlib_module_names"),
+        "sys.stdlib_module_names needs Python 3.10+; CI (3.12) enforces the guard",
+    )
     def test_lib_sources_import_stdlib_or_siblings_only(self):
-        stdlib = set(getattr(sys, "stdlib_module_names", ()))
-        self.assertTrue(stdlib, "needs Python 3.10+ (sys.stdlib_module_names)")
+        stdlib = set(sys.stdlib_module_names)
         siblings = {p.stem for p in LIB_DIR.glob("*.py")}
         allowed = stdlib | siblings | {"nav_hook_lib"}
         offenders = []

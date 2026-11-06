@@ -177,6 +177,17 @@ parallel both landed):
   dropped — block reasons render as plain text, so Tier-1 is self-safe via exact-match rail
 
 Other threads:
+- **GH-40…42** 🔄 — session-discipline batch filed 2026-11-06 from the Pilot repo's TASK-641
+  (pilot `CLAUDE.md` § Session checklist), specced as GitHub issues (no TASK docs), `pilot` +
+  `no-decompose`: task_doc_guard PreToolUse gate (#40), stop_completion refuses the exit
+  signal while `marker_created` is unmet after a task doc was written (#41), local task IDs
+  from `origin/main` + archive after two sessions minted TASK-640 (#42). All three were held
+  `pilot-needs-human` the same morning: `make test` was red on Python 3.9 (the box's and
+  macOS system Python; CI pinned 3.12) — `code_analyzer.py` `str | Path` at import time and
+  the stdlib-purity guard asserting `sys.stdlib_module_names`. Fixed on main 2026-11-06
+  (future annotations, skip below 3.10, CI matrix 3.9 + 3.12); #42 re-armed by cycling `pilot`.
+  In-session `make test` still needs `env -u NAVIGATOR_MOD_OWNS` (mod-owned ops skip the
+  Python dispatcher in `hooks/ops` tests).
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
   config override `.nav-config.local.json` + `nav-features --local` (#30), per-person
   onboarding state under `~/.config/navigator/onboarding/<repo-id>/` (#31),

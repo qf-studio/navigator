@@ -10,6 +10,8 @@ Usage:
     python3 code_analyzer.py --file src/utils/auth.ts --output json
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import re

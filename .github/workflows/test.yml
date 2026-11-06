@@ -9,8 +9,14 @@ permissions:
 
 jobs:
   unit-tests:
-    name: Python unit tests
+    name: Python unit tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the macOS system Python and the Pilot founder box; the hook runtime
+        # and every skill script must import there. 3.12 is the reference interpreter.
+        python-version: ['3.9', '3.12']
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -18,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
 
       - name: Run unit tests
         # `make test` runs per-directory unittest discovery across all genuine
@@ -26,6 +32,7 @@ jobs:
         run: make test
 
       - name: Generated mod data matches the Python runtime
+        if: matrix.python-version == '3.12'
         run: make mod-gen-check
 
   mod-tests:
