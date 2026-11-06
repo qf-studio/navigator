@@ -10,13 +10,19 @@ permissions:
 jobs:
   unit-tests:
     name: Python unit tests (${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         # 3.9 is the macOS system Python and the Pilot founder box; the hook runtime
         # and every skill script must import there. 3.12 is the reference interpreter.
-        python-version: ['3.9', '3.12']
+        # setup-python ships no 3.9 build for Ubuntu 26.04 (ubuntu-latest), so that
+        # leg pins ubuntu-24.04.
+        include:
+          - python-version: '3.9'
+            os: ubuntu-24.04
+          - python-version: '3.12'
+            os: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
