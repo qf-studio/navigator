@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-11-01T18:19:06.106949+00:00",
+  "last_updated": "2026-11-06T16:47:16.476260+00:00",
   "stats": {
-    "total_nodes": 273,
+    "total_nodes": 295,
     "total_edges": 899,
-    "memory_count": 114
+    "memory_count": 119
   },
   "nodes": {
     "tasks": {
@@ -1907,6 +1907,91 @@
         "name": "Claude.Md",
         "aliases": [],
         "domain": "general"
+      },
+      "pilot": {
+        "name": "Pilot",
+        "aliases": [],
+        "domain": "general"
+      },
+      "quality-gate": {
+        "name": "Quality-Gate",
+        "aliases": [],
+        "domain": "general"
+      },
+      "makefile": {
+        "name": "Makefile",
+        "aliases": [],
+        "domain": "general"
+      },
+      "stderr": {
+        "name": "Stderr",
+        "aliases": [],
+        "domain": "general"
+      },
+      "timeout": {
+        "name": "Timeout",
+        "aliases": [],
+        "domain": "general"
+      },
+      "python-3.9": {
+        "name": "Python-3.9",
+        "aliases": [],
+        "domain": "general"
+      },
+      "compatibility": {
+        "name": "Compatibility",
+        "aliases": [],
+        "domain": "general"
+      },
+      "timing": {
+        "name": "Timing",
+        "aliases": [],
+        "domain": "general"
+      },
+      "flaky-test": {
+        "name": "Flaky-Test",
+        "aliases": [],
+        "domain": "general"
+      },
+      "load": {
+        "name": "Load",
+        "aliases": [],
+        "domain": "general"
+      },
+      "slash-command": {
+        "name": "Slash-Command",
+        "aliases": [],
+        "domain": "general"
+      },
+      "prompt-submit": {
+        "name": "Prompt-Submit",
+        "aliases": [],
+        "domain": "general"
+      },
+      "task-doc-guard": {
+        "name": "Task-Doc-Guard",
+        "aliases": [],
+        "domain": "general"
+      },
+      "re-arm": {
+        "name": "Re-Arm",
+        "aliases": [],
+        "domain": "general"
+      },
+      "stalled": {
+        "name": "Stalled",
+        "aliases": [],
+        "domain": "general"
+      },
+      "labels": {
+        "name": "Labels",
+        "aliases": [],
+        "domain": "general"
+      },
+      "prerequisite-gate": {
+        "name": "Prerequisite-Gate",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3546,6 +3631,78 @@
         ],
         "created": "2026-11-01",
         "last_validated": "2026-11-01"
+      },
+      "mem-123": {
+        "type": "pitfall",
+        "summary": "Pilot's test gate shows the last 20 lines of stderr only and caps the test gate at 5 minutes; stdout headers and summaries are invisible, so make test writes everything to stderr, runs suites in parallel and ends with a FAILED SUITES block.",
+        "path": "memories/pitfalls/mem-123.md",
+        "confidence": 0.95,
+        "concepts": [
+          "pilot",
+          "quality-gate",
+          "makefile",
+          "stderr",
+          "timeout"
+        ],
+        "created": "2026-11-06",
+        "last_validated": "2026-11-06"
+      },
+      "mem-124": {
+        "type": "pitfall",
+        "summary": "Python 3.9 is the floor (macOS system Python, Pilot box): PEP 604 annotations without the future import and 3.10-only stdlib attributes break the Pilot gate while CI on 3.12 stays green; CI now runs 3.9 + 3.12.",
+        "path": "memories/pitfalls/mem-124.md",
+        "confidence": 0.95,
+        "concepts": [
+          "deployment",
+          "pilot",
+          "python-3.9",
+          "compatibility"
+        ],
+        "created": "2026-11-06",
+        "last_validated": "2026-11-06"
+      },
+      "mem-125": {
+        "type": "learning",
+        "summary": "A fixed 200 ms p95 hook budget fails on a loaded 4-vCPU box on load alone (bare interpreter start 63 ms vs 25-30 locally); the test now scales the budget by measured interpreter start over 30 ms, floor 1.",
+        "path": "memories/learnings/mem-125.md",
+        "confidence": 0.9,
+        "concepts": [
+          "pilot",
+          "timing",
+          "flaky-test",
+          "load"
+        ],
+        "created": "2026-11-06",
+        "last_validated": "2026-11-06"
+      },
+      "mem-126": {
+        "type": "pitfall",
+        "summary": "On Claude Code 2.1.299 a skill typed as a slash command arrives as e.command on prompt.submit and never as a Skill tool call; a session signal such as task_doc_guard's nav_task_ran needs a UserPromptSubmit recorder too.",
+        "path": "memories/pitfalls/mem-126.md",
+        "confidence": 0.95,
+        "concepts": [
+          "skills",
+          "slash-command",
+          "prompt-submit",
+          "task-doc-guard"
+        ],
+        "created": "2026-11-06",
+        "last_validated": "2026-11-06"
+      },
+      "mem-127": {
+        "type": "pattern",
+        "summary": "Re-arm a stalled Pilot task (past 5 drops) by removing pilot-needs-human and adding pilot-retry-ready after the stall, then wait out a backoff of up to 16 minutes; a backticked repo path not on origin/main holds the task \u2014 reword it to prose; back up the worktree branch before a run can fail.",
+        "path": "memories/patterns/mem-127.md",
+        "confidence": 0.9,
+        "concepts": [
+          "pilot",
+          "re-arm",
+          "stalled",
+          "labels",
+          "prerequisite-gate"
+        ],
+        "created": "2026-11-06",
+        "last_validated": "2026-11-06"
       }
     },
     "files": {}
@@ -8837,7 +8994,8 @@
       "TASK-97",
       "TASK-100",
       "TASK-107",
-      "TASK-108"
+      "TASK-108",
+      "mem-126"
     ],
     "session": [
       "TASK-32",
@@ -9307,7 +9465,8 @@
       "mem-105",
       "mem-111",
       "TASK-107",
-      "TASK-108"
+      "TASK-108",
+      "mem-124"
     ],
     "code quality": [
       "TASK-19",
@@ -9651,7 +9810,8 @@
       "mem-034"
     ],
     "stderr": [
-      "mem-034"
+      "mem-034",
+      "mem-123"
     ],
     "model-bypass": [
       "mem-034",
@@ -9842,6 +10002,57 @@
       "mem-120",
       "mem-121",
       "mem-122"
+    ],
+    "pilot": [
+      "mem-123",
+      "mem-124",
+      "mem-125",
+      "mem-127"
+    ],
+    "quality-gate": [
+      "mem-123"
+    ],
+    "makefile": [
+      "mem-123"
+    ],
+    "timeout": [
+      "mem-123"
+    ],
+    "python-3.9": [
+      "mem-124"
+    ],
+    "compatibility": [
+      "mem-124"
+    ],
+    "timing": [
+      "mem-125"
+    ],
+    "flaky-test": [
+      "mem-125"
+    ],
+    "load": [
+      "mem-125"
+    ],
+    "slash-command": [
+      "mem-126"
+    ],
+    "prompt-submit": [
+      "mem-126"
+    ],
+    "task-doc-guard": [
+      "mem-126"
+    ],
+    "re-arm": [
+      "mem-127"
+    ],
+    "stalled": [
+      "mem-127"
+    ],
+    "labels": [
+      "mem-127"
+    ],
+    "prerequisite-gate": [
+      "mem-127"
     ]
   }
 }

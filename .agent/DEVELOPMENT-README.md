@@ -425,6 +425,7 @@ For shipped scope, query the knowledge graph or browse `CHANGELOG.md` / `release
 - [Plugin Release](./sops/deployment/plugin-release.md) — pre-release checklist, tag → CI workflow, post-release verification
 
 **Debugging**:
+- [Pilot gate red on Navigator](./sops/debugging/pilot-gate-red-on-navigator.md) — the box gate shows 20 lines of stderr with a 5-min cap on Python 3.9 under load; reproduce over SSM, classify the red suite, back up the worktree branch, re-arm (GH-40/41/42, 2026-11-06)
 - [Knowledge-Graph Memory Corruption](./sops/debugging/knowledge-graph-memory-corruption.md) — diagnose junk/duplicate memories, clean via remove-node + resolved/ archiving, fix the ingester
 - Document as discovered. Capture novel diagnoses as memories in the knowledge graph (`mem-XXX.md` under `.agent/knowledge/memories/`).
 
