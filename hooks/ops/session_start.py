@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -272,23 +273,50 @@ def _section_auto_update(root: Path, plugin_dir):
         return None
 
 
+_TASK_ID_RE = re.compile(r"^([A-Za-z]+)-(\d+)")
+_DONE_MARKS = ("✅", "📦")
+_DONE_WORDS = ("completed", "archived", "archive pending")
+_OPEN_CAP = 20
+_DONE_ID_CAP = 15
+_STATUS_CAP = 160
+
+
+def _task_is_done(status: str) -> bool:
+    low = status.lower()
+    return status.startswith(_DONE_MARKS) or any(word in low for word in _DONE_WORDS)
+
+
+def _task_sort_key(name: str):
+    match = _TASK_ID_RE.match(name)
+    return (0, -int(match.group(2)), name) if match else (1, 0, name)
+
+
+def _task_id(name: str) -> str:
+    match = _TASK_ID_RE.match(name)
+    return match.group(0) if match else name[:-3]
+
+
 def _section_open_tasks(root: Path):
     tasks_dir = root / ".agent" / "tasks"
     if not tasks_dir.is_dir():
         return None
-    entries = []
+    open_entries = []
+    done_ids = []
     try:
-        for path in sorted(tasks_dir.glob("*.md")):
-            if path.name.upper().startswith("README"):
-                continue
-            head = hio.safe_read(path, max_bytes=600) or ""
+        names = [
+            path.name
+            for path in tasks_dir.glob("*.md")
+            if not path.name.upper().startswith("README")
+        ]
+        for name in sorted(names, key=_task_sort_key):
+            head = hio.safe_read(tasks_dir / name, max_bytes=600) or ""
             title = next(
                 (
                     line.lstrip("# ").strip()
                     for line in head.splitlines()
                     if line.startswith("#")
                 ),
-                path.stem,
+                name[:-3],
             )
             status = "open"
             for line in head.splitlines():
@@ -296,12 +324,24 @@ def _section_open_tasks(root: Path):
                 if "status" in low and ":" in low:
                     status = line.split(":", 1)[1].strip().strip("*` ")
                     break
-            entries.append(f"- `{path.name}` — {title} [{status}]")
-            if len(entries) >= 20:
-                entries.append("- … (more in .agent/tasks/)")
-                break
+            if _task_is_done(status):
+                done_ids.append(_task_id(name))
+                continue
+            if len(status) > _STATUS_CAP:
+                status = status[: _STATUS_CAP - 1] + "…"
+            open_entries.append(f"- `{name}` — {title} [{status}]")
     except Exception:
         return None
+    entries = open_entries[:_OPEN_CAP]
+    if len(open_entries) > _OPEN_CAP:
+        entries.append("- … (more in .agent/tasks/)")
+    if done_ids:
+        shown = ", ".join(done_ids[:_DONE_ID_CAP])
+        if len(done_ids) > _DONE_ID_CAP:
+            shown += ", …"
+        entries.append(
+            f"- {len(done_ids)} done docs not archived: {shown} — archive with nav-task"
+        )
     if not entries:
         return None
     return "## Open Tasks\n\n" + "\n".join(entries)
