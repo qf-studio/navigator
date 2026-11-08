@@ -22,7 +22,7 @@ github.com/qf-studio/navigator
 ├── .claude-plugin/
 │   ├── plugin.json         # the plugin manifest
 │   └── marketplace.json    # the marketplace manifest (lists this plugin)
-├── skills/                 # 30 skills (the plugin's surface)
+├── skills/                 # 32 skills (the plugin's surface)
 ├── hooks/                  # 8 lifecycle hook scripts
 ├── .github/workflows/      # test.yml + release.yml (CI)
 └── releases/               # per-version RELEASE-NOTES-vX.Y.Z.md

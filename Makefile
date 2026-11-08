@@ -40,6 +40,7 @@ TEST_DIRS := \
 	skills/nav-profile/functions \
 	skills/nav-features/functions \
 	skills/nav-task/functions \
+	skills/nav-roadmaps/functions \
 	scripts
 
 # Standalone shell test scripts (each exits non-zero on failure).
