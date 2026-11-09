@@ -228,6 +228,9 @@ Other threads:
 - **nav-roadmaps** ✅ (v8.4.13, 2026-11-09) — every roadmap doc under `.agent/` as one table
   (kind, last date, status, stale flag) plus per-section ticket counts; `--also` for sibling
   repos (161b749, 12 tests).
+  Release-sync lesson (mem-130): the skill shipped missing from the site skills overview and
+  the CLAUDE.md command list — walk every skill listing, not the change list. GH-47 lessons:
+  mem-128 (Pilot PR merged mid-review), mem-129 (one status reader per runtime).
 - **GH-30…34** ✅ — team-repo batch, specced as GitHub issues (no TASK docs): personal
   config override `.nav-config.local.json` + `nav-features --local` (#30), per-person
   onboarding state under `~/.config/navigator/onboarding/<repo-id>/` (#31),

@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-11-06T16:47:16.476260+00:00",
+  "last_updated": "2026-11-09T15:42:59.972151+00:00",
   "stats": {
-    "total_nodes": 295,
+    "total_nodes": 298,
     "total_edges": 899,
-    "memory_count": 119
+    "memory_count": 122
   },
   "nodes": {
     "tasks": {
@@ -3703,6 +3703,48 @@
         ],
         "created": "2026-11-06",
         "last_validated": "2026-11-06"
+      },
+      "mem-128": {
+        "type": "pitfall",
+        "summary": "A Pilot PR can merge while its review runs: pushing review fixes to pilot/GH-n after the squash merge only resurrects the deleted branch. Check gh pr view state first; land fixes as a follow-up PR from main (GH-47: #48 merged mid-review, fixes in #49).",
+        "path": "memories/pitfalls/mem-128.md",
+        "confidence": 0.9,
+        "concepts": [
+          "pilot",
+          "quality-gate",
+          "deployment"
+        ],
+        "created": "2026-11-09",
+        "last_validated": "2026-11-09"
+      },
+      "mem-129": {
+        "type": "decision",
+        "summary": "Task-doc status has one reader per runtime: compact_marker status_value/is_done/is_in_progress and tasks.ts mirrors, Status line only, leading symbol first then first clause whole-word. A third vocabulary in session_start hid open docs and listed done ones (GH-47).",
+        "path": "memories/decisions/mem-129.md",
+        "confidence": 0.95,
+        "concepts": [
+          "tasks",
+          "hooks-runtime",
+          "session"
+        ],
+        "created": "2026-11-09",
+        "last_validated": "2026-11-09",
+        "contradiction": "status nuance vs one shared reader",
+        "separation": "condition",
+        "principle": "segmentation (symbol, then first clause)"
+      },
+      "mem-130": {
+        "type": "learning",
+        "summary": "Release sync must walk every place that lists skills, not the change list: nav-roadmaps shipped in 8.4.13 missing from the docs-site skills overview and the CLAUDE.md command list. Places: plugin.json, README, CLAUDE.md commands, site skills/index.mdx + _meta.js + page, changelog, notes.",
+        "path": "memories/learnings/mem-130.md",
+        "confidence": 0.9,
+        "concepts": [
+          "skills",
+          "deployment",
+          "claude-md"
+        ],
+        "created": "2026-11-09",
+        "last_validated": "2026-11-09"
       }
     },
     "files": {}
@@ -8995,7 +9037,8 @@
       "TASK-100",
       "TASK-107",
       "TASK-108",
-      "mem-126"
+      "mem-126",
+      "mem-130"
     ],
     "session": [
       "TASK-32",
@@ -9048,7 +9091,8 @@
       "2025-10-19-200824-v2.3.0-complete",
       "2025-01-21-task30-verification-plan",
       "2025-10-20-092541-v3.0.0-migration-complete",
-      "2025-10-31-2116_phase2-parallel-complete"
+      "2025-10-31-2116_phase2-parallel-complete",
+      "mem-129"
     ],
     "authentication": [
       "TASK-33",
@@ -9466,7 +9510,9 @@
       "mem-111",
       "TASK-107",
       "TASK-108",
-      "mem-124"
+      "mem-124",
+      "mem-128",
+      "mem-130"
     ],
     "code quality": [
       "TASK-19",
@@ -9911,7 +9957,8 @@
       "mem-112",
       "mem-113",
       "mem-114",
-      "mem-119"
+      "mem-119",
+      "mem-129"
     ],
     "adhd": [
       "mem-078",
@@ -9956,7 +10003,8 @@
     ],
     "tasks": [
       "mem-092",
-      "mem-093"
+      "mem-093",
+      "mem-129"
     ],
     "pane": [
       "mem-093"
@@ -9989,7 +10037,8 @@
       "mem-122"
     ],
     "claude-md": [
-      "mem-107"
+      "mem-107",
+      "mem-130"
     ],
     "templates": [
       "mem-107",
@@ -10007,10 +10056,12 @@
       "mem-123",
       "mem-124",
       "mem-125",
-      "mem-127"
+      "mem-127",
+      "mem-128"
     ],
     "quality-gate": [
-      "mem-123"
+      "mem-123",
+      "mem-128"
     ],
     "makefile": [
       "mem-123"

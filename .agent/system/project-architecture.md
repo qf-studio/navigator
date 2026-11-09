@@ -166,6 +166,7 @@ blocking gate short-circuits the rest; results merge in registry order into one 
 document. `hooks/mod/ops/index.ts` mirrors the same table for the mod, and
 `hooks/mod/runner.ts` mirrors `runtime._dispatch` (phases, Pilot belt, per-op crash
 isolation). Sixteen ops exist twice: `hooks/ops/<name>.py` and `hooks/mod/ops/<name>.ts`.
+`task_doc_guard` (v8.4.13) is the one Python-only op; the mod neither ports nor owns it.
 
 **Ownership.** `hooks/mod/owns.ts` lists the ops the mod runs (`OWNED`, all sixteen) and
 announces the active subset through `NAVIGATOR_MOD_OWNS`. `config.mod_owns` is the only
@@ -195,6 +196,27 @@ attaches `reject: {reason, evidence}` to its blocking result, the runtime strips
 appends the line from one point (`runtime._log_reject` / `runner.ts logReject`), rewritten
 to the newest 500 lines once past 600, `reject_log.enabled` default on, `suppressed: true`
 under Pilot. The file never enters the model's context; the `/nav` pane reads it behind `l`.
+
+**Task-doc status predicates** (TASK-91, v8.4.13 GH-47): `hooks/ops/compact_marker.py`
+`status_value` / `is_in_progress` / `is_done`, mirrored in `hooks/mod/lib/tasks.ts`
+(`statusValue` / `isInProgress` / `isDone`), are the only readers of a task doc's status. They
+read the Status line only (one tolerant regex); the H1 and prose never count. `is_done`: a
+leading ✅ 📦 ❌ 🗑 means done, any other leading symbol means open, else the first clause
+(up to a dash, comma, semicolon, colon or parenthesis) is matched whole-word against the done
+words. Users: the compact marker's in-progress hint, the `/nav` pane, and session_start's Open
+Tasks block (open docs first, newest id first, 20 at most; done docs as one count line, 15 ids
+at most). `skills/nav-graph/functions/task_to_graph.py` keeps its own `STATUS_WORDS` for graph
+statuses; a new status word goes in both places.
+
+**Session-discipline gates** (v8.4.13): `task_doc_guard` (GH-40, Python-only, PreToolUse
+gate on Write/Edit/Bash plus a recorder on Skill and UserPromptSubmit) denies a new
+`<task_prefix>-<n>*.md` directly under `.agent/tasks/` until nav-task ran this session; the
+signal lives in runtime state. `stop_completion` (GH-41, both runtimes) records session
+evidence when a turn writes a task doc or dispatches legs, and refuses the exit signal until
+a real context marker exists (`stop_completion.require_marker_after_task_doc`, default on);
+the `max_continues` cap logs `stop_completion.marker_bypassed`. Local task IDs (GH-42,
+`skills/nav-task/functions/task_id_generator.py`) take max+1 over the working tree, the
+archive and `origin/main`.
 
 **What the mod adds**: the `/nav` pane (`hooks/mod/ui/nav.ts`, `route.ts`, `trip.ts`,
 `palette.ts`, `status.ts`), the status band, the Pilot theme (`themes/`) and the read-only
