@@ -101,6 +101,46 @@ TRANSCRIPT = "\n".join([
 ])
 
 
+def _task_doc(n, title, status):
+    return f"# TASK-{n}: {title}\n\n**Status**: {status}\n"
+
+
+def _overflow_tasks():
+    """Task corpus for the GH-47 Open Tasks branches: >20 open docs (the cap line), >15 done
+    docs (the id cap with ', …'), ids 9/10/100 (numeric order), a 600-code-point status (the
+    160 cut), done words inside open statuses, a title that quotes a status word, plain-text
+    terminal statuses, a Status line behind 800 chars of front matter, and one behind 2000+."""
+    files = {".agent/tasks/README.md": "# Tasks index\n"}
+    for n in range(9, 32):
+        files[f".agent/tasks/TASK-{n}-open.md"] = _task_doc(n, f"Open {n}", "📋 Planned")
+    files[".agent/tasks/TASK-100-top.md"] = _task_doc(100, "Top", "🚧 In Progress")
+    for n in range(200, 217):
+        files[f".agent/tasks/TASK-{n}-done.md"] = _task_doc(
+            n, f"Done {n}", f"✅ Released — v8.4.{n - 200}")
+    files[".agent/tasks/TASK-300-long.md"] = _task_doc(300, "Long", "🚧 " + "é✓ " * 200)
+    files[".agent/tasks/TASK-301-backlog.md"] = _task_doc(
+        301, "Backlog", "📋 Backlog — postponed (research pass over archived launch plans)")
+    files[".agent/tasks/TASK-302-phase.md"] = _task_doc(
+        302, "Phase", "🚧 Phase 1 completed, Phase 2 in progress")
+    files[".agent/tasks/TASK-303-title.md"] = (
+        "# TASK-303: status line shows completed tasks\n\n"
+        "The status: of this was misread.\n\n**Status**: ✅ Implemented\n")
+    files[".agent/tasks/TASK-304-words.md"] = _task_doc(304, "Words", "Complete (v2.0-v2.3)")
+    files[".agent/tasks/TASK-305-wontdo.md"] = _task_doc(305, "Won't", "❌ Won't Do")
+    files[".agent/tasks/TASK-306-removed.md"] = _task_doc(
+        306, "Removed", "🗑️ Removed — 2026-10-01")
+    files[".agent/tasks/TASK-307-frontmatter.md"] = (
+        "---\n" + "tag: x\n" * 115 + "---\n" + _task_doc(307, "Late status", "✅ Done"))
+    files[".agent/tasks/TASK-308-beyond.md"] = (
+        "# TASK-308: Beyond the window\n\n" + "x\n" * 1100 + "**Status**: ✅ Done\n")
+    files[".agent/tasks/TASK-309-nostatus.md"] = "# TASK-309: No status\n\nCompleted last week.\n"
+    files[".agent/tasks/TASK-310-bold.md"] = "# TASK-310: Bold\n\n> **Status:** **`done`**\n"
+    files[".agent/tasks/zz-notes.md"] = "# Notes\n\n**Status**: open\n"
+    files[".agent/tasks/aa-notes.md"] = "# Alpha notes\n"
+    files[".agent/tasks/TASK-１２-wide.md"] = "# Wide digits\n\n**Status**: 🚧 odd name\n"
+    return files
+
+
 def _base_files():
     files = {".agent/.nav-config.json": json.dumps(CONFIG, indent=2)}
     return files
@@ -132,6 +172,9 @@ def _scenarios():
               {}, {}, {}, {}, {}))
     big = {**full, ".agent/DEVELOPMENT-README.md": "# Big\n" + ("lorem ipsum dolor sit amet\n" * 400)}
     s.append(("session_start", "SessionStart", "truncated", big, {}, {}, stubs, {}, {}))
+    # GH-47: every Open Tasks branch (caps, order, cut, classifier) in one parity case.
+    s.append(("session_start", "SessionStart", "tasks-overflow",
+              {**_base_files(), **_overflow_tasks()}, {"source": "startup"}, {}, stubs, {}, {}))
     sections = {**full, ".agent/.nav-config.json": json.dumps({
         **CONFIG, "session_start_hook": {"include_sections": ["config", "tasks", "marker"],
                                          "char_budget": 3000},

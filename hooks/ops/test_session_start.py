@@ -216,6 +216,60 @@ class OpenTasksSectionTest(SessionStartOpTestBase):
         self.assertEqual(len(status), 160)
         self.assertTrue(status.endswith("…"))
 
+    def test_done_word_in_prose_of_an_open_status_keeps_the_doc_open(self):
+        # TASK-15's real line: a Backlog doc whose status prose mentions archived plans.
+        self.add_task("TASK-15-mk.md",
+                      "📋 Backlog — postponed; research pass over archived launch plans")
+        self.add_task("TASK-16-ph.md", "🚧 Phase 1 completed, Phase 2 in progress")
+        block = self.tasks_block()
+        self.assertIn("`TASK-15-mk.md`", block)
+        self.assertIn("`TASK-16-ph.md`", block)
+        self.assertNotIn("done docs", block)
+
+    def test_only_the_status_line_decides_not_the_title_or_prose(self):
+        path = self.agent / "tasks" / "TASK-67-voc.md"
+        path.write_text(
+            "# TASK-67: status line shows completed tasks\n\n"
+            "The status: of in-progress docs was misread.\n\n"
+            "**Status**: ✅ Implemented — 2026-06-03\n", encoding="utf-8")
+        block = self.tasks_block()
+        self.assertNotIn("`TASK-67-voc.md`", block)
+        self.assertIn("- 1 done docs not archived: TASK-67 — archive with nav-task", block)
+
+    def test_plain_text_terminal_statuses_classify_as_done(self):
+        statuses = ("Complete (v2.0-v2.3)", "Complete and Ready to Execute", "Implemented",
+                    "❌ Won't Do", "🗑️ Removed — 2026-10-01", "`done`", "Released v7.7.0")
+        for i, status in enumerate(statuses):
+            self.add_task(f"TASK-5{i}-t.md", status)
+        block = self.tasks_block()
+        self.assertIn(f"- {len(statuses)} done docs not archived:", block)
+        self.assertNotIn("-t.md`", block)
+
+    def test_open_statuses_with_other_symbols_stay_open(self):
+        for i, status in enumerate(("📋 Planning", "🔬 Research", "📐 Design", "APPROVED",
+                                    "🏗️ Phase 3 Complete - Ready for release")):
+            self.add_task(f"TASK-6{i}-o.md", status)
+        block = self.tasks_block()
+        self.assertEqual(block.count("-o.md`"), 5)
+        self.assertNotIn("done docs", block)
+
+    def test_status_line_after_long_front_matter_is_still_read(self):
+        path = self.agent / "tasks" / "TASK-70-fm.md"
+        path.write_text("---\n" + "tag: value\n" * 100 + "---\n# TASK-70: Late\n\n"
+                        "**Status**: ✅ Done\n", encoding="utf-8")
+        self.assertIn("1 done docs not archived: TASK-70", self.tasks_block())
+
+    def test_open_entry_shows_the_status_line_value_not_a_prose_match(self):
+        path = self.agent / "tasks" / "TASK-71-pr.md"
+        path.write_text("# TASK-71: Prose\n\nSee status: notes below.\n\n"
+                        "**Status**: 📐 Design\n", encoding="utf-8")
+        self.assertIn("- `TASK-71-pr.md` — TASK-71: Prose [📐 Design]", self.tasks_block())
+
+    def test_doc_without_status_line_is_open_with_default_status(self):
+        path = self.agent / "tasks" / "TASK-72-ns.md"
+        path.write_text("# TASK-72: None\n\nCompleted last week, honestly.\n", encoding="utf-8")
+        self.assertIn("- `TASK-72-ns.md` — TASK-72: None [open]", self.tasks_block())
+
     def test_no_done_docs_no_done_line(self):
         self.assertNotIn("done docs", self.tasks_block())
 
