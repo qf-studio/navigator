@@ -198,13 +198,39 @@ const memoriesSection = async (io: Io, root: string, limit: number) => {
     + `in before planning.\n\n${cpSlice(text, 0, 1200)}`
 }
 
+const TASK_ID_RE = /^([A-Za-z]+)-(\d+)/
+const DONE_MARKS = ['✅', '📦']
+const DONE_WORDS = ['completed', 'archived', 'archive pending']
+const OPEN_CAP = 20
+const DONE_ID_CAP = 15
+const STATUS_CAP = 160
+
+const taskIsDone = (status: string): boolean => {
+  const low = status.toLowerCase()
+  return DONE_MARKS.some((m) => status.startsWith(m)) || DONE_WORDS.some((w) => low.includes(w))
+}
+
+const taskId = (name: string): string => TASK_ID_RE.exec(name)?.[0] ?? name.slice(0, -3)
+
+const byTaskOrder = (a: string, b: string): number => {
+  const ma = TASK_ID_RE.exec(a)
+  const mb = TASK_ID_RE.exec(b)
+  if (ma && mb) {
+    const na = BigInt(ma[2])
+    const nb = BigInt(mb[2])
+    if (na !== nb) return na > nb ? -1 : 1
+  } else if (ma || mb) return ma ? -1 : 1
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
 const tasksSection = async (io: Io, root: string) => {
   const dir = `${root}/.agent/tasks`
   if ((await statOf(io, dir))?.kind !== 'dir') return null
-  const entries: string[] = []
+  const openEntries: string[] = []
+  const doneIds: string[] = []
   try {
-    for (const name of await globMd(io, dir)) {
-      if (name.toUpperCase().startsWith('README')) continue
+    const names = (await globMd(io, dir)).filter((n) => !n.toUpperCase().startsWith('README'))
+    for (const name of names.sort(byTaskOrder)) {
       const head = (await safeRead(io, `${dir}/${name}`, 600)) ?? ''
       const title = titleOf(head, name)
       let status = 'open'
@@ -215,14 +241,21 @@ const tasksSection = async (io: Io, root: string) => {
           break
         }
       }
-      entries.push(`- \`${name}\` — ${title} [${status}]`)
-      if (entries.length >= 20) {
-        entries.push('- … (more in .agent/tasks/)')
-        break
+      if (taskIsDone(status)) {
+        doneIds.push(taskId(name))
+        continue
       }
+      if (cpLen(status) > STATUS_CAP) status = cpSlice(status, 0, STATUS_CAP - 1) + '…'
+      openEntries.push(`- \`${name}\` — ${title} [${status}]`)
     }
   } catch {
     return null
+  }
+  const entries = openEntries.slice(0, OPEN_CAP)
+  if (openEntries.length > OPEN_CAP) entries.push('- … (more in .agent/tasks/)')
+  if (doneIds.length > 0) {
+    const shown = doneIds.slice(0, DONE_ID_CAP).join(', ') + (doneIds.length > DONE_ID_CAP ? ', …' : '')
+    entries.push(`- ${doneIds.length} done docs not archived: ${shown} — archive with nav-task`)
   }
   return entries.length === 0 ? null : `## Open Tasks\n\n${entries.join('\n')}`
 }

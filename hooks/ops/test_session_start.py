@@ -147,6 +147,87 @@ class SessionStartOpTestBase(unittest.TestCase):
         }
 
 
+class OpenTasksSectionTest(SessionStartOpTestBase):
+    def add_task(self, name, status=None):
+        body = f"# {name[:-3]}: Title\n\n"
+        if status is not None:
+            body += f"**Status**: {status}\n"
+        (self.agent / "tasks" / name).write_text(body, encoding="utf-8")
+
+    def tasks_block(self):
+        body = self.run_op()["additional_context"]
+        start = body.index("## Open Tasks")
+        end = body.find("\n## ", start + 1)
+        return body[start:end if end != -1 else len(body)]
+
+    def test_done_docs_are_named_in_one_line_not_listed(self):
+        self.add_task("TASK-10-shipped.md", "✅ SHIPPED")
+        self.add_task("TASK-11-boxed.md", "📦 released")
+        block = self.tasks_block()
+        self.assertNotIn("`TASK-10-shipped.md`", block)
+        self.assertNotIn("`TASK-11-boxed.md`", block)
+        self.assertIn(
+            "- 2 done docs not archived: TASK-11, TASK-10 — archive with nav-task", block)
+
+    def test_done_words_classify_as_done(self):
+        for i, status in enumerate(("Completed", "ARCHIVED", "x Archive Pending")):
+            self.add_task(f"TASK-2{i}-w.md", status)
+        self.assertIn("3 done docs not archived", self.tasks_block())
+
+    def test_rocket_doc_is_listed_as_open(self):
+        self.add_task("TASK-12-live.md", "🚀 In Progress")
+        block = self.tasks_block()
+        self.assertIn("- `TASK-12-live.md` — TASK-12-live: Title [🚀 In Progress]", block)
+        self.assertNotIn("done docs", block)
+
+    def test_open_docs_render_newest_id_first_unnumbered_last(self):
+        self.add_task("TASK-9-a.md", "open")
+        self.add_task("TASK-100-b.md", "open")
+        self.add_task("notes.md", "open")
+        block = self.tasks_block()
+        order = [block.index(n) for n in
+                 ("TASK-100-b.md", "TASK-9-a.md", "TASK-01-sample.md", "notes.md")]
+        self.assertEqual(order, sorted(order))
+
+    def test_cap_counts_open_docs_only(self):
+        for i in range(25):
+            self.add_task(f"TASK-{200 + i}-o.md", "open")
+        for i in range(5):
+            self.add_task(f"TASK-{300 + i}-d.md", "✅ done")
+        block = self.tasks_block()
+        self.assertEqual(block.count("-o.md`"), 20)
+        self.assertIn("- … (more in .agent/tasks/)", block)
+        self.assertIn("- 5 done docs not archived:", block)
+
+    def test_done_docs_do_not_push_open_docs_past_the_cap(self):
+        for i in range(18):
+            self.add_task(f"TASK-{200 + i}-o.md", "open")
+        for i in range(5):
+            self.add_task(f"TASK-{300 + i}-d.md", "✅ done")
+        block = self.tasks_block()
+        self.assertEqual(block.count("-o.md`"), 18)
+        self.assertNotIn("more in .agent/tasks/", block)
+
+    def test_long_status_truncates_to_160_chars(self):
+        self.add_task("TASK-13-long.md", "x" * 600)
+        block = self.tasks_block()
+        line = next(l for l in block.splitlines() if "TASK-13-long.md" in l)
+        status = line[line.index("[") + 1:-1]
+        self.assertEqual(len(status), 160)
+        self.assertTrue(status.endswith("…"))
+
+    def test_no_done_docs_no_done_line(self):
+        self.assertNotIn("done docs", self.tasks_block())
+
+    def test_done_ids_cap_at_15_then_ellipsis(self):
+        for i in range(17):
+            self.add_task(f"TASK-{400 + i}-d.md", "✅")
+        line = next(l for l in self.tasks_block().splitlines() if "done docs" in l)
+        self.assertIn("- 17 done docs not archived:", line)
+        self.assertIn(", … — archive with nav-task", line)
+        self.assertEqual(line.count("TASK-"), 15)
+
+
 class InjectionBodyTest(SessionStartOpTestBase):
     def test_returns_additional_context_with_sentinel_and_sections(self):
         result = self.run_op()
