@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.4.13] — 2026-11-09
+
+Session discipline from the Pilot batch: `task_doc_guard` blocks a hand-written task doc until
+`/nav-task` ran (GH-40), the completion gate refuses the exit signal until a context marker
+follows a task doc (GH-41), local task IDs come from `origin/main` and the archive (GH-42).
+Session-start Open Tasks reads only the Status line through one shared `is_done` predicate,
+open docs first and done docs as one count line (GH-47, #48, #49). New skill `nav-roadmaps`.
+`make test` is green on Python 3.9, parallel, hermetic, and real on macOS.
+→ [Full release notes](./releases/RELEASE-NOTES-v8.4.13.md)
+
 ## [v8.4.12] — 2026-11-01
 
 nav-sync-claude keeps a project's own CLAUDE.md layout: fenced code blocks no longer end a

@@ -61,7 +61,7 @@ TEST_JOBS ?= 4
 test:
 	@exec 1>&2; echo "Running unit tests ($(TEST_JOBS) jobs)..."; \
 	fail=0; failed=""; log=$$(mktemp -d); \
-	printf '%s\n' $(TEST_DIRS) | xargs -P $(TEST_JOBS) -I{} sh -c 'd={}; out="$$0/$$(echo $$d | tr / _).log"; \
+	printf '%s\n' $(TEST_DIRS) | xargs -P $(TEST_JOBS) -n1 sh -c 'd=$$1; out="$$0/$$(echo $$d | tr / _).log"; \
 		if ls $$d/test_*.py >/dev/null 2>&1; then \
 			( cd $$d && env -u NAVIGATOR_MOD_OWNS -u PILOT_EXECUTOR -u CLAUDE_PROJECT_DIR -u CLAUDE_USER_MESSAGE python3 -m unittest discover -p "test_*.py" ) >"$$out" 2>&1 || echo "$$d" >>"$$0/.failed"; \
 		fi' "$$log"; \
