@@ -389,6 +389,7 @@ Natural language commands:
 - "Create an SOP for debugging [issue]" (after solving issue)
 - "Create context marker [name]" (save point)
 - "Clear context and preserve markers" (compact)
+- "Show roadmaps" (every roadmap doc as one table, stale flags)
 
 Slash commands (legacy, still work): `/nav:init`, `/nav:start`, `/nav:marker`,
 `/nav:compact`
