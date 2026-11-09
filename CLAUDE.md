@@ -284,7 +284,7 @@ exists nowhere in the context. Subagents never see it. A repo can pin a mode wit
 
 When both are on, the blocks stack in table order: shape first, sentences inside it.
 Enforced by prompt_modes (hook runtime); this text is documentation, not the mechanism.
-Design: `.agent/tasks/TASK-82-adhd-mode.md`, `.agent/tasks/TASK-93-reply-modes-ste.md`.
+Design: `.agent/tasks/archive/TASK-82-adhd-mode.md`, `.agent/tasks/archive/TASK-93-reply-modes-ste.md`.
 
 ---
 

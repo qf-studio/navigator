@@ -118,5 +118,5 @@ a change here recolors every tab, not only Claude Code.
 ## Related
 
 - `themes/pilot.json`, `themes/pilot.ghostty`, `hooks/mod/ui/palette.ts`
-- `.agent/tasks/TASK-83-mods-spike.md` (where the custom theme was introduced)
+- `.agent/tasks/archive/TASK-83-mods-spike.md` (where the custom theme was introduced)
 - Pilot TUI palette: `~/.claude/skills/pilot-design/SKILL.md`

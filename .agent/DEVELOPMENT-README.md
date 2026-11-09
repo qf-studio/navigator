@@ -146,6 +146,9 @@ When implementation is complete, run these without prompting:
 
 See `.agent/tasks/*.md` for current plans. Shipped work lives in `.agent/tasks/archive/`.
 
+2026-11-09 sweep: 46 done docs (TASK-05 … TASK-83, three poc-* reports) moved to `archive/` in one
+pass after v8.4.13's Open Tasks line counted them; `.agent/tasks/` now holds only open work.
+
 Current active threads (as of 2026-11-09; v8.4.13 session-discipline batch GH-40/41/42 + Open Tasks on the Status line GH-47 + nav-roadmaps 2026-11-09; v8.4.12 nav-sync-claude layout round trip TASK-109 2026-11-01; v8.4.6–v8.4.11 `/nav` pane + brief on Claude Code Desktop TASK-108 2026-10-20; v8.4.5 mod clean under `claude plugin validate` on CC 2.1.299 TASK-107 2026-10-20; v8.4.4 nav-onboard runs as documented + practice sandbox TASK-106 GH-35 2026-10-16; v8.4.3 nav-sync-claude faithful round trip TASK-105 2026-10-15; v8.4.0 collector stack + /nav session guard TASK-100..103 and v8.4.1–v8.4.2 session card = this session only TASK-104, all 2026-10-14; docs site synced through v8.4.11 (8.4.12 pending); v8.3.5 release-CI gates TASK-99 2026-10-08, v8.0.0–v8.3.4 per the stamp at the end of this file; v7.0.0 tagged 2026-09-01, v7.1.0 + v7.2.0 TRIZ and v7.3.0 deep-research releases 2026-09-10, v7.4.0 readable reports 2026-09-12, v7.5.0 LSP-aware research 2026-09-13, v7.5.1 research provenance + v7.6.0 source lens 2026-09-14, v7.7.0 typed prompt judge 2026-09-19, v7.7.1 judge telemetry 2026-09-23, v7.8.0 team-repo batch 2026-09-28, v7.9.0 ADHD mode + multi-Claude removal 2026-10-01 — docs site synced through v7.8.0):
 
 **v7.0.0 program — "Hooks as Runtime"** — ALPHA COMPLETE 2026-07-10 (uncommitted→committed same
@@ -257,7 +260,7 @@ Other threads:
 - **TASK-83** ✅ — Claude Code mods spike: `mods/nav-status/` (in-process band + ADHD
   injection, loaded via `--plugin-dir`); Python op defers through `config.mod_owns`.
   The spike became the v8 runtime (TASK-84, v8.0.0); `mods/nav-status/` is superseded by
-  `hooks/mod/` (`tasks/TASK-83-mods-spike.md`).
+  `hooks/mod/` (`tasks/archive/TASK-83-mods-spike.md`).
 - **TASK-109** ✅ (v8.4.12, 2026-11-01) — nav-sync-claude keeps a project's own layout:
   extract records the title, preamble and every `##` section in order with fenced blocks
   whole (a `# comment` in a bash block is not a header); generate renders them back and

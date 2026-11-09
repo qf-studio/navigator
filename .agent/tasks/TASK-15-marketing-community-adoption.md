@@ -156,5 +156,5 @@ and budget notes, and the named-competitor matrix (AI Context Optimizer, Augment
 - `README.md`, `CLAUDE.md` (Navigator Runtime v8), `.agent/system/project-architecture.md`
 - Docs site: `/Users/aleks.petrov/Projects/startups/navigator-site` (repo `qf-studio/navigator-docs`; deploy: push `main` + `prod-*` tag)
 - Drafts: `.agent/marketing/*.md` (local, untracked by design)
-- Workshop: `.agent/tasks/TASK-39-nextjs-workshop-prep.md`; site: `TASK-55-landing-docs-site.md`
+- Workshop: `.agent/tasks/archive/TASK-39-nextjs-workshop-prep.md`; site: `tasks/archive/TASK-55-landing-docs-site.md`
 - Archived launch thinking: `.agent/tasks/archive/TASK-18-*`

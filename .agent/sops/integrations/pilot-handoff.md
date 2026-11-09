@@ -73,4 +73,4 @@ Ask for a dry run to print the command without creating anything:
 ## Out of Scope
 
 Monitoring Pilot workers and pulling results/PRs back are deliberately not part
-of this handoff — see `.agent/tasks/TASK-54-nav-pilot-dispatch-skill.md`.
+of this handoff — see `.agent/tasks/archive/TASK-54-nav-pilot-dispatch-skill.md`.

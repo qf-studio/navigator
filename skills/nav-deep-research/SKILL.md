@@ -168,4 +168,4 @@ refetch --run <slug>` rebuilds them from the recorded URLs and reports sha misma
 - `functions/untrusted.py` — the `<nav-untrusted-source>` fence
 - `reference/REPORT-FORMAT.md` — the readable report layout, gate rules, fix path
 - Agents: `agents/deep-research-{fetcher,writer,critic,patcher}.md`
-- Task doc: `.agent/tasks/TASK-74-nav-deep-research.md`
+- Task doc: `.agent/tasks/archive/TASK-74-nav-deep-research.md`

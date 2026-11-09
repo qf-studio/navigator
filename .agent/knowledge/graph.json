@@ -542,7 +542,7 @@
         ]
       },
       "TASK-44": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-44-version-tooling.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-44-version-tooling.md",
         "title": "Version & release tooling correctness",
         "status": "completed",
         "concepts": [
@@ -557,7 +557,7 @@
         ]
       },
       "TASK-50": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-50-skill-templates.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-50-skill-templates.md",
         "title": "Skill template/reference integrity",
         "status": "completed",
         "concepts": [
@@ -573,7 +573,7 @@
         ]
       },
       "TASK-45": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-45-hook-tests.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-45-hook-tests.md",
         "title": "Test coverage for hooks & destructive/blocking paths",
         "status": "completed",
         "concepts": [
@@ -589,7 +589,7 @@
         ]
       },
       "TASK-46": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-46-hook-safety.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-46-hook-safety.md",
         "title": "Hook correctness & safety fixes (non-path)",
         "status": "completed",
         "concepts": [
@@ -604,7 +604,7 @@
         ]
       },
       "TASK-47": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-47-kg-integrity.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-47-kg-integrity.md",
         "title": "Knowledge-graph data integrity + dormant maintenance wiring",
         "status": "completed",
         "concepts": [
@@ -619,7 +619,7 @@
         ]
       },
       "TASK-48": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-48-detection-precision.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-48-detection-precision.md",
         "title": "Detection precision: token-boundary matching + consolidate complexity impls",
         "status": "completed",
         "concepts": [
@@ -633,7 +633,7 @@
         ]
       },
       "TASK-49": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-49-plugin-paths.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-49-plugin-paths.md",
         "title": "Plugin-relative path resolution (skills + hooks work outside the source repo)",
         "status": "completed",
         "concepts": [
@@ -651,7 +651,7 @@
         ]
       },
       "TASK-54": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-54-nav-pilot-dispatch-skill.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-54-nav-pilot-dispatch-skill.md",
         "title": "nav-pilot \u2014 Dispatch Handoff Skill (Navigator \u2192 Pilot)",
         "status": "completed",
         "concepts": [
@@ -665,7 +665,7 @@
         ]
       },
       "TASK-55": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-55-landing-docs-site.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-55-landing-docs-site.md",
         "title": "Navigator Landing Page + Documentation Site",
         "status": "unknown",
         "concepts": [
@@ -684,7 +684,7 @@
         ]
       },
       "TASK-56": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-56-nav-brief.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-56-nav-brief.md",
         "title": "nav-brief \u2014 Intent-Brief Enforcement for Ambiguous Prompts",
         "status": "completed",
         "concepts": [
@@ -697,7 +697,7 @@
         ]
       },
       "TASK-57": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-57-v7-hook-channel-spike.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-57-v7-hook-channel-spike.md",
         "title": "v7 Spike \u2014 Empirically Verify Unproven Hook Channels",
         "status": "completed",
         "concepts": [
@@ -725,7 +725,7 @@
         ]
       },
       "TASK-59": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-59-nav-hook-lib.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-59-nav-hook-lib.md",
         "title": "nav_hook_lib \u2014 Shared Hook Runtime Library",
         "status": "completed",
         "concepts": [
@@ -807,7 +807,7 @@
         ]
       },
       "TASK-64": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-64-v7-release-gate.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-64-v7-release-gate.md",
         "title": "v7.0.0 Release Gate \u2014 Validation, RC Soak, Rollback",
         "status": "completed",
         "concepts": [
@@ -821,7 +821,7 @@
         ]
       },
       "TASK-68": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-68-tier1-similarity-subagent-topk.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-68-tier1-similarity-subagent-topk.md",
         "title": "Task 68 Tier1 Similarity Subagent Topk",
         "status": "completed",
         "concepts": [
@@ -833,7 +833,7 @@
         ]
       },
       "TASK-66": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-66-read-guard-double-increment.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-66-read-guard-double-increment.md",
         "title": "Task 66 Read Guard Double Increment",
         "status": "completed",
         "concepts": [
@@ -846,7 +846,7 @@
         ]
       },
       "TASK-65": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-65-stop-completion-populator.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-65-stop-completion-populator.md",
         "title": "Task 65 Stop Completion Populator",
         "status": "completed",
         "concepts": [
@@ -860,7 +860,7 @@
         ]
       },
       "TASK-69": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-69-use-cases-site-update.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-69-use-cases-site-update.md",
         "title": "Use-case content \u2014 landing page + docs site update",
         "status": "completed",
         "concepts": [
@@ -877,7 +877,7 @@
         ]
       },
       "TASK-70": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-70-signal-visibility-readonly-bash.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-70-signal-visibility-readonly-bash.md",
         "title": "Invisible exit signals + read-only Bash false-fire",
         "status": "completed",
         "concepts": [
@@ -888,7 +888,7 @@
         ]
       },
       "TASK-74": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-74-nav-deep-research.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-74-nav-deep-research.md",
         "title": "nav-deep-research \u2014 web deep research for Navigator",
         "status": "completed",
         "concepts": [
@@ -903,7 +903,7 @@
         ]
       },
       "TASK-83": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-83-mods-spike.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-83-mods-spike.md",
         "title": "Claude Code mods spike \u2014 `nav-status`",
         "status": "completed",
         "concepts": [

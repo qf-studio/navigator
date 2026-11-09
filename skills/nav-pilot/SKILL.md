@@ -145,6 +145,6 @@ PostToolUse hook — no extra action needed.
 ## Notes
 
 - One-way by design: monitoring Pilot workers and pulling results back are out
-  of scope (see `.agent/tasks/TASK-54-nav-pilot-dispatch-skill.md`).
+  of scope (see `.agent/tasks/archive/TASK-54-nav-pilot-dispatch-skill.md`).
 - Validation is intentionally absent — Pilot's `spec_validator` owns that.
 - Pairs with `nav-task` (authors the doc) → `nav-pilot` (dispatches it).
