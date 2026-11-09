@@ -210,6 +210,49 @@ def is_in_progress(text: str) -> bool:
     return "in progress" in low or "in-progress" in low or "🚧" in text
 
 
+# Done vocabulary shared with session_start (GH-47). ASCII word boundaries so the TS mirror
+# (`\b` is ASCII-only in JavaScript) decides the same.
+_DONE_MARKS = ("✅", "📦", "❌", "🗑")
+_DONE_WORDS = re.compile(
+    r"\b(?:completed?|implemented|released|shipped|archived|archive pending|done|removed"
+    r"|deprecated|won'?t do)\b",
+    re.IGNORECASE | re.ASCII,
+)
+_LEADING_SYMBOLS = re.compile(r"^(?:[^\x00-\x7f]|[ \t])*")
+_CLAUSE_END = re.compile(r"[—–,;:(]|[ \t]-[ \t]")
+
+
+def status_value(text: str):
+    """The value of the Status line (TASK-91 regex) with bold/code decoration stripped.
+
+    None when the doc has no Status line; the H1 or prose never count. Mirrored in
+    hooks/mod/lib/tasks.ts (`statusValue`).
+    """
+    match = _STATUS_LINE.search(text)
+    return match.group(1).strip("*` ") if match else None
+
+
+def is_done(text: str) -> bool:
+    """True when the Status line says the work is finished (GH-47).
+
+    A leading symbol decides when present: ✅ 📦 ❌ 🗑 mean done, any other (🚧 📋 🔬 🚀 …)
+    means open. Without a symbol the first clause of the value (up to a dash, comma,
+    semicolon, colon or parenthesis) is matched whole-word against the done vocabulary,
+    so `🚧 Phase 1 completed, Phase 2 in progress` and `📋 Backlog — … archived launch
+    plans` stay open while `Complete (v2.0)` and `Implemented` are done. Docs without a
+    Status line are open. Mirrored in hooks/mod/lib/tasks.ts (`isDone`).
+    """
+    value = status_value(text)
+    if value is None:
+        return False
+    marks = _LEADING_SYMBOLS.match(value).group(0)
+    if marks.strip():
+        return any(mark in marks for mark in _DONE_MARKS)
+    end = _CLAUSE_END.search(value)
+    clause = value if end is None else value[: end.start()]
+    return bool(_DONE_WORDS.search(clause))
+
+
 def _active_task_hint(root: Path):
     tasks_dir = root / ".agent" / "tasks"
     if not tasks_dir.is_dir():

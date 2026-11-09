@@ -33,6 +33,11 @@ from pathlib import Path
 # The dispatcher shim puts hooks/ on sys.path; colocated tests pin it too.
 from nav_hook_lib import config, hio, personal
 
+try:  # package context (runtime imports ops.session_start)
+    from . import compact_marker
+except ImportError:  # bare sibling context (unittest discovery from ops/)
+    import compact_marker
+
 SENTINEL = "<!-- nav-session-start-injected:v1 -->"
 CHAR_BUDGET = 9500  # v6 default; leaves headroom under Claude Code's 10k cap
 TRUNCATION_FOOTER = "\n\n[truncated: ask nav-start for full detail]"
@@ -273,17 +278,15 @@ def _section_auto_update(root: Path, plugin_dir):
         return None
 
 
-_TASK_ID_RE = re.compile(r"^([A-Za-z]+)-(\d+)")
-_DONE_MARKS = ("✅", "📦")
-_DONE_WORDS = ("completed", "archived", "archive pending")
+# ASCII digits only: the TS mirror's `[0-9]` never matches other Unicode digits, and the two
+# runtimes must emit the same bytes.
+_TASK_ID_RE = re.compile(r"^([A-Za-z]+)-([0-9]+)")
 _OPEN_CAP = 20
 _DONE_ID_CAP = 15
 _STATUS_CAP = 160
-
-
-def _task_is_done(status: str) -> bool:
-    low = status.lower()
-    return status.startswith(_DONE_MARKS) or any(word in low for word in _DONE_WORDS)
+# Head window per task doc. Wide enough that front matter or an intro paragraph before the
+# Status line does not drop a done doc into the open list (GH-47).
+_TASK_HEAD_CHARS = 2000
 
 
 def _task_sort_key(name: str):
@@ -309,7 +312,7 @@ def _section_open_tasks(root: Path):
             if not path.name.upper().startswith("README")
         ]
         for name in sorted(names, key=_task_sort_key):
-            head = hio.safe_read(tasks_dir / name, max_bytes=600) or ""
+            head = hio.safe_read(tasks_dir / name, max_bytes=_TASK_HEAD_CHARS) or ""
             title = next(
                 (
                     line.lstrip("# ").strip()
@@ -318,15 +321,10 @@ def _section_open_tasks(root: Path):
                 ),
                 name[:-3],
             )
-            status = "open"
-            for line in head.splitlines():
-                low = line.lower()
-                if "status" in low and ":" in low:
-                    status = line.split(":", 1)[1].strip().strip("*` ")
-                    break
-            if _task_is_done(status):
+            if compact_marker.is_done(head):
                 done_ids.append(_task_id(name))
                 continue
+            status = compact_marker.status_value(head) or "open"
             if len(status) > _STATUS_CAP:
                 status = status[: _STATUS_CAP - 1] + "…"
             open_entries.append(f"- `{name}` — {title} [{status}]")

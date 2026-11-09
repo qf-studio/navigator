@@ -295,6 +295,36 @@ class EventBranchingTest(CompactMarkerTestBase):
             self.assertIsNone(compact_marker.run(ctx))
 
 
+class DonePredicateTests(unittest.TestCase):
+    def test_leading_done_symbol_decides(self):
+        for value in ("✅ Completed", "✅ Spike complete — 2026-10-02 (mod)", "📦 released",
+                      "❌ Won't Do", "🗑️ Removed — 2026-10-01", "**✅ Implemented**"):
+            self.assertTrue(compact_marker.is_done(f"# T\n\n**Status**: {value}\n"), value)
+
+    def test_leading_open_symbol_decides_even_with_done_words(self):
+        for value in ("🚧 Phase 1 completed, Phase 2 in progress",
+                      "📋 Backlog — postponed; archived launch plans",
+                      "🏗️ Phase 3 Complete - Ready for release", "🚀 In Progress"):
+            self.assertFalse(compact_marker.is_done(f"# T\n\n**Status**: {value}\n"), value)
+
+    def test_without_symbol_the_first_clause_is_matched_whole_word(self):
+        for value in ("Complete (v2.0-v2.3)", "Complete and Ready to Execute", "Implemented",
+                      "`done`", "Released v7.7.0", "x Archive Pending", "ARCHIVED"):
+            self.assertTrue(compact_marker.is_done(f"# T\n\n> Status: {value}\n"), value)
+        for value in ("Planning", "APPROVED", "In Progress", "Incomplete", "Undone",
+                      "Open — completed items listed below"):
+            self.assertFalse(compact_marker.is_done(f"# T\n\n> Status: {value}\n"), value)
+
+    def test_title_and_prose_never_count(self):
+        text = "# TASK-67: status line shows completed tasks\n\nAll completed. Archived.\n"
+        self.assertFalse(compact_marker.is_done(text))
+        self.assertIsNone(compact_marker.status_value(text))
+
+    def test_status_value_strips_decoration(self):
+        self.assertEqual(compact_marker.status_value("**Status**: **✅ Done** \n"), "✅ Done")
+        self.assertEqual(compact_marker.status_value("status: `done`\n"), "done")
+
+
 class InProgressPredicateTests(unittest.TestCase):
     """TASK-91: the Status line decides; prose mentions elsewhere do not."""
 
