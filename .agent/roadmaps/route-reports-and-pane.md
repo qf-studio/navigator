@@ -18,8 +18,8 @@
 - [x] 5. Release the pane update as version 8.6.0. (needs 4)
 
 ### Phase 3: After the release
-- [ ] 6. Announce the route report and the pane on Threads and LinkedIn. (operator, needs 5)
+- [x] 6. Announce the route report and the pane on Threads and LinkedIn. (operator, needs 5)
 
 ### Waits for you
 - [ ] Check the pane in the desktop side panel.
-- [ ] Post the announcement from `.agent/marketing/2026-11-15-v8-6-0-posts.md`, then check step 6.
+- [x] Post the announcement from `.agent/marketing/2026-11-15-v8-6-0-posts.md`, then check step 6.
