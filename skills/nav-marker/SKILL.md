@@ -171,6 +171,24 @@ Create marker document with this structure:
 - Error message format preferences unknown
 ]
 
+## Route State (if the active task document has a `## Route` section)
+
+[Capture the route state so the next session can show what changed - skip when the command
+exits with an error (no task document with a route)]
+
+**Run**:
+```bash
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
+[ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
+python3 "$PLUGIN_DIR/skills/nav-route/functions/route_render.py" --state
+```
+
+**Paste the JSON it prints, unchanged, in a `json` code block**:
+[{"task": "TASK-12", "date": "2026-11-15", "steps": {"1": "Merged 2026-11-14", "2": "Next"}}]
+
+The next session runs `route_render.py --since <this marker>`; the report marks each step
+whose state changed (nav-route skill).
+
 ## Loop State (if in loop mode)
 
 [Capture loop mode state for resumption - skip if not in loop mode]

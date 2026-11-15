@@ -140,6 +140,25 @@ Concrete, checkable outcomes — written so anyone (human or AI) can verify them
 
 ---
 
+## Route
+
+<!-- The route in plain words: one line per step, no internal codes, no state words (the
+     state comes from GitHub and the checkboxes). A trailing parenthesis holds the ticket
+     (#12), "operator" for a step a person does, and "needs 1, 2". Read by nav-route and
+     the /nav pane. Phases below hold the technical detail. -->
+
+### Phase 1: {Name}
+- [ ] 1. [What this step does, in plain words]
+- [ ] 2. [What the next step does] (needs 1)
+
+### Side tracks
+- [ ] [Work outside the main route]
+
+### Waits for you
+- [ ] [A decision or an action for the user]
+
+---
+
 ## Implementation
 
 ### Phase 1: {Name}
@@ -495,13 +514,15 @@ Read .agent/tasks/TASK-{XX}-{slug}.md
 ## Task Document Template Structure
 
 ### For New Tasks (Planning)
-1. Context (problem/goal)
+1. Context (problem/goal; the goal is two or three plain sentences, nav-route prints it)
 2. Acceptance criteria (`- [ ]` checkable outcomes)
-3. Implementation (phases)
-4. Out of scope (explicit non-goals)
-5. Technical decisions (to be made)
-6. Verify + Done (validation + completion)
-7. Refs (sources/related)
+3. Route (one plain line per step, in phases; ticket, `operator` and `needs` in a trailing
+   parenthesis; no state words — `skills/nav-route/examples/route-section.md`)
+4. Implementation (phases, technical detail)
+5. Out of scope (explicit non-goals)
+6. Technical decisions (to be made)
+7. Verify + Done (validation + completion)
+8. Refs (sources/related)
 
 ### For Completed Tasks (Archive)
 1. What was built (summary)

@@ -222,7 +222,7 @@ DEFAULTS = {
         "api_key_file": "~/.config/typesafe/api_key",
         "max_state_chars": 4000,
     },
-    # ---- reply modes (v7.9 ADHD TASK-82, v8.3 STE TASK-93): the switch is the
+    # ---- reply modes (v7.9 ADHD TASK-82, v8.3 STE TASK-93, ROUTE GH-50): the switch is the
     # person's, not the repo's. reply_modes.enabled gates the prompt_modes op;
     # <mode>.enabled=True only makes that mode's machinery available (toggle
     # phrases answer, the block can be injected). Nothing is injected for
@@ -231,6 +231,7 @@ DEFAULTS = {
     "reply_modes": {"enabled": True},
     "adhd_mode": {"enabled": True, "on": None},
     "ste_mode": {"enabled": True, "on": None},
+    "route_mode": {"enabled": True, "on": None},
 }
 
 

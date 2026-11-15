@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-11-09T15:42:59.972151+00:00",
+  "last_updated": "2026-11-15T15:43:28.696371+00:00",
   "stats": {
-    "total_nodes": 298,
-    "total_edges": 899,
+    "total_nodes": 299,
+    "total_edges": 905,
     "memory_count": 122
   },
   "nodes": {
@@ -1004,6 +1004,19 @@
           "context",
           "skills",
           "deployment"
+        ]
+      },
+      "TASK-110": {
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-110-nav-route-report.md",
+        "title": "nav-route \u2014 a route report in plain words, plus a personal route mode",
+        "status": "in-progress",
+        "concepts": [
+          "markers",
+          "context",
+          "deployment",
+          "knowledge",
+          "testing",
+          "skills"
         ]
       }
     },
@@ -8587,6 +8600,36 @@
       "from": "mem-122",
       "to": "TASK-109",
       "type": "learned-from"
+    },
+    {
+      "from": "TASK-110",
+      "to": "markers",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-110",
+      "to": "context",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-110",
+      "to": "deployment",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-110",
+      "to": "knowledge",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-110",
+      "to": "testing",
+      "type": "implements"
+    },
+    {
+      "from": "TASK-110",
+      "to": "skills",
+      "type": "implements"
     }
   ],
   "concept_index": {
@@ -8782,7 +8825,8 @@
       "TASK-107",
       "mem-114",
       "TASK-108",
-      "mem-122"
+      "mem-122",
+      "TASK-110"
     ],
     "context": [
       "TASK-32",
@@ -8906,7 +8950,8 @@
       "TASK-93",
       "TASK-100",
       "TASK-107",
-      "TASK-108"
+      "TASK-108",
+      "TASK-110"
     ],
     "skills": [
       "TASK-32",
@@ -9038,7 +9083,8 @@
       "TASK-107",
       "TASK-108",
       "mem-126",
-      "mem-130"
+      "mem-130",
+      "TASK-110"
     ],
     "session": [
       "TASK-32",
@@ -9423,7 +9469,8 @@
       "TASK-69",
       "TASK-83",
       "TASK-107",
-      "TASK-108"
+      "TASK-108",
+      "TASK-110"
     ],
     "deployment": [
       "TASK-11",
@@ -9512,7 +9559,8 @@
       "TASK-108",
       "mem-124",
       "mem-128",
-      "mem-130"
+      "mem-130",
+      "TASK-110"
     ],
     "code quality": [
       "TASK-19",
@@ -9591,7 +9639,8 @@
       "TASK-93",
       "TASK-95",
       "TASK-100",
-      "TASK-108"
+      "TASK-108",
+      "TASK-110"
     ],
     "theory of mind": [
       "TASK-19",

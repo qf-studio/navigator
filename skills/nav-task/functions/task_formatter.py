@@ -52,6 +52,25 @@ Concrete, checkable outcomes — written so anyone (human or AI) can verify them
 
 ---
 
+## Route
+
+<!-- The route in plain words: one line per step, no internal codes, no state words (the
+     state comes from GitHub and the checkboxes). A trailing parenthesis holds the ticket
+     (#12), "operator" for a step a person does, and "needs 1, 2". Read by nav-route and
+     the /nav pane. Phases below hold the technical detail. -->
+
+### Phase 1: [Phase Name]
+- [ ] 1. [What this step does, in plain words]
+- [ ] 2. [What the next step does] (needs 1)
+
+### Side tracks
+- [ ] [Work outside the main route]
+
+### Waits for you
+- [ ] [A decision or an action for the user]
+
+---
+
 ## Implementation
 
 ### Phase 1: [Phase Name]

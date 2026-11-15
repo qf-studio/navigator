@@ -39,6 +39,7 @@
     "./skills/nav-start",
     "./skills/nav-stats",
     "./skills/nav-roadmaps",
+    "./skills/nav-route",
     "./skills/nav-profile",
     "./skills/nav-diagnose",
     "./skills/nav-loop",

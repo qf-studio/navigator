@@ -202,5 +202,9 @@ export const CONFIG_DEFAULTS = {
   "ste_mode": {
     "enabled": true,
     "on": null
+  },
+  "route_mode": {
+    "enabled": true,
+    "on": null
   }
 } as const

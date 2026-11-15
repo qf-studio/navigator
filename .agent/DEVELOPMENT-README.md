@@ -225,6 +225,14 @@ Other threads:
   Pitfall: pushing review fixes to a Pilot PR branch after the squash merge only resurrects
   the deleted branch — check `gh pr view` state first. On macOS `make test` died inside BSD
   `xargs -I{}` and still printed "All unit tests passed" (fixed in the bump: `-n1`, `$1`).
+- **TASK-110 nav-route** 🚧 (GH-50, branch `feat/nav-route-gh-50`, unreleased) — a route report
+  in plain words: `## Route` section in the task templates (phases, one checkbox line per
+  step, ticket / `operator` / `needs` in a trailing parenthesis, no state words),
+  `skills/nav-route/functions/route_render.py` (full form, `--short --since <marker>`,
+  `--state`; state from `gh api`, checkboxes as fallback; a step with no plain line is an
+  error), `parseSteps` reads `## Route` first so the `/nav` pane and the report share one
+  format, `route` row in `MODES` (cap 1600 → 2200), `## Route State` in nav-marker.
+  File: `.agent/tasks/TASK-110-nav-route-report.md`. Next: the `/nav` pane roadmap card.
 - **nav-roadmaps** ✅ (v8.4.13, 2026-11-09) — every roadmap doc under `.agent/` as one table
   (kind, last date, status, stale flag) plus per-section ticket counts; `--also` for sibling
   repos (161b749, 12 tests).

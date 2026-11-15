@@ -233,6 +233,18 @@ FEATURES = {
         "type": "config",
         "personal": True
     },
+    "route_mode": {
+        "name": "route_mode",
+        "display_name": "Route Mode",
+        "version": "8.5.0",
+        "description": "Per-person route report shape (goal, roadmap, side tracks, queue, what waits for you; no internal step codes); say 'route mode on/off' any time",
+        "short_desc": "Route report in plain words, personal switch",
+        "config_key": "route_mode",
+        "enabled_key": "on",
+        "default": False,
+        "type": "config",
+        "personal": True
+    },
     "tier1": {
         "name": "tier1",
         "display_name": "Tier-1 Answers",

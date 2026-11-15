@@ -51,7 +51,7 @@ Each behavior is an op with a config off-switch in `.agent/.nav-config.json`:
 |---|---|---|---|
 | Workflow gating | prompt_gate | `prompt.submit` | `workflow_enforcer_hook.enabled`, `.strict_block` |
 | Tier-1 instant answers | prompt_tier1 | `prompt.submit` | `tier1.enabled`, per rule via `tier1.rules` |
-| Reply modes (ADHD shape, STE sentences) | prompt_modes | `prompt.submit` | `reply_modes.enabled`; per mode `<key>_mode.enabled`, `<key> mode on/off` or `<key>_mode.on` |
+| Reply modes (ADHD shape, ROUTE report, STE sentences) | prompt_modes | `prompt.submit` | `reply_modes.enabled`; per mode `<key>_mode.enabled`, `<key> mode on/off` or `<key>_mode.on` |
 | Intent briefs on ambiguous prompts | prompt_brief | `prompt.submit` | `brief_hook.enabled` |
 | Repeated-Read guard | read_guard | `tool.call` (Read) | `read_guard_hook.enabled`, `.strict_block` |
 | Hand-written task doc guard (GH-40) | task_doc_guard | `classic.PreToolUse` (Write/Edit/Bash/Skill) + `classic.UserPromptSubmit`, Python-only | `task_doc_guard_hook.enabled`, `.strict_block` |
@@ -262,7 +262,7 @@ config. Verify with `python3 hooks/nav_hook_lib/judge.py --check`; session start
 key source or warns when none is found. Setup SOP:
 `.agent/sops/integrations/typesafe-judge-setup.md`. Replay the eval with `scripts/judge_eval.py`.
 
-### Reply Modes: ADHD and STE (v7.9.0, v8.3.0)
+### Reply Modes: ADHD, ROUTE and STE (v7.9.0, v8.3.0, GH-50)
 
 Per-person switches that shape replies. Each mode is one row in a table
 (`hooks/nav_hook_lib/reply_modes.py`, mirrored in `hooks/mod/lib/reply_modes.ts`) and one
@@ -277,12 +277,20 @@ exists nowhere in the context. Subagents never see it. A repo can pin a mode wit
 - **ADHD** (`adhd mode on`): reply shape. One next action first, time-critical items
   first with the deadline in bold, bullets over prose, lists capped at five, numbered
   steps with "step k of n", no preamble, one sub-two-minute closing action.
+- **ROUTE** (`route mode on`): status reports in long sessions. Five parts in order (the
+  goal, the roadmap, side tracks, the queue now, what waits for you), work named by what it
+  does and by its ticket number, no internal step codes, each change since the last report
+  marked. A report is due at session start and end, and after a dispatch, a merge, a review
+  verdict or a deviation from the plan. The `nav-route` skill prints the report from the
+  `## Route` section of the task document and live `gh` state
+  (`skills/nav-route/SKILL.md`); its lines are exempt from the STE sentence rules.
 - **STE** (`ste mode on`, `use ste`): sentence style from ASD-STE100 Simplified
   Technical English, Part 1 only. One idea per sentence, 20 words for instructions,
   imperative instructions, active voice, present tense, no gerunds, no noun clusters,
   full sentences. The controlled dictionary is not applied.
 
-When both are on, the blocks stack in table order: shape first, sentences inside it.
+When several are on, the blocks stack in table order: shape first (ADHD, ROUTE), sentences
+inside it (STE).
 Enforced by prompt_modes (hook runtime); this text is documentation, not the mechanism.
 Design: `.agent/tasks/archive/TASK-82-adhd-mode.md`, `.agent/tasks/archive/TASK-93-reply-modes-ste.md`.
 
@@ -390,6 +398,7 @@ Natural language commands:
 - "Create context marker [name]" (save point)
 - "Clear context and preserve markers" (compact)
 - "Show roadmaps" (every roadmap doc as one table, stale flags)
+- "Route report" (goal, roadmap with live ticket state, queue, what waits for you)
 
 Slash commands (legacy, still work): `/nav:init`, `/nav:start`, `/nav:marker`,
 `/nav:compact`

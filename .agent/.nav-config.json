@@ -191,5 +191,9 @@
   "ste_mode": {
     "enabled": true,
     "on": null
+  },
+  "route_mode": {
+    "enabled": true,
+    "on": null
   }
 }

@@ -167,6 +167,7 @@ ALL_FEATURE_BLOCKS = {
     "adhd_mode",  # 7.9.0 (TASK-82)
     "reply_modes",  # 8.3.0 (TASK-93)
     "ste_mode",  # 8.3.0 (TASK-93)
+    "route_mode",  # 8.5.0 (GH-50)
     "tom_features",
     "loop_mode",
     "simplification",

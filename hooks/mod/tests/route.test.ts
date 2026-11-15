@@ -3,8 +3,8 @@ import { describe, expect, test } from 'claude-code/testing'
 import { firstLine, parseNextAction } from '../ui/status'
 
 import {
-  bandText, buildRoute, captureGoal, contentWords, isOffRoute, nextTaskNumber, parseChecklist, parseSteps,
-  routeView, waypointText,
+  bandText, buildRoute, captureGoal, contentWords, isOffRoute, nextTaskNumber, parseChecklist,
+  parseRouteSection, parseSteps, routeView, waypointText,
 } from '../ui/route'
 
 // The shape TASK-84 uses: a numbered work-breakdown table, progress headings marking steps ✅.
@@ -65,6 +65,38 @@ describe('route model', () => {
       { id: '9', label: 'Docs: CLAUDE.md "Runtime" table', done: false },
       { id: '10', label: 'Dogfood, bump, tag, CI release', done: false }, // "(automated part)" is partial
     ])
+  })
+  test('steps: a `## Route` section wins over every other checkbox (GH-50)', () => {
+    const doc = [
+      '# TASK-7: Open Tasks',
+      '## Acceptance Criteria',
+      '- [ ] An acceptance box is not a step.',
+      '## Route',
+      '### Phase 1: The gate',
+      '- [x] 1. Read the status from one shared function. (#48)',
+      '- [ ] 2. Show done documents as one count line. (PR #49, needs 1)',
+      '- [ ] 3. Install the plugin (the founder box). (operator, needs 2)',
+      '### Phase 2: Release',
+      '- [ ] 4a. Announce the release. (acme/site#7, needs 3, 2)',
+      '### Side tracks',
+      '- [ ] Repair the test target. (#52)',
+      '### Waits for you',
+      '- [ ] Decide the release number.',
+      '## Done',
+      '- [ ] Not a step either.',
+    ].join('\n')
+    const steps = [
+      { id: '1', label: 'Read the status from one shared function.', done: true },
+      { id: '2', label: 'Show done documents as one count line.', done: false },
+      { id: '3', label: 'Install the plugin (the founder box).', done: false },
+      { id: '4a', label: 'Announce the release.', done: false },
+    ]
+    expect(parseRouteSection(doc)).toEqual(steps)
+    expect(parseSteps(doc)).toEqual(steps)
+    expect(parseRouteSection('## Routes\n- [ ] 1. Not a route section.')).toEqual([])
+    // A route section with no numbered step falls back to the checklist.
+    expect(parseSteps('## Route\n### Side tracks\n- [ ] a side track\n## Done\n- [x] b'))
+      .toEqual([{ label: 'a side track', done: false }, { label: 'b', done: true }])
   })
   test('steps: a numbered list under a plan heading; ✅ or strike-through marks done', () => {
     const doc = '## Notes\n1. not a step\n## Implementation plan\n1. Write the parser ✅\n2. ~~Drop the panel~~\n3. Ship it\n## Risks\n4. none'

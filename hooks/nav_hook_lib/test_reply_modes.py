@@ -47,7 +47,7 @@ class _Isolated(unittest.TestCase):
 
 class TableTest(unittest.TestCase):
     def test_rows_are_unique_and_ordered_shape_before_sentence(self):
-        self.assertEqual([m.key for m in rm.MODES], ["adhd", "ste"])
+        self.assertEqual([m.key for m in rm.MODES], ["adhd", "route", "ste"])
         for attr in ("key", "label", "config_key", "state_name", "rule_block"):
             values = [getattr(m, attr) for m in rm.MODES]
             self.assertEqual(len(values), len(set(values)), attr)
@@ -72,6 +72,24 @@ class TableTest(unittest.TestCase):
             self.assertNotIn("<!--", block)
             self.assertLess(len(block), 900, mode.key)
         self.assertLess(total, rm.MAX_TOTAL_BLOCK_CHARS)
+
+    def test_route_block_names_the_shape_the_rules_and_the_events(self):
+        block = rm.by_key("route").rule_block
+        for must in ("the goal, the roadmap, side tracks, the queue now, what waits for you",
+                     "Internal step codes stay out", "change since the last report is marked",
+                     "leaves the plan", "session start and end", "a dispatch, a merge",
+                     "a review verdict", "nav-route skill", "lines stay as printed"):
+            self.assertIn(must, block)
+
+    def test_typescript_mirror_holds_every_block_verbatim(self):
+        mirror = (Path(__file__).resolve().parents[1] / "mod" / "lib" / "reply_modes.ts")
+        text = mirror.read_text(encoding="utf-8")
+        for mode in rm.MODES:
+            self.assertIn(f"`{mode.rule_block}`", text, mode.key)
+            self.assertIn(f"key: '{mode.key}', label: '{mode.label}', "
+                          f"configKey: '{mode.config_key}', stateName: '{mode.state_name}'",
+                          text, mode.key)
+        self.assertEqual(text.count("ruleBlock: "), len(rm.MODES) + 1)  # rows + the type
 
     def test_adhd_block_keeps_its_v7_9_rules(self):
         for must in ("ONE next action", "deadline in bold", "at most 5", "step k of n",

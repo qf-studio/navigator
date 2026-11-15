@@ -1,8 +1,8 @@
-// Reply modes (ADHD TASK-82, STE TASK-93), mirrored from hooks/nav_hook_lib/reply_modes.py
-// and hooks/ops/prompt_modes.py. Pure: no `$` here. The op does the I/O and feeds these
+// Reply modes (ADHD TASK-82, ROUTE GH-50, STE TASK-93), mirrored from
+// hooks/nav_hook_lib/reply_modes.py and hooks/ops/prompt_modes.py. Pure: no `$` here. The op does the I/O and feeds these
 // functions. Every mode is one row in MODES; adding a mode is adding a row here and the
 // mirrored row in the Python table. Table order is injection order: reply-shape rules
-// (ADHD) before sentence rules (STE), so the later block applies inside the earlier one.
+// (ADHD, ROUTE) before sentence rules (STE), so the later block applies inside the earlier ones.
 
 export const OP_CONFIG_KEY = 'reply_modes'
 export const MAX_PHRASE_CHARS = 32
@@ -29,6 +29,15 @@ Kept in full regardless: error output, test results, anything the user asked to 
 explained, and every warning before a destructive action.
 Applies to replies only, not to files, reports or commit messages.`
 
+export const ROUTE_RULE_BLOCK = `ROUTE MODE: on (personal setting; "route mode off" ends it)
+The reader follows long work by a route report. The report shape that works:
+- Five parts in order: the goal, the roadmap, side tracks, the queue now, what waits for you.
+- Work is named by what it does and by its ticket number. Internal step codes stay out.
+- Each change since the last report is marked. Work that leaves the plan is named, with the reason.
+- A report is due at session start and end, and after a dispatch, a merge, a review verdict
+  or a deviation from the plan.
+The nav-route skill prints the report; its lines stay as printed. Applies to replies only.`
+
 export const STE_RULE_BLOCK = `STE MODE: on (personal setting; "ste mode off" ends it)
 The reader wants ASD-STE100 Simplified Technical English. The sentence style that works:
 - One idea per sentence. Instructions have 20 words or fewer, descriptions 25 or fewer.
@@ -42,6 +51,8 @@ any reply-shape rules above.`
 export const MODES: readonly Mode[] = [
   { key: 'adhd', label: 'ADHD', configKey: 'adhd_mode', stateName: 'adhd-mode',
     ruleBlock: ADHD_RULE_BLOCK, extraOn: [], extraOff: [] },
+  { key: 'route', label: 'ROUTE', configKey: 'route_mode', stateName: 'route-mode',
+    ruleBlock: ROUTE_RULE_BLOCK, extraOn: [], extraOff: [] },
   { key: 'ste', label: 'STE', configKey: 'ste_mode', stateName: 'ste-mode',
     ruleBlock: STE_RULE_BLOCK, extraOn: ['use ste'], extraOff: ['stop ste'] },
 ]

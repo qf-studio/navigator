@@ -14,6 +14,15 @@ const ITEM_RE = /^\s*(\d+)[.)]\s+(.+?)\s*$/
 // `### Step 0 — …✅`, `### Steps 5b + 5c — …✅`; `### Step 10 (automated part) — …✅` is partial.
 const STEP_DONE_RE = /^#{2,4}\s+Steps?\s+([\da-z+,&\s]+?)\s*(\([^)]*\))?\s*[—–-]\s.*✅/i
 const LABEL_MAX = 60
+// The `## Route` section of a task doc (GH-50), mirrored from
+// skills/nav-route/functions/route_render.py: `- [ ] 3. Plain line. (#12, needs 2)`.
+const ROUTE_RE = /^##\s+Route\s*$/i
+const ROUTE_OFF_RE = /^###\s+(side tracks|waits for you)\s*$/i
+const ROUTE_STEP_RE = /^(\d+[a-z]?)[.)]\s+(.+)$/i
+const ROUTE_ATTR =
+  String.raw`(?:(?:pr\s+)?(?:[\w.-]+\/[\w.-]+)?#\d+|operator|needs\s+[\da-z ]+|\d+[a-z]?)`
+const ROUTE_ATTRS_RE =
+  new RegExp(String.raw`\s*\(\s*${ROUTE_ATTR}(?:\s*,\s*${ROUTE_ATTR})*\s*\)\s*$`, 'i')
 const GOAL_RE = /^\s*(?:\|\s*)?(?:\*\*)?goal(?:\*\*)?\s*(?:\||:)\s*(?:\*\*)?(.+?)(?:\s*\|)?\s*$/im
 const STOP = new Set([
   'this', 'that', 'these', 'those', 'with', 'from', 'into', 'about', 'after', 'before', 'please',
@@ -55,11 +64,40 @@ const doneIds = (lines: readonly string[]): Set<string> =>
   }))
 
 /**
- * The steps to the destination, from the active task doc: its `- [ ]` checklist when it has one,
- * else the numbered table rows or list items of its plan section, done when the row says ✅ or
- * ~~struck~~, or a `### Step n — … ✅` progress heading names it.
+ * The numbered steps of a `## Route` section, in order: the main route only (side tracks and
+ * the "waits for you" list are not legs), each label without its `(#12, needs 2)` attributes.
+ * [] when the doc has no such section, so acceptance and Done checkboxes never count as legs.
+ */
+export const parseRouteSection = (markdown: string): Step[] => {
+  const lines = markdown.split('\n')
+  const start = lines.findIndex(l => ROUTE_RE.test(l))
+  if (start < 0) return []
+  const steps: Step[] = []
+  let off = false
+  for (const line of lines.slice(start + 1)) {
+    if (/^##\s/.test(line)) break
+    if (/^###\s/.test(line)) { off = ROUTE_OFF_RE.test(line); continue }
+    const check = off ? null : CHECK_RE.exec(line)
+    const step = check?.[2] ? ROUTE_STEP_RE.exec(check[2].replace(/\*\*/g, '')) : null
+    if (!check || !step) continue
+    steps.push({
+      id: step[1]!.toLowerCase(),
+      label: step[2]!.replace(ROUTE_ATTRS_RE, '').trim(),
+      done: check[1] !== ' ',
+    })
+  }
+  return steps
+}
+
+/**
+ * The steps to the destination, from the active task doc: its `## Route` section when it has
+ * one (GH-50); else its `- [ ]` checklist; else the numbered table rows or list items of its
+ * plan section, done when the row says ✅ or ~~struck~~, or a `### Step n — … ✅` progress
+ * heading names it.
  */
 export const parseSteps = (markdown: string): Step[] => {
+  const route = parseRouteSection(markdown)
+  if (route.length > 0) return route
   const checklist = parseChecklist(markdown)
   if (checklist.length > 0) return checklist
   const lines = markdown.split('\n')

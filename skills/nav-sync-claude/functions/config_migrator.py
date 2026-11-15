@@ -254,6 +254,12 @@ VERSION_CONFIGS: Dict[str, Dict[str, Any]] = {
             "on": None
         }
     },
+    "8.5.0": {
+        "route_mode": {
+            "enabled": True,
+            "on": None
+        }
+    },
 }
 
 

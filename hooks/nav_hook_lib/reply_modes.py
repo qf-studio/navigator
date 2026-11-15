@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""nav_hook_lib.reply_modes — per-person reply modes (TASK-82 ADHD, TASK-93 STE).
+"""nav_hook_lib.reply_modes — per-person reply modes (TASK-82 ADHD, GH-50 ROUTE, TASK-93 STE).
 
 A reply mode is a rule block that rides every prompt while the mode is on and
 exists nowhere in the context while it is off. Every mode is one row in
 ``MODES``; adding a mode is adding a row here and the mirrored row in
 ``hooks/mod/lib/reply_modes.ts``. Table order is injection order: reply-shape
-rules (ADHD) come before sentence rules (STE), so the later block applies
-inside the earlier one.
+rules (ADHD, ROUTE) come before sentence rules (STE), so the later block applies
+inside the earlier ones.
 
 The switch is the person's, not the repo's:
 
@@ -31,7 +31,7 @@ OP_CONFIG_KEY = "reply_modes"
 MAX_PHRASE_CHARS = 32
 # Soft ceiling on the sum of every rule block (all modes on at once); asserted
 # by tests so a new row cannot quietly double the per-prompt cost.
-MAX_TOTAL_BLOCK_CHARS = 1600
+MAX_TOTAL_BLOCK_CHARS = 2200
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,20 @@ Kept in full regardless: error output, test results, anything the user asked to 
 explained, and every warning before a destructive action.
 Applies to replies only, not to files, reports or commit messages."""
 
+# ROUTE (GH-50): the shape and the events of a status report in long sessions.
+# Deliberately short: the nav-route skill holds the shape and the live ticket
+# state; this block only says that a report is due and what it must never hold.
+# "Its lines stay as printed" exempts the report rows from the STE sentence rules.
+ROUTE_RULE_BLOCK = """\
+ROUTE MODE: on (personal setting; "route mode off" ends it)
+The reader follows long work by a route report. The report shape that works:
+- Five parts in order: the goal, the roadmap, side tracks, the queue now, what waits for you.
+- Work is named by what it does and by its ticket number. Internal step codes stay out.
+- Each change since the last report is marked. Work that leaves the plan is named, with the reason.
+- A report is due at session start and end, and after a dispatch, a merge, a review verdict
+  or a deviation from the plan.
+The nav-route skill prints the report; its lines stay as printed. Applies to replies only."""
+
 # STE (TASK-93): a Part 1 subset of ASD-STE100 Issue 9 (Simplified Technical
 # English). Sentence-level rules only; the ~900-word dictionary does not fit a
 # developer conversation and is deliberately left out.
@@ -105,6 +119,7 @@ any reply-shape rules above."""
 
 MODES: tuple = (
     Mode("adhd", "ADHD", "adhd_mode", "adhd-mode", ADHD_RULE_BLOCK),
+    Mode("route", "ROUTE", "route_mode", "route-mode", ROUTE_RULE_BLOCK),
     Mode("ste", "STE", "ste_mode", "ste-mode", STE_RULE_BLOCK,
          extra_on=("use ste",), extra_off=("stop ste",)),
 )

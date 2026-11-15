@@ -62,6 +62,7 @@ v<version> Features:
 │ judge                   │ [ ]    │ Jev judgments overlay the prompt scorers      │
 │ adhd_mode               │ [ ]    │ Per-person reply shaping (one next action,... │
 │ ste_mode                │ [ ]    │ STE sentence rules, personal switch           │
+│ route_mode              │ [ ]    │ Route report in plain words, personal switch  │
 │ config_guard            │ [x]    │ Warns when .nav-config.json edits break JSON  │
 │ setup_hook              │ [x]    │ One-line runtime status on the Setup event    │
 └─────────────────────────┴────────┴───────────────────────────────────────────────┘
@@ -141,6 +142,10 @@ v7 hooks runtime (config-toggled; new blocking/injecting features ship OFF):
   mechanics as `adhd_mode`: `enable ste_mode` writes `~/.config/navigator/ste-mode.json`,
   or say `ste mode on` / `use ste` / `ste mode off` at any prompt. Both modes may be on;
   the ADHD block comes first and the STE block applies inside it
+- `route_mode` - Route report shape for long sessions (goal, roadmap, side tracks, the queue
+  now, what waits for you; no internal step codes; changes marked). Same personal-switch
+  mechanics: `enable route_mode` writes `~/.config/navigator/route-mode.json`, or say
+  `route mode on` / `route mode off` at any prompt. The `nav-route` skill prints the report
 - `config_guard` - systemMessage warning on invalid `.nav-config.json` edits
   (safety surface, ON by default)
 - `setup_hook` - One-line runtime status on the Setup event (safety surface,
