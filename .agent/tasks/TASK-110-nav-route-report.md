@@ -1,6 +1,6 @@
 # TASK-110: nav-route — a route report in plain words, plus a personal route mode
 
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed (v8.5.0, 2026-11-15)
 **Created**: 2026-11-15
 **Assignee**: Manual
 
@@ -61,12 +61,11 @@ pane all read.
 - [x] 6. Add the route reply mode to both runtimes. (needs 2)
 - [x] 7. Record the route state in a context marker. (needs 3)
 
-### Phase 4: Documents and the pull request
+### Phase 4: Documents and the release
 - [x] 8. Describe the skill and the mode in the project documents. (needs 6)
-- [ ] 9. Open the pull request for review. (#50, needs 8)
+- [x] 9. Release the version 8.5.0. (#50, needs 8)
 
 ### Waits for you
-- [ ] Review the pull request and decide on the release number.
 - [ ] Decide what the `/nav` pane shows in place of the memories card.
 
 ---
@@ -108,10 +107,10 @@ python3 skills/nav-route/functions/route_render.py --task .agent/tasks/TASK-110-
 
 ## Done
 
-- [ ] `skills/nav-route/functions/route_render.py` prints the full form, the short form and
+- [x] `skills/nav-route/functions/route_render.py` prints the full form, the short form and
       the route state.
-- [ ] `make test` and `make mod-test` pass.
-- [ ] The pull request for #50 is open.
+- [x] `make test` and `make mod-test` pass.
+- [x] Released as v8.5.0 (the owner chose a direct release, with no pull request).
 
 ---
 

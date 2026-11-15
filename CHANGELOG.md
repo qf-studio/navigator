@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.5.0] — 2026-11-15
+
+New skill `nav-route`: a route report in plain words (the goal, the roadmap in phases, side
+tracks, the queue now, what waits for you) from the `## Route` section of a task document,
+with ticket state from GitHub and the checkboxes as fallback; a short form that shows only
+the changed lines. The task templates carry the route section and the `/nav` pane reads its
+legs from it. `route mode on` is a third personal reply mode that says when a report is due
+and keeps internal step codes out (GH-50).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.5.0.md)
+
 ## [v8.4.13] — 2026-11-09
 
 Session discipline from the Pilot batch: `task_doc_guard` blocks a hand-written task doc until

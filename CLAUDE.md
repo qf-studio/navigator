@@ -262,7 +262,7 @@ config. Verify with `python3 hooks/nav_hook_lib/judge.py --check`; session start
 key source or warns when none is found. Setup SOP:
 `.agent/sops/integrations/typesafe-judge-setup.md`. Replay the eval with `scripts/judge_eval.py`.
 
-### Reply Modes: ADHD, ROUTE and STE (v7.9.0, v8.3.0, GH-50)
+### Reply Modes: ADHD, ROUTE and STE (v7.9.0, v8.5.0, v8.3.0)
 
 Per-person switches that shape replies. Each mode is one row in a table
 (`hooks/nav_hook_lib/reply_modes.py`, mirrored in `hooks/mod/lib/reply_modes.ts`) and one
@@ -466,5 +466,5 @@ DEFAULTS < shared < local); `nav-features disable <feature> --local` writes ther
 
 **For complete Navigator documentation**: See `.agent/DEVELOPMENT-README.md`
 
-**Last Updated**: 2026-11-09
-**Navigator Version**: 8.4.13
+**Last Updated**: 2026-11-15
+**Navigator Version**: 8.5.0
