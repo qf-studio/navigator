@@ -743,7 +743,7 @@ const judged = (on: On, files: Files, caseIndex: number) => {
   on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: JSON.stringify(doc) } }))
 }
 
-test('(u4) stacked below 72 columns: the judge version takes its own line, the next card wraps', async ($, on) => {
+test('(u4) below 72 columns the judge verdict is one row of the top card; j opens its card, the next card wraps', async ($, on) => {
   const files: Files = {}
   judged(on, files, 30)
   world(on, files, 20)
@@ -754,10 +754,15 @@ test('(u4) stacked below 72 columns: the judge version takes its own line, the n
   expect(wideVersion).toHaveLength(1) // in the row layout the version sits beside the verdict
   await wide.unmount()
   const narrow = await navPane($, 'terminal', 46)
-  const lines = (await narrow.findAll({ type: 'Text' })).map(t => t.text)
-  expect(lines.filter(t => t === 'jev-1.13.0')).toHaveLength(1) // its own line
-  expect(lines.join('\n')).toContain('judge  task · substantial · unclear')
+  let lines = (await narrow.findAll({ type: 'Text' })).map(t => t.text)
+  expect(lines.filter(t => t === 'jev-1.13.0')).toHaveLength(0) // the model name waits behind j
+  expect(lines.join('\n')).toContain('judge\ntask · substantial · unclear')
   expect(lines.join('\n')).toContain('TASK-80\nTyped judge, phase 2') // not truncated
+  await narrow.press({ key: 'judge' })
+  lines = (await narrow.findAll({ type: 'Text' })).map(t => t.text)
+  expect(lines.filter(t => t === 'jev-1.13.0')).toHaveLength(1) // its own line in the open card
+  expect(lines.join('\n')).toContain('judge  task · substantial · unclear')
+  await narrow.press({ key: 'judge' })
 })
 
 test('(u) the judge card: verdict in words, the effect, the axes it overrode; j opens the tally', async ($, on) => {
@@ -847,7 +852,8 @@ const routeJson = (over: Record<string, unknown> = {}) => JSON.stringify({
   done: 2, total: 6,
   routes: [
     { path: ROADMAP_PATH, id: '', title: 'Route reports and the pane', kind: 'roadmap', has_route: true, done: 2, total: 6, active: true },
-    { path: '.agent/tasks/TASK-80-judge.md', id: 'TASK-80', title: 'Typed judge, phase 2', kind: 'task', has_route: false, done: 0, total: 0, active: false },
+    { path: '.agent/tasks/TASK-80-judge.md', id: 'TASK-80', title: 'Typed judge, phase 2', kind: 'task', has_route: true, done: 0, total: 3, active: false },
+    { path: '.agent/tasks/TASK-15-x.md', id: 'TASK-15', title: 'Marketing plan', kind: 'task', has_route: false, done: 0, total: 0, active: false },
   ],
   ...over,
 })
@@ -888,27 +894,39 @@ test('(x) the route card: phases with counts, the open phase with tickets and st
   expect(submitted).toEqual(['Do the next leg of "Route reports and the pane": Install the plugin on the build machine.'])
 })
 
-test('(x2) the side panel (below 72 columns): one line each for context and session, folded phases, open steps only', async ($, on) => {
-  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20)
+test('(x2) the side panel (below 72 columns) is light: gauge, one line per step, the ticket on the pressed step only', async ($, on) => {
+  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 42)
   routeReply = () => routeJson()
   await $.command.run(NAV_CMD)
+  await complete($, 'ok\n')
   for (const surface of SURFACES) {
-    const ui = await navPane($, surface, 38)
+    const ui = await navPane($, surface, 46)
     const lines = (await ui.findAll({ type: 'Text' })).map(t => t.text)
     const all = lines.join('\n')
-    expect(all).toContain('context\n--% · compact safe')
+    expect(all).toContain('context\n42%') // the fill gauge stays: glyph cells here, a Box fill on the desktop
+    if (surface === 'terminal') expect(/42% [█▓░]+/.test(all)).toBe(true)
+    expect(all).not.toContain('compact safe') // the verdict shows only when it asks for something
     expect(all).toContain('session\n--')
-    expect(all).toContain('2/6 · 4 legs left')
+    expect(all).toContain('2/6 · 4 legs left · phase 2 of 3')
     expect(all).not.toContain('Each report and the pane') // no goal line
-    expect(all).toContain('✓ 1 phase done')
+    expect(all).not.toContain('phase done') // the other phases are the hint above, not lines
     expect(all).toContain('● The pane')
-    expect(all).toContain('○ 1 phase later')
-    expect(all).toContain('Show the route in the pane.\nTASK-111 · PR #53 · In the queue now')
+    // The pressed step: full text and its ticket. The other open steps: one line and one word.
+    expect(all).toContain('Install the plugin on the build machine.\nOperator step · Next')
+    expect(all).toContain('Show the route in the pane.\nqueue')
+    expect(all).not.toContain('TASK-111 · PR #53')
+    expect(all).toContain('Announce the release.\nblocked')
+    expect(all).not.toContain('Blocked: needs step 4')
+    expect(all).not.toContain('state from GitHub') // behind d
+    expect(all).not.toContain('queue\nTASK-111') // the queue row is the ● marks on the steps
     expect(all).toContain('2 wait for you')
     expect(all).toContain('… 1 more · say "route report"')
     expect(all).not.toContain('Review PR #53')
-    await ui.press({ key: 'details' }) // d brings the full context and session cards back
-    expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('0  0 docs')
+    await ui.press({ key: 'details' }) // d brings the full cards and the source line back
+    const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+    expect(more).toContain('0  0 docs')
+    expect(more).toContain('compact safe')
+    expect(more).toContain('state from GitHub ')
     await ui.press({ key: 'details' })
     await ui.unmount()
   }
@@ -929,7 +947,8 @@ test('(x3) t lists the roadmaps; a press selects one for the pane, the band and 
   let all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
   expect(all).toContain('roadmaps')
   expect(all).toContain('Route reports and the pane\n2/6')
-  expect(all).toContain('TASK-80  Typed judge, phase 2\nno route section')
+  expect(all).toContain('TASK-80  Typed judge, phase 2\n0/3')
+  expect(all).not.toContain('Marketing plan') // a document with no route section is not offered
   await ui.press({ key: 'route-1' })
   expect(selected()).toBe('.agent/tasks/TASK-80-judge.md')
   all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')

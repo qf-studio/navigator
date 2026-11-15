@@ -4,7 +4,8 @@ import type { NavRouteReport, NavRouteStep } from '../../../types'
 import { bandText, parseRouteSection } from '../ui/route'
 import {
   bandCounts, bandLeg, bashTouchesTickets, cardLines, currentStep, hasTicket, legPromptOf, parseRouteOutput,
-  phaseTitle, progressText, routesHint, rowCount, sideText, sourceText, stepMark, wantTickets,
+  phaseHint, phaseTitle, progressText, routesHint, rowCount, shortState, sideText, sourceText, stepMark,
+  wantTickets,
 } from '../ui/roadmap'
 
 const step = (number: string, kind: string, over: Partial<NavRouteStep> = {}): NavRouteStep => ({
@@ -54,10 +55,14 @@ describe('route card model', () => {
     expect(lines.map(l => (l.type === 'step' ? l.step.number : l.type === 'more' ? `+${l.count}` : l.type)))
       .toEqual(['phase', 'phase', '3', '4', '+2', 'phase'])
   })
-  test('lines, compact: phases before and after fold into counts; open steps only', () => {
+  test('lines, compact: the open phase only, with its open steps; a hint says where it sits', () => {
     const lines = cardLines(report(), 3, true)
     expect(lines.map(l => (l.type === 'fold' ? `${l.mark} ${l.text}` : l.type === 'step' ? l.step.number : l.type)))
-      .toEqual(['✓ 1 phase done', 'phase', '4', '5', '6', '○ 1 phase later'])
+      .toEqual(['phase', '4', '5', '6'])
+    expect(phaseHint(report())).toBe('phase 2 of 3')
+    expect(phaseHint(report({ phases: [report().phases[1]!] }))).toBe('')
+    expect(['queue', 'work', 'next', 'blocked', 'later', 'done'].map(shortState))
+      .toEqual(['queue', 'work', 'next', 'blocked', '', ''])
     const done = report({ phases: [{ title: 'A', done: 1, total: 1, steps: [step('1', 'done')] }, { title: 'B', done: 1, total: 1, steps: [step('2', 'done')] }] })
     expect(cardLines(done, 3, true)).toEqual([{ type: 'fold', mark: '✓', text: '2 phases done' }])
     expect(cardLines(done, 3).every(l => l.type === 'phase' && l.mark === '✓')).toBe(true)

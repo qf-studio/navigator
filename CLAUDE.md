@@ -84,8 +84,10 @@ through the `route` section of `.agent/.nav-runtime-state.json`), reads and the 
 trend behind `d`, the reject log behind `l`
 (`3 rejects` + `14:03 stop_completion` under reads; `.agent/.nav-rejects.jsonl`, one JSON line per
 read-guard deny, prompt-gate block or stop-gate block, written by both runtimes, TASK-88), and marker/compact
-buttons (below 72 columns the pane folds for the side panel: context and session are one line
-each, done and later phases are count lines, only open steps show, and the button row wraps;
+buttons (below 72 columns the pane folds for the side panel: one card holds the context gauge,
+the session and the judge verdict as one row each; the route card shows the open phase only,
+one cut line and one state word per open step, the full text and the ticket only on the step
+the press does; the queue row and the source line wait behind `d`; the button row wraps;
 GitHub is asked on `/nav`, on `r` and after a turn that ran `gh` or a push, never at session
 start or under `PILOT_EXECUTOR`); a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte

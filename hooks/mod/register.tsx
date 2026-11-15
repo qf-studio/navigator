@@ -40,7 +40,7 @@ import {
 import type { Step, Waypoint } from './ui/route'
 import {
   bandCounts, bandLeg, bashTouchesTickets, cardLines, currentStep, hasTicket, legPromptOf, parseRouteOutput,
-  progressText, routesHint, rowCount, sideText, sourceText, stepMark, wantTickets,
+  phaseHint, progressText, routesHint, shortState, rowCount, sideText, sourceText, stepMark, wantTickets,
 } from './ui/roadmap'
 import type { RouteTrigger } from './ui/roadmap'
 import { load as loadState, save as saveState } from './lib/state'
@@ -830,6 +830,8 @@ export const register: Register = on => {
     const stored = await read($, routeReport)
     const report = stored !== null && (p.active === null || stored.doc.path === p.active.path) ? stored : null
     const routesOpen = await read($, showRoutes)
+    // The list offers what can be a route: a document with a route section, and the active one.
+    const routeRows = p.routes.filter(row => row.hasRoute || row.active)
     const step = report === null ? null : currentStep(report)
     const percent = s?.ctxPercent ?? null
     const pct = percent === null ? '--%' : `${Math.round(percent)}%`
@@ -930,14 +932,16 @@ export const register: Register = on => {
       <Box flexDirection="column" rowGap={remote ? 1 : 0}>
         {narrow && !details ? (
           <Box {...panel} flexDirection="column">
-            {labelRow(<Text color={PALETTE.accent}>context</Text>, (
+            {labelRow(<Text color={PALETTE.accent}>context</Text>, remote ? gaugeRow : (
               <Text wrap="truncate-end">
-                <Text color={ctxColor} bold>{pct}</Text>
-                <Text color={lowFuel ? PALETTE.warning : PALETTE.dim}>
-                  {lowFuel ? ' · compact due' : a.lastTurnCommitted ? ' · good moment to compact' : ' · compact safe'}
-                </Text>
+                <Text color={ctxColor} bold>{pct}</Text> <Text color={ctxColor}>{gauge(percent, Math.max(8, gaugeWidth - TASK_LABEL))}</Text>
               </Text>
             ))}
+            {lowFuel || a.lastTurnCommitted ? labelRow(dimLabel(''), (
+              <Text color={lowFuel ? PALETTE.warning : PALETTE.dim} wrap="truncate-end">
+                {lowFuel ? 'compact due' : 'good moment to compact'}
+              </Text>
+            )) : null}
             {labelRow(<Text color={PALETTE.accent}>session</Text>, (
               <Text wrap="truncate-end">
                 <Text color={PALETTE.success} bold>
@@ -948,6 +952,13 @@ export const register: Register = on => {
                 </Text>
               </Text>
             ))}
+            {j !== null && !judgeOpen ? labelRow(<Text color={PALETTE.accent}>judge</Text>, (
+              <Text wrap="truncate-end">
+                <Text color={PALETTE.label}>{j.verdict}</Text>
+                <Text color={PALETTE.dim}> → {j.effect}</Text>
+                {j.override === null ? null : <Text color={PALETTE.warning}>  {j.override}</Text>}
+              </Text>
+            )) : null}
           </Box>
         ) : (
           <Box flexDirection={narrow ? 'column' : 'row'} {...topGap}>
@@ -1008,7 +1019,7 @@ export const register: Register = on => {
           </Box>
         ) : null}
 
-        {j === null ? null : (
+        {j === null || (narrow && !details && !judgeOpen) ? null : (
           <Box {...panel} flexDirection="column">
             <Box flexDirection="row" justifyContent="space-between">
               <Text wrap={rowWrap}>
@@ -1044,7 +1055,7 @@ export const register: Register = on => {
               {narrow ? null : <Box marginLeft={2} flexShrink={0}><Text color={PALETTE.dim}>{progress}</Text></Box>}
             </Box>
             {narrow
-              ? <Text color={PALETTE.dim}>{progress}</Text>
+              ? <Text color={PALETTE.dim} wrap="truncate-end">{[progress, phaseHint(report)].filter(Boolean).join(' · ')}</Text>
               : <Text color={PALETTE.dim} wrap="truncate-end">{report.goal}</Text>}
             <Box flexDirection="column" marginTop={1}>
               {cardLines(report, narrow ? ROUTE_STEPS_NARROW : ROUTE_STEPS, narrow).map((line, i) => {
@@ -1072,15 +1083,20 @@ export const register: Register = on => {
                   <Button key="leg" label={mark} {...hk('n')}
                     onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
                 ) : <Text color={st.kind === 'done' ? PALETTE.success : PALETTE.dim}>{mark}</Text>
+                // Side panel: one cut line per step with one state word; only the step the press
+                // does shows its full text and its ticket.
                 return narrow ? (
                   <Box key={`rl-${i}`} flexDirection="column" marginLeft={2}>
                     <Box flexDirection="row">
                       <Box flexShrink={0}>{head}</Box>
                       <Box flexGrow={1} flexShrink={1} marginLeft={1}>
-                        <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap="wrap">{st.text}</Text>
+                        <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap={isLeg ? 'wrap' : 'truncate-end'}>{st.text}</Text>
                       </Box>
+                      {isLeg || shortState(st.kind) === '' ? null : (
+                        <Box marginLeft={2} flexShrink={0}><Text color={PALETTE.dim}>{shortState(st.kind)}</Text></Box>
+                      )}
                     </Box>
-                    <Box marginLeft={4}><Text color={stateColor(st.kind)} wrap="wrap">{tail}</Text></Box>
+                    {isLeg ? <Box marginLeft={4}><Text color={stateColor(st.kind)} wrap="truncate-end">{tail}</Text></Box> : null}
                   </Box>
                 ) : (
                   <Box key={`rl-${i}`} flexDirection="row" marginLeft={4}>
@@ -1095,10 +1111,12 @@ export const register: Register = on => {
             </Box>
             {sideText(report) === '' ? null
               : labelRow(dimLabel('side'), <Text color={PALETTE.dim} wrap={rowWrap}>{sideText(report)}</Text>)}
-            <Text color={PALETTE.dim} wrap={rowWrap}>
-              {[sourceText(report, -new Date(report.at).getTimezoneOffset()),
-                routesHint(p.routes) === '' ? null : `route ${routesHint(p.routes)}`].filter(Boolean).join(' · ')}
-            </Text>
+            {narrow && !details ? null : (
+              <Text color={PALETTE.dim} wrap={rowWrap}>
+                {[sourceText(report, -new Date(report.at).getTimezoneOffset()),
+                  routesHint(routeRows) === '' ? null : `route ${routesHint(routeRows)}`].filter(Boolean).join(' · ')}
+              </Text>
+            )}
           </Box>
         ) : (
           <Box {...panel} flexDirection="column">
@@ -1146,15 +1164,16 @@ export const register: Register = on => {
           </Box>
         )}
 
-        {report !== null && (report.queue.length > 0 || report.waits.length > 0) ? (
+        {report !== null && ((!narrow && report.queue.length > 0) || report.waits.length > 0) ? (
           <Box {...panel} flexDirection="column">
-            {report.queue.length === 0 ? null : labelRow(
+            {narrow || report.queue.length === 0 ? null : labelRow(
               <Text color={PALETTE.accent}>queue</Text>,
               <Text color={PALETTE.label} wrap={rowWrap}>{report.queue.map(q => q.ticket).join(' · ')}</Text>,
             )}
             {report.waits.length === 0 ? null : (
               <Text color={PALETTE.warning}>
-                {report.waits.length} {report.waits.length === 1 ? 'waits' : 'wait'} for you
+                {narrow && report.waits.length === 1 ? 'waits for you'
+                  : `${report.waits.length} ${report.waits.length === 1 ? 'waits' : 'wait'} for you`}
               </Text>
             )}
             {report.waits.slice(0, narrow ? 1 : WAITS_LINES).map((item, i) => (
@@ -1191,10 +1210,10 @@ export const register: Register = on => {
         {routesOpen ? (
           <Box {...panel} flexDirection="column">
             {title('roadmaps')}
-            {p.routes.length === 0 && (
+            {routeRows.length === 0 && (
               <Text color={PALETTE.dim} wrap="wrap">none · add .agent/roadmaps/&lt;name&gt;.md with a ## Route section</Text>
             )}
-            {p.routes.map((row, i) => (
+            {routeRows.map((row, i) => (
               <Box key={`route-row-${i}`} flexDirection="row">
                 <Box flexShrink={0}>
                   <Button key={`route-${i}`} label={row.active ? '●' : '○'} plain

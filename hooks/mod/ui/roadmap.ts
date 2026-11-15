@@ -87,9 +87,8 @@ const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' 
 /**
  * The route card's lines: every phase is one line; the first phase with open work also lists
  * its steps. With more steps than `maxSteps` the list keeps the last done step for context,
- * starts there, and folds the tail into "n more". `compact` is the narrow side panel: the
- * phases before and after the open one fold into one count line each, and only open steps
- * of the open phase are listed.
+ * starts there, and folds the tail into "n more". `compact` is the narrow side panel: only
+ * the open phase, and only its open steps.
  */
 export const cardLines = (report: NavRouteReport, maxSteps: number, compact = false): CardLine[] => {
   const open = report.phases.findIndex(p => p.steps.some(isOpen))
@@ -109,15 +108,22 @@ export const cardLines = (report: NavRouteReport, maxSteps: number, compact = fa
       ...(more > 0 ? [{ type: 'more', count: more } as CardLine] : [])]
   })
   if (!compact) return perPhase.flat()
-  const total = report.phases.length
-  if (open < 0) return [{ type: 'fold', mark: '✓', text: `${plural(total, 'phase')} done` }]
-  const later = total - open - 1
-  return [
-    ...(open > 0 ? [{ type: 'fold', mark: '✓', text: `${plural(open, 'phase')} done` } as CardLine] : []),
-    ...(perPhase[open] ?? []),
-    ...(later > 0 ? [{ type: 'fold', mark: '○', text: `${plural(later, 'phase')} later` } as CardLine] : []),
-  ]
+  // The side panel shows the open phase only; `phaseHint` says where it sits among the others.
+  if (open < 0) {
+    return [{ type: 'fold', mark: '✓', text: `${plural(report.phases.length, 'phase')} done` }]
+  }
+  return perPhase[open] ?? []
 }
+
+/** `phase 2 of 3` for the side panel, where the other phases are not listed; '' for one phase. */
+export const phaseHint = (report: NavRouteReport): string => {
+  const open = report.phases.findIndex(p => p.steps.some(isOpen))
+  return report.phases.length > 1 && open >= 0 ? `phase ${open + 1} of ${report.phases.length}` : ''
+}
+
+/** One word for a step's state in the side panel, where a step is one line; '' says nothing. */
+export const shortState = (kind: string): string =>
+  ({ queue: 'queue', work: 'work', next: 'next', blocked: 'blocked' } as Record<string, string>)[kind] ?? ''
 
 export const stepMark = (kind: string): string =>
   kind === 'done' ? '✓' : kind === 'queue' || kind === 'work' ? '●' : '○'
