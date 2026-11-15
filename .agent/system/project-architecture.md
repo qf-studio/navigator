@@ -219,8 +219,34 @@ the `max_continues` cap logs `stop_completion.marker_bypassed`. Local task IDs (
 archive and `origin/main`.
 
 **What the mod adds**: the `/nav` pane (`hooks/mod/ui/nav.ts`, `route.ts`, `trip.ts`,
-`palette.ts`, `status.ts`), the status band, the Pilot theme (`themes/`) and the read-only
+`roadmap.ts`, `palette.ts`, `status.ts`), the status band, the Pilot theme (`themes/`) and the read-only
 update notice (`hooks/mod/lib/update.ts`).
+
+**Routes and roadmaps** (v8.5.0 TASK-110, v8.6.0 TASK-111). One format and one source of
+state. The format is the `## Route` section: phases (`###`), one checkbox line per step
+with an order number and a plain line, and a trailing parenthesis with the ticket (`#12`,
+`PR #12`, `owner/repo#12`), a task document (`TASK-12`), `operator`, and `needs 1, 2`;
+`### Side tracks` and `### Waits for you` are not steps; the section holds no state words.
+Two kinds of document hold it: a roadmap (`.agent/roadmaps/<name>.md`, the larger unit,
+written by hand) and a task document (the three task templates carry the section).
+The source of state is `skills/nav-route/functions/route_render.py`: GitHub through
+`gh api repos/{owner}/{repo}/issues/N` (parallel, `--gh-timeout`), then the Status line of
+the task document a step names (`ops.compact_marker.is_done` / `is_in_progress`, the one
+status reader), then the checkbox, then order (`Next`, `Later`, `Blocked: needs step N`).
+It prints the report (full form, `--short --since <marker>`, `--state`), the route list
+(`--list`) and both as JSON (`--format json --with-list`). The default document is the
+selection in the `route` section of `.nav-runtime-state.json` (`{"active": "<path>"}`,
+written by the pane), else the first open roadmap, else the last open task document with a
+route. The pane never derives state: `refreshRoute` in `hooks/mod/register.tsx` runs the
+script, `hooks/mod/ui/roadmap.ts` validates the JSON and decides the lines (`cardLines`,
+`wantTickets`, `stepTag`), and `parseRouteSection` in `hooks/mod/ui/route.ts` is only the
+fast path that moves the leg inside a turn. `wantTickets` is the refresh policy: never at
+session start, always on `r` and after a turn that ran `gh` or a push, on `/nav` when the
+GitHub-backed report is older than a minute, after a doc edit only to stay GitHub-backed;
+never under `PILOT_EXECUTOR`. The route reply mode (`MODES` row `route`, block cap 2200)
+only says when a report is due; nav-marker stores `--state` in a `## Route State` block.
+Details: `skills/nav-route/SKILL.md`, `tasks/archive/TASK-110-nav-route-report.md`,
+`tasks/archive/TASK-111-nav-pane-roadmaps.md`.
 
 Local-only files under `.agent/`: `.nav-runtime-state.json`, `.nav-runtime-state.lock`,
 `.nav-dispatch-health.json`, `.nav-rejects.jsonl`, `.nav-config.local.json` (all in this
@@ -500,7 +526,7 @@ new rule comes with a measured flip count (TASK-95/96).
 
 ---
 
-**Last Updated**: 2026-10-07 (v8 runtime: mod + Python fallback, ownership, shared state,
+**Last Updated**: 2026-11-15 (routes and roadmaps: one format, one state source, the pane refresh policy; before: 2026-10-07 (v8 runtime: mod + Python fallback, ownership, shared state,
 parity fixtures, reject log; skills replace the commands directory; release via tag push;
 config layering and reply-modes table TASK-93; plugin-root file TASK-97; stop gate Bash
 classifier summary TASK-96)

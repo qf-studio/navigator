@@ -114,7 +114,7 @@ python3 skills/nav-route/functions/route_render.py
 ## Refs
 
 - Roadmap: `.agent/roadmaps/route-reports-and-pane.md` (step 3)
-- Before: `.agent/tasks/TASK-110-nav-route-report.md` (v8.5.0, issue 50)
+- Before: `.agent/tasks/archive/TASK-110-nav-route-report.md` (v8.5.0, issue 50)
 
 ---
 

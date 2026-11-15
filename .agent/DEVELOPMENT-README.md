@@ -232,7 +232,7 @@ Other threads:
   `--state`; state from `gh api`, checkboxes as fallback; a step with no plain line is an
   error), `parseSteps` reads `## Route` first so the `/nav` pane and the report share one
   format, `route` row in `MODES` (cap 1600 → 2200), `## Route State` in nav-marker.
-  File: `.agent/tasks/TASK-110-nav-route-report.md`. Next: the `/nav` pane roadmap card.
+  File: `.agent/tasks/archive/TASK-110-nav-route-report.md`.
 - **TASK-111 /nav pane roadmaps** ✅ (v8.6.0, 2026-11-15) — a roadmap
   is its own document (`.agent/roadmaps/<name>.md`, same `## Route` format; a step can point
   to a task doc with `(TASK-12)`, state from its Status line → "In work" / "Done").
@@ -243,7 +243,9 @@ Other threads:
   layout folds for the side panel; band adds `2 in queue · 1 waits`. nav-roadmaps lists
   files in a `roadmaps/` folder. Roadmap of record: `.agent/roadmaps/route-reports-and-pane.md`.
   Side panel after two owner rounds: one line per step, ticket only on the pressed step.
-  Open: the check on the desktop side panel.
+  File: `.agent/tasks/archive/TASK-111-nav-pane-roadmaps.md`.
+  Open: the check on the desktop side panel, a new pane screenshot for the docs site, and
+  the announcement of 8.5.0 and 8.6.0.
 - **nav-roadmaps** ✅ (v8.4.13, 2026-11-09) — every roadmap doc under `.agent/` as one table
   (kind, last date, status, stale flag) plus per-section ticket counts; `--also` for sibling
   repos (161b749, 12 tests).

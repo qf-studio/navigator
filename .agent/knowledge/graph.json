@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-11-15T15:43:28.696371+00:00",
+  "last_updated": "2026-11-15T20:55:49.502170+00:00",
   "stats": {
-    "total_nodes": 299,
-    "total_edges": 905,
-    "memory_count": 122
+    "total_nodes": 311,
+    "total_edges": 910,
+    "memory_count": 127
   },
   "nodes": {
     "tasks": {
@@ -1007,7 +1007,7 @@
         ]
       },
       "TASK-110": {
-        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/TASK-110-nav-route-report.md",
+        "path": "/Users/aleks.petrov/Projects/startups/navigator/.agent/tasks/archive/TASK-110-nav-route-report.md",
         "title": "nav-route \u2014 a route report in plain words, plus a personal route mode",
         "status": "in-progress",
         "concepts": [
@@ -2003,6 +2003,41 @@
       },
       "prerequisite-gate": {
         "name": "Prerequisite-Gate",
+        "aliases": [],
+        "domain": "general"
+      },
+      "route": {
+        "name": "Route",
+        "aliases": [],
+        "domain": "general"
+      },
+      "roadmap": {
+        "name": "Roadmap",
+        "aliases": [],
+        "domain": "general"
+      },
+      "task-doc": {
+        "name": "Task-Doc",
+        "aliases": [],
+        "domain": "general"
+      },
+      "design": {
+        "name": "Design",
+        "aliases": [],
+        "domain": "general"
+      },
+      "template": {
+        "name": "Template",
+        "aliases": [],
+        "domain": "general"
+      },
+      "status": {
+        "name": "Status",
+        "aliases": [],
+        "domain": "general"
+      },
+      "development": {
+        "name": "Development",
         "aliases": [],
         "domain": "general"
       }
@@ -3758,6 +3793,73 @@
         ],
         "created": "2026-11-09",
         "last_validated": "2026-11-09"
+      },
+      "mem-131": {
+        "type": "decision",
+        "summary": "Route state has one source: route_render.py. The pane runs it (--format json --with-list) and draws the result; TypeScript validates and lays out, it never derives a state. parseRouteSection is only the fast path inside a turn",
+        "path": "memories/decisions/mem-131.md",
+        "confidence": 0.95,
+        "concepts": [
+          "nav-pane",
+          "route",
+          "roadmap"
+        ],
+        "created": "2026-11-15",
+        "last_validated": "2026-11-15",
+        "contradiction": "live ticket state in the pane vs a second copy of the state rules",
+        "separation": "in space"
+      },
+      "mem-132": {
+        "type": "decision",
+        "summary": "A roadmap is its own named document (.agent/roadmaps/<name>.md), not a task ID: the owner asked 'why the roadmaps are TASK?'. Tasks and tickets are its steps ((TASK-12), (#50)); a task doc keeps the small route of one step",
+        "path": "memories/decisions/mem-132.md",
+        "confidence": 0.95,
+        "concepts": [
+          "roadmap",
+          "route",
+          "task-doc"
+        ],
+        "created": "2026-11-15",
+        "last_validated": "2026-11-15"
+      },
+      "mem-133": {
+        "type": "learning",
+        "summary": "Pane tests check content, not look: the first real render of the route card was 'overloaded with text' and had lost the context gauge. Side panel rule that passed after 3 owner rounds: one cut line per item, one tag at the right, details behind a key, the gauge stays. Show a mock and expect screenshot rounds before a release",
+        "path": "memories/learnings/mem-133.md",
+        "confidence": 0.9,
+        "concepts": [
+          "nav-pane",
+          "testing",
+          "design"
+        ],
+        "created": "2026-11-15",
+        "last_validated": "2026-11-15"
+      },
+      "mem-134": {
+        "type": "pitfall",
+        "summary": "New text in a task doc must not go above the Status line or use state words: Status readers look at 2000 bytes, 400 bytes and 15 lines, and graph_builder matches 'Completed' anywhere. The route goal stays in ## Context and the route section holds no state",
+        "path": "memories/pitfalls/mem-134.md",
+        "confidence": 0.9,
+        "concepts": [
+          "task-doc",
+          "template",
+          "status"
+        ],
+        "created": "2026-11-15",
+        "last_validated": "2026-11-15"
+      },
+      "mem-135": {
+        "type": "learning",
+        "summary": "The installed plugin reads this working directory ('Read from' in claude plugin list), so a restart loads branch code before any release. An owner check of unreleased mod code needs only a restart; the judge row and the context percent are empty until the first prompt and turn of the new session",
+        "path": "memories/learnings/mem-135.md",
+        "confidence": 0.9,
+        "concepts": [
+          "skills",
+          "nav-pane",
+          "development"
+        ],
+        "created": "2026-11-15",
+        "last_validated": "2026-11-15"
       }
     },
     "files": {}
@@ -8630,6 +8732,31 @@
       "from": "TASK-110",
       "to": "skills",
       "type": "implements"
+    },
+    {
+      "from": "mem-131",
+      "to": "TASK-111",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-132",
+      "to": "TASK-111",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-133",
+      "to": "TASK-111",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-134",
+      "to": "TASK-110",
+      "type": "learned-from"
+    },
+    {
+      "from": "mem-135",
+      "to": "TASK-111",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -8826,7 +8953,8 @@
       "mem-114",
       "TASK-108",
       "mem-122",
-      "TASK-110"
+      "TASK-110",
+      "mem-133"
     ],
     "context": [
       "TASK-32",
@@ -9084,7 +9212,8 @@
       "TASK-108",
       "mem-126",
       "mem-130",
-      "TASK-110"
+      "TASK-110",
+      "mem-135"
     ],
     "session": [
       "TASK-32",
@@ -10033,7 +10162,10 @@
       "mem-115",
       "mem-116",
       "mem-117",
-      "mem-118"
+      "mem-118",
+      "mem-131",
+      "mem-133",
+      "mem-135"
     ],
     "ghostty": [
       "mem-090"
@@ -10153,6 +10285,30 @@
     ],
     "prerequisite-gate": [
       "mem-127"
+    ],
+    "route": [
+      "mem-131",
+      "mem-132"
+    ],
+    "roadmap": [
+      "mem-131",
+      "mem-132"
+    ],
+    "task-doc": [
+      "mem-132",
+      "mem-134"
+    ],
+    "design": [
+      "mem-133"
+    ],
+    "template": [
+      "mem-134"
+    ],
+    "status": [
+      "mem-134"
+    ],
+    "development": [
+      "mem-135"
     ]
   }
 }
