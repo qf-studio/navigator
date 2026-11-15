@@ -1,6 +1,6 @@
 ---
 name: nav-route
-description: Print a route report in plain words from the active task document and live GitHub state - the goal, the roadmap in phases with ticket numbers, side tracks, the queue now, and what waits for the user. Auto-invoke when user says "route report", "show the route", "where are we on the plan", "status report", "what is left", "what waits for me", or when route mode asks for a report (session start and end, after a dispatch, a merge, a review verdict, or a deviation from the plan).
+description: Print a route report in plain words from the active roadmap or task document and live GitHub state - the goal, the roadmap in phases with ticket numbers, side tracks, the queue now, and what waits for the user. Auto-invoke when user says "route report", "show the route", "where are we on the plan", "status report", "what is left", "what waits for me", or when route mode asks for a report (session start and end, after a dispatch, a merge, a review verdict, or a deviation from the plan).
 allowed-tools: Bash, Read
 version: 1.0.0
 ---
@@ -20,7 +20,13 @@ Do NOT invoke for the list of all roadmap documents. That is `nav-roadmaps`.
 
 ## The Source: the `## Route` Section
 
-The script reads one section of the task document. `nav-task` writes it for a new task.
+The script reads one section of a document. Two kinds of document hold it:
+
+- **A roadmap**, `.agent/roadmaps/<name>.md`: a title, `**Goal**:` with two or three plain
+  sentences, and the route. A roadmap is the larger unit. Its steps point to task documents
+  and tickets. Write it by hand; it is not a task document.
+- **A task document**, `.agent/tasks/TASK-XX-*.md`: the small route of one task. `nav-task`
+  writes the section for a new task.
 
 ```markdown
 ## Route
@@ -39,16 +45,20 @@ The script reads one section of the task document. `nav-task` writes it for a ne
 
 - A step is one checkbox line: an order number and a plain line that says what the step does.
 - The trailing parenthesis is optional. It holds the ticket (`#12`, `PR #12`,
-  `owner/repo#12`), the word `operator` for a step that a person does, and `needs` with the
-  step numbers that must be done first.
+  `owner/repo#12`), a task document (`TASK-12`), the word `operator` for a step that a person
+  does, and `needs` with the step numbers that must be done first.
+- A step that points to a task document takes its state from the Status line of that
+  document: in progress shows as "In work", done shows as "Done".
 - A step with no ticket and no `operator` shows as "Not filed".
 - The section holds no state words. The state comes from GitHub when `gh` answers. A checked
   box is always done. With no `gh`, the checkboxes give the state.
 - `### Side tracks` holds work outside the main route. `### Waits for you` holds the open
   decisions for the user.
-- The goal comes from `**Goal**:` in `## Context`.
+- The goal comes from `**Goal**:` (in `## Context` of a task document).
 
-The `/nav` pane reads its legs from the same section (`hooks/mod/ui/route.ts`).
+The `/nav` pane draws its route card from the same script (`--format json`) and lists the
+route documents behind `t`. A press there selects the active route; this script follows the
+selection.
 
 ## Execution Steps
 
@@ -58,10 +68,12 @@ The `/nav` pane reads its legs from the same section (`hooks/mod/ui/route.ts`).
 PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(cat "${NAVIGATOR_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/navigator}/plugin-root" 2>/dev/null)}"
 [ -d "$PLUGIN_DIR/skills" ] || PLUGIN_DIR="$HOME/.claude/plugins/marketplaces/navigator-marketplace"
 
-python3 "$PLUGIN_DIR/skills/nav-route/functions/route_render.py" [--task .agent/tasks/TASK-XX-slug.md]
+python3 "$PLUGIN_DIR/skills/nav-route/functions/route_render.py" [--doc .agent/roadmaps/name.md]
 ```
 
-With no `--task`, the script takes the last open task document that has a route section.
+With no `--doc`, the script takes the route selected in the `/nav` pane, else the first open
+roadmap, else the last open task document that has a route section. `--list` prints every
+route document with its done count. When the user names a roadmap or a task, pass its path.
 
 Choose the form:
 
@@ -73,7 +85,8 @@ Choose the form:
 | A marker is written (`nav-marker`) | `--state` (JSON for the `## Route State` block) |
 
 `--since` takes a context marker that holds a `## Route State` block, or a JSON file from
-`--state`. Other flags: `--no-gh` (checkboxes only), `--queue-label NAME` (an issue label
+`--state`. Other flags: `--no-gh` (no GitHub calls), `--format json` (the report or the
+list as data), `--queue-label NAME` (an issue label
 that means "in the queue"; default `pilot`, `in-progress`, `queued`; an assignee also counts),
 `--today YYYY-MM-DD`.
 
@@ -105,7 +118,7 @@ See `examples/route-report.md` for the full form and the short form.
 
 ## Rules
 
-- The states are: `Done` (with the date from GitHub), `Merged`, `In the queue now`, `Next`,
+- The states are: `Done` (with the date from GitHub), `Merged`, `In the queue now`, `In work`, `Next`,
   `Later`, `Blocked: needs step N`, `Closed, not merged`, `Closed, not planned`.
 - `Next` is the first open step whose needed steps are done. A step with no `needs` does not
   wait for the steps before it.
@@ -113,4 +126,4 @@ See `examples/route-report.md` for the full form and the short form.
 - "What waits for you" lists the operator step that is next, each open pull request, and the
   open lines of `### Waits for you`.
 - The script reads the task document and calls `gh api` for each ticket. It writes no files.
-- A route covers one task document. Other work is one side-track line with its ticket.
+- A route covers one document. Other work is one side-track line with its ticket.

@@ -233,6 +233,16 @@ Other threads:
   error), `parseSteps` reads `## Route` first so the `/nav` pane and the report share one
   format, `route` row in `MODES` (cap 1600 → 2200), `## Route State` in nav-marker.
   File: `.agent/tasks/TASK-110-nav-route-report.md`. Next: the `/nav` pane roadmap card.
+- **TASK-111 /nav pane roadmaps** 🚧 (branch `feat/nav-pane-roadmaps`, unreleased) — a roadmap
+  is its own document (`.agent/roadmaps/<name>.md`, same `## Route` format; a step can point
+  to a task doc with `(TASK-12)`, state from its Status line → "In work" / "Done").
+  `route_render.py` gains `--doc`, `--list`, `--format json`, `--with-list`, `--gh-timeout`
+  and follows the pane's selection (`route.active` in `.nav-runtime-state.json`). The pane
+  (`hooks/mod/ui/roadmap.ts`, `register.tsx`) draws the route card, queue/waits and the
+  roadmaps list behind `t` from that JSON; memories card, pin and tasks list removed; narrow
+  layout folds for the side panel; band adds `2 in queue · 1 waits`. nav-roadmaps lists
+  files in a `roadmaps/` folder. Roadmap of record: `.agent/roadmaps/route-reports-and-pane.md`.
+  Open: the check in a real session on both surfaces, then the release.
 - **nav-roadmaps** ✅ (v8.4.13, 2026-11-09) — every roadmap doc under `.agent/` as one table
   (kind, last date, status, stale flag) plus per-section ticket counts; `--also` for sibling
   repos (161b749, 12 tests).
@@ -379,8 +389,9 @@ Other threads:
 - **TASK-84** ✅ (v8.0.0, 2026-10-03) — v8 runtime: all 16 ops in the mod at byte parity (Python stays as fallback),
   `/nav` cards (context · session, Prometheus-fed when the local stack answers · judge verdict
   after a judged prompt · next = the current leg as a press with an ETA, legs from the checklist
-  or numbered plan · off-route park/back/switch · memories with pinning · reads and tasks behind
-  `d`), one-line
+  or numbered plan · off-route park/back/switch · reads behind `d`; since TASK-111 the route
+  card, queue/waits and the roadmaps list behind `t` replace the memories card and the tasks
+  list), one-line
   band, Pilot theme, update notice (TASK-81), v6 shims deleted, `--verify-mod` release gate.
   Released as v8.0.0 after a live dogfood day (`tasks/archive/TASK-84-v8-mod-runtime.md`,
   section "Resume here").

@@ -1,13 +1,11 @@
 // Navigator pane data: pure parsing and formatting. The hooks module does the I/O.
 
 import type {
-  NavGraph, NavJudge, NavJudgeLabel, NavMemory, NavPace, NavRate, NavReads, NavRejects, NavTask,
+  NavJudge, NavJudgeLabel, NavPace, NavRate, NavReads, NavRejects, NavTask,
 } from '../../../types'
 import type { Judgment } from '../lib/scoring'
 
 const TASK_ID_RE = /(TASK-\d+)/
-const MEMORY_RE = /^-\s*([A-Z]+):\s*"(.*)"\s*(?:\((\d+)%\))?/
-const STAT_RE = /^(Total Nodes|Total Edges|Memories):\s*(\d+)/
 
 /** `path|# TASK-80: Title` lines → in-progress tasks with titles, in file order. */
 export const parseTasks = (stdout: string): NavTask[] =>
@@ -18,29 +16,6 @@ export const parseTasks = (stdout: string): NavTask[] =>
     const title = heading.replace(/^#+\s*/, '').replace(new RegExp(`^${m[1]}:?\\s*`), '').trim()
     return [{ id: m[1], title, path: path.trim() }]
   })
-
-/** `memory_recall.py --format compact` lines → kind, text, confidence. */
-export const parseMemories = (stdout: string): NavMemory[] =>
-  stdout.split('\n').flatMap(line => {
-    const m = MEMORY_RE.exec(line.trim())
-    if (!m?.[1] || m[2] === undefined) return []
-    return [{ kind: m[1], text: m[2], percent: m[3] === undefined ? null : Number(m[3]) }]
-  })
-
-/** `graph_manager.py --action stats` text → counts; null when nothing parsed. */
-export const parseGraphStats = (stdout: string): NavGraph | null => {
-  const found: Record<string, number> = {}
-  for (const line of stdout.split('\n')) {
-    const m = STAT_RE.exec(line.trim())
-    if (m?.[1] && m[2] !== undefined) found[m[1]] = Number(m[2])
-  }
-  const nodes = found['Total Nodes']
-  const edges = found['Total Edges']
-  const memories = found.Memories
-  return nodes === undefined || edges === undefined || memories === undefined
-    ? null
-    : { nodes, edges, memories }
-}
 
 type Entry = { name: string; mtimeMs: number }
 

@@ -14,13 +14,14 @@ const ITEM_RE = /^\s*(\d+)[.)]\s+(.+?)\s*$/
 // `### Step 0 — …✅`, `### Steps 5b + 5c — …✅`; `### Step 10 (automated part) — …✅` is partial.
 const STEP_DONE_RE = /^#{2,4}\s+Steps?\s+([\da-z+,&\s]+?)\s*(\([^)]*\))?\s*[—–-]\s.*✅/i
 const LABEL_MAX = 60
+const BAND_LEG_MIN = 12 // cells of leg text the band keeps when it makes room for the counts
 // The `## Route` section of a task doc (GH-50), mirrored from
 // skills/nav-route/functions/route_render.py: `- [ ] 3. Plain line. (#12, needs 2)`.
 const ROUTE_RE = /^##\s+Route\s*$/i
 const ROUTE_OFF_RE = /^###\s+(side tracks|waits for you)\s*$/i
 const ROUTE_STEP_RE = /^(\d+[a-z]?)[.)]\s+(.+)$/i
-const ROUTE_ATTR =
-  String.raw`(?:(?:pr\s+)?(?:[\w.-]+\/[\w.-]+)?#\d+|operator|needs\s+[\da-z ]+|\d+[a-z]?)`
+const ROUTE_ATTR = String.raw`(?:(?:pr\s+)?(?:[\w.-]+\/[\w.-]+)?#\d+|[a-z][a-z0-9]*-\d+`
+  + String.raw`|operator|needs\s+[\da-z ]+|\d+[a-z]?)`
 const ROUTE_ATTRS_RE =
   new RegExp(String.raw`\s*\(\s*${ROUTE_ATTR}(?:\s*,\s*${ROUTE_ATTR})*\s*\)\s*$`, 'i')
 const GOAL_RE = /^\s*(?:\|\s*)?(?:\*\*)?goal(?:\*\*)?\s*(?:\||:)\s*(?:\*\*)?(.+?)(?:\s*\|)?\s*$/im
@@ -230,6 +231,8 @@ export type BandState = {
   offRoute: string | null
   lowFuel: boolean
   ctxPercent: number | null
+  /** `2 in queue · 1 waits` from the route report (TASK-111); '' or absent when nothing. */
+  counts?: string
 }
 
 export const legsLeftText = (position: number, total: number): string | null => {
@@ -245,10 +248,22 @@ export const legsLeftText = (position: number, total: number): string | null => 
  *   off route: Threads feedback · /nav to park or go back
  */
 export const bandText = (s: BandState, width: number): string => {
-  const leg = s.waypoint === null ? null
-    : `● ${s.total > 0 && s.position > 0 ? `${s.position}/${s.total} ` : ''}${s.waypoint}`
-  const route = [s.label, leg, leg === null ? null : legsLeftText(s.position, s.total)]
-    .filter((x): x is string => Boolean(x)).join(' · ')
+  const legOf = (waypoint: string): string =>
+    `● ${s.total > 0 && s.position > 0 ? `${s.position}/${s.total} ` : ''}${waypoint}`
+  const routeOf = (leg: string | null, legsLeft = true): string =>
+    [s.label, leg, leg === null || !legsLeft ? null : legsLeftText(s.position, s.total),
+      leg === null ? null : s.counts]
+      .filter((x): x is string => Boolean(x)).join(' · ')
+  let route = routeOf(s.waypoint === null ? null : legOf(s.waypoint))
+  // The counts are the news on this line: a long leg text gives way so they are not cut off,
+  // and then the legs-left count, which the pane also shows.
+  const over = `nav · ${route}`.length - width
+  if (s.waypoint !== null && s.counts && over > 0 && s.offRoute === null && !s.lowFuel) {
+    const keep = Math.max(BAND_LEG_MIN, s.waypoint.length - over - 1)
+    const short = keep < s.waypoint.length ? `${s.waypoint.slice(0, keep).trimEnd()}…` : s.waypoint
+    route = routeOf(legOf(short))
+    if (`nav · ${route}`.length > width) route = routeOf(legOf(short), false)
+  }
   const fuel = s.ctxPercent === null ? 'low fuel' : `low fuel ${Math.round(s.ctxPercent)}%`
   let line: string
   if (s.offRoute !== null) line = `off route: ${s.offRoute} · /nav to park or go back`

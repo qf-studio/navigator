@@ -1,7 +1,8 @@
-# The route section of a task document
+# The route section of a roadmap or task document
 
-Put this section in the task document, after the acceptance criteria. Write each step line
-one time; do not write a state.
+A roadmap is a file in `.agent/roadmaps/` with a title, a `**Goal**:` paragraph and this
+section. A task document has the section after its acceptance criteria. Write each step
+line one time; do not write a state.
 
 ```markdown
 ## Route
@@ -28,5 +29,6 @@ one time; do not write a state.
 | `2.` | The order number. A letter is permitted (`4a.`). |
 | The text | What the step does, in plain words. An internal code is an error. |
 | `(#49)`, `(PR #49)`, `(owner/repo#49)` | The ticket. No ticket shows as "Not filed". |
+| `(TASK-12)` | The task document that holds the detail. Its Status line gives the state. |
 | `(operator)` | A person does this step. It shows as "Operator step". |
 | `(needs 1)`, `(needs 3, 4)` | The steps that must be done first. |

@@ -74,11 +74,20 @@ when it answers, `dashboard.enabled`; else Claude Code's own numbers; `--` and `
 not in prometheus` when Prometheus has no series for this session after two turns,
 TASK-102/104), reads (fan-out verdict), the typed judge's verdict on the last prompt and what
 Navigator did with it (`j`: the session tally and the last decisions, `y`/`x` label the latest
-into `~/.config/navigator/judge-labels.json` for `scripts/judge_eval.py`), next (the current leg as a press that submits it, with an ETA from
-the pace so far), memories with pinning, reads and tasks behind `d`, the reject log behind `l`
+into `~/.config/navigator/judge-labels.json` for `scripts/judge_eval.py`), route (TASK-111: the
+active roadmap or task document from `route_render.py --format json`: its goal, the phases with
+done counts, the open phase with ticket and live state per step, the next step as a press that
+submits it; a document with no `## Route` section keeps the old "next" leg card), queue and
+"waits for you" (when not empty), the roadmaps list behind `t` (`.agent/roadmaps/*.md` and
+open task docs; a press selects the active route for the pane, the band and "route report"
+through the `route` section of `.agent/.nav-runtime-state.json`), reads and the context
+trend behind `d`, the reject log behind `l`
 (`3 rejects` + `14:03 stop_completion` under reads; `.agent/.nav-rejects.jsonl`, one JSON line per
 read-guard deny, prompt-gate block or stop-gate block, written by both runtimes, TASK-88), and marker/compact
-buttons (below 72 columns the three top cards stack and the button row wraps); a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
+buttons (below 72 columns the pane folds for the side panel: context and session are one line
+each, done and later phases are count lines, only open steps show, and the button row wraps;
+GitHub is asked on `/nav`, on `r` and after a turn that ran `gh` or a push, never at session
+start or under `PILOT_EXECUTOR`); a status **band** above the prompt (phase · context · next action); a **Pilot** custom theme (`/theme` →
 Pilot); and a read-only update notice. Parity with the Python ops is asserted byte for byte
 by generated fixtures (`scripts/gen_mod_data.py`, `make mod-test`).
 
@@ -282,7 +291,8 @@ exists nowhere in the context. Subagents never see it. A repo can pin a mode wit
   does and by its ticket number, no internal step codes, each change since the last report
   marked. A report is due at session start and end, and after a dispatch, a merge, a review
   verdict or a deviation from the plan. The `nav-route` skill prints the report from the
-  `## Route` section of the task document and live `gh` state
+  `## Route` section of a roadmap (`.agent/roadmaps/<name>.md`) or task document and live
+  `gh` state
   (`skills/nav-route/SKILL.md`); its lines are exempt from the STE sentence rules.
 - **STE** (`ste mode on`, `use ste`): sentence style from ASD-STE100 Simplified
   Technical English, Part 1 only. One idea per sentence, 20 words for instructions,

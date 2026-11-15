@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Find the roadmap documents under one or more ``.agent/`` trees and render them as tables.
 
-A roadmap is: a file whose name contains ``roadmap``; a task doc whose H1 contains
+A roadmap is: a file whose name contains ``roadmap``; any file in a ``roadmaps/`` folder
+(the route documents of nav-route); a task doc whose H1 contains
 ``roadmap``; or a program doc that a roadmap names as its ``Source plan`` / ``Task doc``.
 Markers, archives and caches are skipped.
 
@@ -155,7 +156,7 @@ def _discover(root: Path) -> list[Path]:
     for path in root.rglob("*.md"):
         if _skip(path.relative_to(root)):
             continue
-        if "roadmap" in path.name.lower():
+        if "roadmap" in path.name.lower() or path.parent.name.lower() == "roadmaps":
             hits.add(path)
             continue
         if path.parent.name == "tasks":

@@ -103,6 +103,14 @@ class RoadmapScanTest(unittest.TestCase):
             },
         )
 
+    def test_a_file_in_a_roadmaps_folder_is_a_roadmap_whatever_its_name(self):
+        (self.root / "roadmaps").mkdir()
+        (self.root / "roadmaps" / "launch.md").write_text(
+            "# Cloud launch\n\n**Status**: 🚧 In Progress 2026-11-07\n\n## Route\n- [ ] 1. Open the doors.\n")
+        docs = {d["path"]: d for d in rs.scan_root(self.root, TODAY, 30, 110)}
+        self.assertEqual(docs["roadmaps/launch.md"]["title"], "Cloud launch")
+        self.assertEqual(docs["roadmaps/launch.md"]["kind"], "live")
+
     def test_kinds(self):
         self.assertEqual(self.by_path["system/saas-roadmap.md"]["kind"], "historical")
         self.assertEqual(self.by_path["tasks/TASK-405-platform.md"]["kind"], "program")

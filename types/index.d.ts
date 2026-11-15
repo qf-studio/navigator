@@ -6,18 +6,49 @@ export type NavStatus = {
   ctxPercent: number | null
 }
 
-export type NavGraph = { nodes: number; edges: number; memories: number }
 export type NavRate = { kind: string; percentUsed: number; resetsAt: string | null }
 export type NavTask = { id: string; title: string; path?: string }
-export type NavMemory = { kind: string; text: string; percent: number | null }
+
+/** TASK-111: one step of the route report (skills/nav-route/functions/route_render.py --format json). */
+export type NavRouteStep = {
+  key: string
+  number: string
+  text: string
+  /** `#50`, `TASK-12 · PR #7`, `Operator step`, `Not filed`. */
+  ticket: string
+  /** The words the reader sees: `Done 2026-11-08`, `In the queue now`, `Blocked: needs step 2`. */
+  state: string
+  /** done | queue | work | next | blocked | later */
+  kind: string
+  changed: string
+}
+export type NavRoutePhase = { title: string; done: number; total: number; steps: NavRouteStep[] }
+export type NavRouteDoc = { path: string; id: string; title: string; kind: string }
+/** A row of the roadmaps list: a roadmap or an open task document. */
+export type NavRouteRow = NavRouteDoc & { hasRoute: boolean; done: number; total: number; active: boolean }
+export type NavRouteReport = {
+  doc: NavRouteDoc
+  goal: string
+  source: string
+  /** True when GitHub answered for at least one ticket. */
+  github: boolean
+  phases: NavRoutePhase[]
+  side: NavRouteStep[]
+  queue: { ticket: string; text: string }[]
+  waits: string[]
+  done: number
+  total: number
+  /** When the script ran (ms). */
+  at: number
+}
 
 export type NavPane = {
   tasks: NavTask[]
   marker: string | null
-  graph: NavGraph | null
   docsTreeBytes: number
-  /** Memories recalled for the open tasks (memory_recall.py --auto). */
-  memories: NavMemory[]
+  /** Every route document (roadmaps, then open task docs); the active one drives the pane. */
+  routes: NavRouteRow[]
+  active: NavRouteDoc | null
   /** Steps of the active task doc: its checklist, else its numbered plan (the route when present). */
   steps?: { id?: string; label: string; done: boolean }[]
 }
@@ -46,6 +77,8 @@ export type NavActivity = {
   /** Bash calls this turn, and whether any came back without Claude Code's `isReadOnly` (TASK-85). */
   bashCalls: number
   bashMutating: boolean
+  /** A `gh` call or a push / merge / pull this turn: ticket state may have moved (TASK-111). */
+  ticketsTouched: boolean
 }
 
 export type NavHistory = { ctx: number[]; saved: number[] }
@@ -129,7 +162,8 @@ declare module 'claude-code' {
       rejects: NavRejects | null
       showRejects: boolean
       pace: NavPace
-      pinned: string | null
+      route: NavRouteReport | null
+      showRoutes: boolean
       crashes: Record<string, number>
       trip: NavTrip | null
     }

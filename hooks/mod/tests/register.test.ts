@@ -18,7 +18,7 @@ type Write = { path: string; text: string }
 type EnvSet = { name: string; value?: string }
 
 // The world beneath the plugin: an in-memory FS, a fixed cwd, a fixed usage.
-const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
+const world = (on: On, files: Files, percentIn?: number | (() => number), env: Record<string, string> = {}) => {
   const allWrites: Write[] = []
   const submitted: string[] = [] // what reached the engine's prompt.submit
   // Only writes to the personal switch; the runtime state file is saved every event.
@@ -34,7 +34,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
   }
   on('session.version', () => ({ value: { version: '2.1.287', base: '2.1.287', builtAt: '' } }))
   on('session.id', () => ({ value: 'session-1' }))
-  mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG })
+  mock.env(on, { HOME: '/home/me', NAVIGATOR_CONFIG_HOME: CFG, ...env })
   mock.clock(on, { now: 1_700_000_000_000 })
   on('session.cwd', () => ({ value: CWD }))
   on('session.usage', () => {
@@ -89,7 +89,15 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
       })),
   }))
   curlReply = null
+  routeReply = null
+  routeCalls.length = 0
   on('process.run', (_$, e) => {
+    if (String(e.argv[1]).endsWith('route_render.py')) {
+      routeCalls.push(e.argv.slice(2))
+      // No reply set: the script finds no route document (exit 2, an error and an empty list).
+      const out = routeReply?.(e.argv) ?? JSON.stringify({ error: 'no route document', routes: [] })
+      return { value: { exitCode: routeReply === null ? 2 : 0, stdout: out, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
     if (e.argv[0] === 'curl') {
       const out = curlReply?.(String(e.argv[e.argv.length - 1])) ?? null
       const exitCode = out === null ? 7 : 0
@@ -99,9 +107,7 @@ const world = (on: On, files: Files, percentIn?: number | (() => number)) => {
       exitCode: 0, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
       stdout: e.argv[0] === 'sh'
         ? '400000\n' // the docs-tree byte count
-        : String(e.argv[1]).endsWith('graph_manager.py')
-          ? 'Total Nodes: 195\nTotal Edges: 843\nMemories: 71\n'
-          : e.argv.includes('--concepts')
+        : e.argv.includes('--concepts')
             ? '- PATTERN: "hooks dispatch through one entry point" (88%)\n'
             : '- PITFALL: "stop gate over-fires on heredoc Bash" (90%)\n- DECISION: "state v2 atomic" (95%)\n',
     } }
@@ -289,7 +295,7 @@ const navPane = ($: Engine, surface: (typeof SURFACES)[number], bodyColumns = 72
     },
   })
 
-test('(f) /nav: context, session, reads on top; then the task with its leg, memories, open tasks', async ($, on) => {
+test('(f) /nav: context and session on top; then the task with its leg; reads and the trend behind d', async ($, on) => {
   const { opened } = world(on, {
     [`${AGENT}/knowledge/graph.json`]: JSON.stringify({ concept_index: { hooks: [], session: [] } }),
   }, 42)
@@ -304,20 +310,20 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     expect(texts).toContain('3 legs left') // impl, verify, complete; no leg finished yet: no eta
     expect(texts).not.toContain('research') // passed legs stay out of the pane
     expect(texts).not.toContain('wire the band') // the reply's next line is not the route
-    for (const card of ['context', 'session', 'next', 'memories']) expect(texts).toContain(card)
+    for (const card of ['context', 'session', 'next']) expect(texts).toContain(card)
+    expect(texts).not.toContain('memories') // TASK-111: the prompt hooks inject them; the pane does not
     expect(texts.indexOf('context')).toBeLessThan(texts.indexOf('next'))
     expect(texts).toContain('42%')
     expect(texts).toContain('compact safe')
     expect(texts).toContain('phase IMPL')
-    expect(texts).toContain('graph 195 nodes')
-    expect(texts).toContain('stop gate over-fires on heredoc Bash') // memories for the open tasks
+    expect(texts).not.toContain('graph ')
     expect(texts).not.toContain('judge  ') // nothing judged yet: no card, no key
     expect(texts).not.toContain('docs') // reads and the task list wait behind d
     expect(texts).not.toContain('TASK-15')
     const buttons = (await ui.findAll({ type: 'Button' })).map(b => b.text)
     expect(buttons).toContain('● 2/4') // the current leg is the press; its text is a Text beside it
     expect(texts).toContain('impl')
-    expect(buttons).toHaveLength(8) // leg + 2 memories + m c r d l
+    expect(buttons).toHaveLength(7) // leg + m c r t d l
     // TASK-108: cell-sized glyphs stay on the terminal; a remote surface draws the gauge as a
     // Box fill and the trend as an Svg, and its key row has no `·` between native buttons.
     const glyphs = /[█▓░\u2800-\u28ff]/
@@ -327,14 +333,14 @@ test('(f) /nav: context, session, reads on top; then the task with its leg, memo
     } else {
       expect(glyphs.test(texts)).toBe(false)
       expect(texts).not.toContain('·')
-      expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
+      expect((await ui.findAll({ type: 'Svg' })).length).toBe(0) // the trend waits behind d
     }
     expect(texts).not.toMatch(/TASK-80 {2,}/) // no padEnd label columns anywhere
     expect(texts).not.toContain('hotkeys work') // no key hint on either surface
     await ui.press({ key: 'details' })
     const more = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
     expect(more).toContain('0  0 docs')
-    expect(more).toContain('○ TASK-15  Marketing plan')
+    if (surface !== 'terminal') expect((await ui.findAll({ type: 'Svg' })).length).toBeGreaterThan(0)
     await ui.press({ key: 'details' }) // state persists into the next surface's pass
     await ui.unmount()
   }
@@ -552,6 +558,9 @@ test('(s2) a numbered plan with ✅ progress headings becomes the route', async 
 // Prometheus of .agent/grafana/docker-compose.yml behind `curl` (the panel never uses
 // $.http.fetch: sessions with nonessential traffic disabled refuse it, loopback included).
 let curlReply: ((url: string) => string | null) | null = null
+// TASK-111: what route_render.py prints, and the flags of every call to it.
+let routeReply: ((argv: readonly string[]) => string) | null = null
+const routeCalls: string[][] = []
 // Whether this session's own series exist (TASK-102): the `session.*` queries answer empty when not.
 let sessionSeen = true
 const prometheus = (_on: On, fetches: string[], up = true) => {
@@ -811,18 +820,179 @@ test('(u2) a chat prompt reads "chat · direct"; no card without a judgment', as
   expect(all).not.toContain('unclear')
 })
 
-test('(v) a pinned memory rides the next prompt once', async ($, on) => {
-  world(on, {}, 20)
+// TASK-111: route_render.py --format json --with-list, as the script prints it.
+const ROADMAP_PATH = '.agent/roadmaps/route-reports.md'
+const routeJson = (over: Record<string, unknown> = {}) => JSON.stringify({
+  doc: { path: ROADMAP_PATH, id: '', title: 'Route reports and the pane', kind: 'roadmap' },
+  goal: 'Each report and the pane show one route with real tickets.',
+  source: 'State from GitHub and the checkboxes, 2026-11-15.',
+  github: true,
+  phases: [
+    { title: 'Phase 1: Reports', done: 2, total: 2, steps: [
+      { key: '1', number: '1', text: 'Print a route report.', ticket: 'TASK-110 · #50', state: 'Done 2026-11-15', kind: 'done', changed: '' },
+      { key: '2', number: '2', text: 'Release the report.', ticket: '#51', state: 'Merged 2026-11-15', kind: 'done', changed: '' },
+    ] },
+    { title: 'Phase 2: The pane', done: 0, total: 3, steps: [
+      { key: '3', number: '3', text: 'Show the route in the pane.', ticket: 'TASK-111 · PR #53', state: 'In the queue now', kind: 'queue', changed: '' },
+      { key: '4', number: '4', text: 'Install the plugin on the build machine.', ticket: 'Operator step', state: 'Next', kind: 'next', changed: '' },
+      { key: '5', number: '5', text: 'Announce the release.', ticket: 'Not filed', state: 'Blocked: needs step 4', kind: 'blocked', changed: '' },
+    ] },
+    { title: 'Phase 3: Later', done: 0, total: 1, steps: [
+      { key: '6', number: '6', text: 'Measure the report use.', ticket: 'Not filed', state: 'Later', kind: 'later', changed: '' },
+    ] },
+  ],
+  side: [{ key: 'side:1', number: '', text: 'Repair the test target.', ticket: '#52', state: 'In the queue now', kind: 'queue', changed: '' }],
+  queue: [{ ticket: 'TASK-111 · PR #53', text: 'Show the route in the pane.' }, { ticket: '#52', text: 'Repair the test target.' }],
+  waits: ['Do the operator step 4: Install the plugin on the build machine.', 'Review PR #53: Show the route in the pane.'],
+  done: 2, total: 6,
+  routes: [
+    { path: ROADMAP_PATH, id: '', title: 'Route reports and the pane', kind: 'roadmap', has_route: true, done: 2, total: 6, active: true },
+    { path: '.agent/tasks/TASK-80-judge.md', id: 'TASK-80', title: 'Typed judge, phase 2', kind: 'task', has_route: false, done: 0, total: 0, active: false },
+  ],
+  ...over,
+})
+const ROADMAP_DOC = '# Route reports and the pane\n\n**Goal**: x y.\n\n## Route\n- [x] 1. Print a route report.\n- [x] 2. Release the report.\n- [ ] 3. Show the route in the pane.\n- [ ] 4. Install the plugin on the build machine.\n- [ ] 5. Announce the release.\n- [ ] 6. Measure the report use.\n'
+
+test('(x) the route card: phases with counts, the open phase with tickets and state, queue and waits', async ($, on) => {
+  const { submitted } = world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20)
+  routeReply = () => routeJson()
+  await $.command.run(NAV_CMD)
+  for (const surface of SURFACES) {
+    const ui = await navPane($, surface)
+    const all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+    expect(all).toContain('route  Route reports and the pane')
+    expect(all).toContain('2/6 · 4 legs left')
+    expect(all).toContain('Each report and the pane show one route with real tickets.')
+    expect(all).toContain('✓ Reports\n✓\n2/2') // a done phase is one line, its steps folded
+    expect(all).not.toContain('Print a route report.')
+    expect(all).toContain('● The pane\n●\n0/3')
+    expect(all).toContain('Show the route in the pane.\nTASK-111 · PR #53 · In the queue now')
+    expect(all).toContain('Install the plugin on the build machine.\nOperator step · Next')
+    expect(all).toContain('Announce the release.\nBlocked: needs step 4') // "Not filed" is not printed
+    expect(all).toContain('○ Later\n○\n0/1')
+    expect(all).not.toContain('Measure the report use.')
+    expect(all).toContain('side\n1 open · 1 in the queue')
+    expect(all).toContain('state from GitHub ')
+    expect(all).toContain('route 1 of 2')
+    expect(all).toContain('queue\nTASK-111 · PR #53 · #52')
+    expect(all).toContain('2 wait for you')
+    expect(all).toContain('1\nDo the operator step 4: Install the plugin on the build machine.')
+    expect(all).not.toContain('→ then') // the old next card is not drawn beside the route card
+    expect(all).not.toContain('roadmaps\n') // the list waits behind t
+    await ui.unmount()
+  }
+  // The press is the step the script marks next, in plain words; no ticket for an operator step.
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'leg' })
+  await ui.unmount()
+  expect(submitted).toEqual(['Do the next leg of "Route reports and the pane": Install the plugin on the build machine.'])
+})
+
+test('(x2) the side panel (below 72 columns): one line each for context and session, folded phases, open steps only', async ($, on) => {
+  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20)
+  routeReply = () => routeJson()
+  await $.command.run(NAV_CMD)
+  for (const surface of SURFACES) {
+    const ui = await navPane($, surface, 38)
+    const lines = (await ui.findAll({ type: 'Text' })).map(t => t.text)
+    const all = lines.join('\n')
+    expect(all).toContain('context\n--% · compact safe')
+    expect(all).toContain('session\n--')
+    expect(all).toContain('2/6 · 4 legs left')
+    expect(all).not.toContain('Each report and the pane') // no goal line
+    expect(all).toContain('✓ 1 phase done')
+    expect(all).toContain('● The pane')
+    expect(all).toContain('○ 1 phase later')
+    expect(all).toContain('Show the route in the pane.\nTASK-111 · PR #53 · In the queue now')
+    expect(all).toContain('2 wait for you')
+    expect(all).toContain('… 1 more · say "route report"')
+    expect(all).not.toContain('Review PR #53')
+    await ui.press({ key: 'details' }) // d brings the full context and session cards back
+    expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('0  0 docs')
+    await ui.press({ key: 'details' })
+    await ui.unmount()
+  }
+})
+
+test('(x3) t lists the roadmaps; a press selects one for the pane, the band and "route report"', async ($, on) => {
+  const files: Files = { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }
+  world(on, files, 20)
+  // The script follows the selection the pane wrote to the shared state file.
+  const selected = () => (JSON.parse(files[`${AGENT}/.nav-runtime-state.json`] ?? '{}') as { route?: { active?: string } }).route?.active
+  routeReply = () => (selected() === '.agent/tasks/TASK-80-judge.md'
+    ? JSON.stringify({ error: "the task document has no '## Route' section", routes: (JSON.parse(routeJson()) as { routes: { active: boolean; id: string }[] }).routes.map(r => ({ ...r, active: r.id === 'TASK-80' })) })
+    : routeJson())
+  await $.command.run(NAV_CMD)
+  await complete($, 'Phase: IMPL\n')
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'roadmaps' })
+  let all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain('roadmaps')
+  expect(all).toContain('Route reports and the pane\n2/6')
+  expect(all).toContain('TASK-80  Typed judge, phase 2\nno route section')
+  await ui.press({ key: 'route-1' })
+  expect(selected()).toBe('.agent/tasks/TASK-80-judge.md')
+  all = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')
+  expect(all).toContain('next\nTASK-80\nTyped judge, phase 2') // no route section: the leg card as before
+  expect(all).not.toContain('route  Route reports')
+  await ui.press({ key: 'route-0' })
+  expect(selected()).toBe(ROADMAP_PATH)
+  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('route  Route reports and the pane')
+  await ui.unmount()
+  const b = await band($, 'terminal')
+  expect((await b.find({ type: 'Text' }))?.text ?? '')
+    .toBe('nav · Route reports and the pane · ● 3/6 Install the… · 2 in queue · 2 wait')
+  await b.unmount()
+})
+
+test('(x4) GitHub is asked on /nav, on r and after a turn that ran gh; never at session start or under Pilot', async ($, on) => {
+  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20)
+  routeReply = argv => routeJson({ github: !argv.includes('--no-gh') })
+  const asked = () => routeCalls.map(argv => !argv.includes('--no-gh'))
+  await $.session.start({ cwd: CWD } as never)
+  expect(asked()).toEqual([false]) // session start: checkboxes only
+  await $.command.run(NAV_CMD)
+  expect(asked()).toEqual([false, true])
+  expect(routeCalls[1]).toEqual(['--agent-dir', '.agent', '--format', 'json', '--with-list', '--gh-timeout', '3'])
+  await $.command.run(NAV_CMD)
+  expect(asked()).toEqual([false, true, false]) // a fresh GitHub-backed report: no second ask within a minute
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'refresh' })
+  await ui.unmount()
+  expect(asked()).toEqual([false, true, false, true]) // r always asks
+  await complete($, 'nothing touched\n')
+  expect(asked()).toHaveLength(4) // a turn with no doc edit and no gh call runs nothing
+  await $.tool.call({ tool: 'Bash', command: 'gh pr merge 53 --squash' } as never)
+  await complete($, 'merged\n')
+  expect(asked()).toEqual([false, true, false, true, true])
+  await $.tool.call({ tool: 'Write', file_path: `${AGENT}/roadmaps/route-reports.md`, content: 'x' } as never)
+  await complete($, 'edited the roadmap\n')
+  expect(asked()).toEqual([false, true, false, true, true, true]) // the card shows GitHub state: it stays GitHub-backed
+})
+
+test('(x5) under the Pilot executor the pane never asks GitHub', async ($, on) => {
+  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20, { PILOT_EXECUTOR: '1' })
+  routeReply = argv => routeJson({ github: !argv.includes('--no-gh') })
   await $.command.run(NAV_CMD)
   const ui = await navPane($, 'terminal')
-  await ui.press({ key: 'mem-0' })
-  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('● pinned for your next prompt')
+  await ui.press({ key: 'refresh' })
+  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('state from the checkboxes ')
   await ui.unmount()
-  const first = await submit($, 'go on')
-  expect(first.context?.join('\n') ?? '').toContain('Navigator memory pinned by the user for this prompt: stop gate over-fires on heredoc Bash')
-  const second = await submit($, 'go on')
-  expect(second.context?.join('\n') ?? '').not.toContain('pinned')
-  expect(await texts($)).toContain('▸ pins a memory into your next prompt')
+  expect(routeCalls.every(argv => argv.includes('--no-gh'))).toBe(true)
+})
+
+test('(x6) junk from the script keeps the last report; an error clears it', async ($, on) => {
+  world(on, { [`${CWD}/${ROADMAP_PATH}`]: ROADMAP_DOC }, 20)
+  routeReply = () => routeJson()
+  await $.command.run(NAV_CMD)
+  routeReply = () => 'Traceback (most recent call last):'
+  const ui = await navPane($, 'terminal')
+  await ui.press({ key: 'refresh' })
+  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).toContain('route  Route reports and the pane')
+  routeReply = () => JSON.stringify({ error: 'step 4 has no plain line that says what it does', routes: [] })
+  await ui.press({ key: 'refresh' })
+  expect((await ui.findAll({ type: 'Text' })).map(t => t.text).join('\n')).not.toContain('route  Route reports')
+  await ui.unmount()
 })
 
 // A Stop transcript in the harness shape: one Bash tool_use, its result, a closing line.

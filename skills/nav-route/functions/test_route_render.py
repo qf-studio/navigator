@@ -361,7 +361,129 @@ class CliTest(unittest.TestCase):
         self.task.unlink()
         code, _, err = run_cli("--tasks-dir", str(self.dir), "--no-gh")
         self.assertEqual(code, 2)
-        self.assertIn("no open task document with a '## Route' section", err)
+        self.assertIn("no open roadmap or task document with a '## Route' section", err)
+
+
+ROADMAP = """# Route reports and the pane
+
+**Status**: 🚧 In Progress
+
+**Goal**: Each report and the pane show one route with real tickets.
+
+## Route
+
+### Phase 1: Reports
+- [ ] 1. Print a route report from a document. (TASK-7, #48)
+- [ ] 2. Show the route in the pane. (TASK-8, needs 1)
+- [ ] 3. Announce the release. (operator, needs 2)
+- [ ] 4. Measure the report use. (TASK-99)
+"""
+
+
+class RoadmapTest(unittest.TestCase):
+    """Roadmap documents, steps that point to task documents, the list and the JSON form."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.agent = Path(tmp.name) / ".agent"
+        (self.agent / "tasks" / "archive").mkdir(parents=True)
+        (self.agent / "roadmaps").mkdir()
+        self.roadmap = self.agent / "roadmaps" / "route-reports.md"
+        self.roadmap.write_text(ROADMAP, "utf-8")
+        self.task("TASK-7-open-tasks.md", DOC.replace("🚧 In Progress", "✅ Completed"),
+                  archive=True)
+        self.task("TASK-8-pane.md", DOC.replace("TASK-7", "TASK-8"))
+        self.task("TASK-9-notes.md", "# TASK-9: Notes\n\n**Status**: 📋 Backlog\n")
+
+    def task(self, name, text, archive=False):
+        folder = self.agent / "tasks" / ("archive" if archive else "")
+        (folder / name).write_text(text, "utf-8")
+
+    def cli(self, *argv):
+        return run_cli("--agent-dir", str(self.agent), "--no-gh", *argv)
+
+    def test_task_reference_in_the_attributes(self):
+        one, two, _, four = rr.parse_route(ROADMAP).steps
+        self.assertEqual((one.task, one.ref, one.text),
+                         ("TASK-7", "#48", "Print a route report from a document."))
+        self.assertEqual((two.task, two.needs), ("TASK-8", ("1",)))
+        self.assertEqual(four.task, "TASK-99")
+
+    def test_step_state_comes_from_the_task_document(self):
+        code, out, _ = self.cli("--doc", str(self.roadmap))
+        self.assertEqual(code, 0)
+        self.assertIn("- ✓ 1. Print a route report from a document. — TASK-7 · #48 · Done", out)
+        self.assertIn("- ● 2. Show the route in the pane. — TASK-8 · In work", out)
+        self.assertIn("— Operator step · Blocked: needs step 2", out)
+        self.assertIn("- ○ 4. Measure the report use. — TASK-99 · Next", out)   # no such doc
+        self.assertIn("## 4. The queue now\n\n- TASK-8: Show the route in the pane.", out)
+
+    def test_roadmap_title_has_no_task_id(self):
+        _, out, _ = self.cli("--doc", str(self.roadmap))
+        self.assertIn("# Route report: Route reports and the pane\n", out)
+
+    def test_default_document_is_the_roadmap(self):
+        _, out, _ = self.cli()
+        self.assertIn("# Route report: Route reports and the pane", out)
+
+    def test_pane_selection_wins_and_a_stale_selection_is_ignored(self):
+        state = self.agent / rr.STATE_FILE
+        state.write_text(json.dumps({"route": {"active": ".agent/tasks/TASK-8-pane.md"}}), "utf-8")
+        self.assertIn("# Route report: TASK-8", self.cli()[1])
+        state.write_text(json.dumps({"route": {"active": ".agent/tasks/gone.md"}}), "utf-8")
+        self.assertIn("# Route report: Route reports and the pane", self.cli()[1])
+        state.write_text("not json", "utf-8")
+        self.assertIn("# Route report: Route reports and the pane", self.cli()[1])
+
+    def test_list_has_roadmaps_first_then_open_tasks(self):
+        code, out, _ = self.cli("--list", "--format", "json")
+        rows = json.loads(out)
+        self.assertEqual(code, 0)
+        self.assertEqual([(r["kind"], r["id"], r["has_route"], r["done"], r["total"], r["active"])
+                          for r in rows],
+                         [("roadmap", "", True, 1, 4, True),
+                          ("task", "TASK-8", True, 1, 5, False),
+                          ("task", "TASK-9", False, 0, 0, False)])
+        self.assertEqual(rows[0]["path"], ".agent/roadmaps/route-reports.md")
+        self.assertEqual(rows[0]["title"], "Route reports and the pane")
+        text = self.cli("--list")[1]
+        self.assertIn("- ● Route reports and the pane · 1/4 · `.agent/roadmaps/route-reports.md`",
+                      text)
+        self.assertIn("- ○ TASK-9 — Notes · no route section", text)
+
+    def test_without_roadmaps_the_last_open_task_with_a_route_is_active(self):
+        self.roadmap.unlink()
+        rows = json.loads(self.cli("--list", "--format", "json")[1])
+        self.assertEqual([r["id"] for r in rows if r["active"]], ["TASK-8"])
+
+    def test_json_report(self):
+        code, out, _ = self.cli("--format", "json", "--with-list")
+        data = json.loads(out)
+        self.assertEqual(code, 0)
+        self.assertEqual(data["doc"], {"path": ".agent/roadmaps/route-reports.md", "id": "",
+                                       "title": "Route reports and the pane", "kind": "roadmap"})
+        self.assertEqual((data["done"], data["total"], data["github"]), (1, 4, False))
+        self.assertEqual(data["goal"],
+                         "Each report and the pane show one route with real tickets.")
+        phase = data["phases"][0]
+        self.assertEqual((phase["title"], phase["done"], phase["total"]),
+                         ("Phase 1: Reports", 1, 4))
+        self.assertEqual(phase["steps"][1], {
+            "key": "2", "number": "2", "text": "Show the route in the pane.",
+            "ticket": "TASK-8", "state": "In work", "kind": "work", "changed": ""})
+        self.assertEqual(data["queue"], [{"ticket": "TASK-8",
+                                          "text": "Show the route in the pane."}])
+        self.assertEqual(data["waits"], [])
+        self.assertEqual(len(data["routes"]), 3)
+
+    def test_json_error_keeps_the_list(self):
+        code, out, err = self.cli("--doc", str(self.agent / "tasks" / "TASK-9-notes.md"),
+                                  "--format", "json", "--with-list")
+        data = json.loads(out)
+        self.assertEqual((code, err), (2, ""))
+        self.assertIn("no '**Goal**:' text", data["error"])
+        self.assertEqual(len(data["routes"]), 3)
 
 
 if __name__ == "__main__":
