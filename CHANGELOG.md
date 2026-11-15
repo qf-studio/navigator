@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/). The authoritati
 
 ---
 
+## [v8.6.0] — 2026-11-15
+
+The `/nav` pane shows the work, not the memories: a roadmap is its own named document
+(`.agent/roadmaps/<name>.md`), the route card shows its phases and the open steps with ticket
+and live state, a second card shows the queue and what waits for you, and `t` lists the
+roadmaps to pick the active one. A step can point to a task document (`(TASK-12)`). The side
+panel folds to one line per step. The memories card and the tasks list are removed (TASK-111).
+→ [Full release notes](./releases/RELEASE-NOTES-v8.6.0.md)
+
 ## [v8.5.0] — 2026-11-15
 
 New skill `nav-route`: a route report in plain words (the goal, the roadmap in phases, side

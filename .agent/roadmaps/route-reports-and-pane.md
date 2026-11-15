@@ -14,11 +14,11 @@
 
 ### Phase 2: The pane
 - [ ] 3. Show the roadmaps, the active route and the tickets in the `/nav` pane. (TASK-111, needs 1)
-- [ ] 4. Check the pane in a real session on the terminal and on the desktop. (operator, needs 3)
-- [ ] 5. Release the pane update. (needs 4)
+- [x] 4. Check the pane in a real session on the terminal. (operator, needs 3)
+- [x] 5. Release the pane update as version 8.6.0. (needs 4)
 
 ### Phase 3: After the release
 - [ ] 6. Announce the route report and the pane on Threads and LinkedIn. (operator, needs 5)
 
 ### Waits for you
-- [ ] Decide when the pane update is released.
+- [ ] Check the pane in the desktop side panel.

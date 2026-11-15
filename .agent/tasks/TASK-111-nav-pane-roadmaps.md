@@ -1,6 +1,6 @@
 # TASK-111: /nav pane — roadmaps, the active route with tickets, the queue
 
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed (v8.6.0, 2026-11-15)
 **Created**: 2026-11-15
 **Assignee**: Manual
 
@@ -57,10 +57,11 @@ queue, and what waits for the owner. It stays readable in the narrow side panel.
 
 ### Phase 3: Documents and the check
 - [x] 6. Describe the new pane and the roadmap documents. (needs 3)
-- [ ] 7. Check the pane in a real session on the terminal and on the desktop. (operator, needs 6)
+- [x] 7. Check the pane in a real session on the terminal. (operator, needs 6)
 
 ### Waits for you
-- [ ] Decide when the pane update is released.
+- [x] Decide when the pane update is released.
+- [ ] Check the pane in the desktop side panel.
 
 ---
 
@@ -105,7 +106,8 @@ python3 skills/nav-route/functions/route_render.py
 - [x] `route_render.py` reads `.agent/roadmaps/*.md`, `TASK-NN` steps, and prints JSON.
 - [x] `hooks/mod/ui/roadmap.ts` and the pane cards exist with tests.
 - [x] `make test`, `make mod-test` and `make mod-typecheck` pass.
-- [ ] The pane is checked in a real session on both surfaces.
+- [x] The pane is checked in a real session on the terminal (two layout rounds with the owner).
+- [ ] The pane is checked in the desktop side panel.
 
 ---
 
