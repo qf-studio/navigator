@@ -4,8 +4,8 @@ import type { NavRouteReport, NavRouteStep } from '../../../types'
 import { bandText, parseRouteSection } from '../ui/route'
 import {
   bandCounts, bandLeg, bashTouchesTickets, cardLines, currentStep, hasTicket, legPromptOf, parseRouteOutput,
-  phaseHint, phaseTitle, progressText, routesHint, rowCount, shortState, sideText, sourceText, stepMark,
-  wantTickets,
+  phaseHint, phaseTitle, plainText, progressText, routesHint, rowCount, shortState, sideText, sourceText,
+  stepMark, stepTag, wantTickets,
 } from '../ui/roadmap'
 
 const step = (number: string, kind: string, over: Partial<NavRouteStep> = {}): NavRouteStep => ({
@@ -63,6 +63,11 @@ describe('route card model', () => {
     expect(phaseHint(report({ phases: [report().phases[1]!] }))).toBe('')
     expect(['queue', 'work', 'next', 'blocked', 'later', 'done'].map(shortState))
       .toEqual(['queue', 'work', 'next', 'blocked', '', ''])
+    // The pressed step shows its ticket; with no ticket, and for every other step, one state word.
+    expect(stepTag(step('5', 'work', { ticket: 'TASK-7 · #8' }), true)).toBe('TASK-7 · #8')
+    expect(stepTag(step('5', 'work', { ticket: 'TASK-7 · #8' }), false)).toBe('work')
+    expect(stepTag(step('4', 'next', { ticket: 'Operator step' }), true)).toBe('next')
+    expect(plainText('Show the `/nav` pane.')).toBe('Show the /nav pane.')
     const done = report({ phases: [{ title: 'A', done: 1, total: 1, steps: [step('1', 'done')] }, { title: 'B', done: 1, total: 1, steps: [step('2', 'done')] }] })
     expect(cardLines(done, 3, true)).toEqual([{ type: 'fold', mark: '✓', text: '2 phases done' }])
     expect(cardLines(done, 3).every(l => l.type === 'phase' && l.mark === '✓')).toBe(true)

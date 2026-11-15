@@ -121,6 +121,16 @@ export const phaseHint = (report: NavRouteReport): string => {
   return report.phases.length > 1 && open >= 0 ? `phase ${open + 1} of ${report.phases.length}` : ''
 }
 
+/** Step text as the pane shows it: no markdown code marks. */
+export const plainText = (text: string): string => text.replace(/`/g, '')
+
+/**
+ * The tag at the right of a step line in the side panel: the ticket for the step the press
+ * does (its dot already says queue or work), one state word for the others.
+ */
+export const stepTag = (step: NavRouteStep, isLeg: boolean): string =>
+  isLeg && hasTicket(step) ? step.ticket : shortState(step.kind)
+
 /** One word for a step's state in the side panel, where a step is one line; '' says nothing. */
 export const shortState = (kind: string): string =>
   ({ queue: 'queue', work: 'work', next: 'next', blocked: 'blocked' } as Record<string, string>)[kind] ?? ''

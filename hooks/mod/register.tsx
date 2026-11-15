@@ -40,7 +40,7 @@ import {
 import type { Step, Waypoint } from './ui/route'
 import {
   bandCounts, bandLeg, bashTouchesTickets, cardLines, currentStep, hasTicket, legPromptOf, parseRouteOutput,
-  phaseHint, progressText, routesHint, shortState, rowCount, sideText, sourceText, stepMark, wantTickets,
+  phaseHint, plainText, progressText, routesHint, stepTag, rowCount, sideText, sourceText, stepMark, wantTickets,
 } from './ui/roadmap'
 import type { RouteTrigger } from './ui/roadmap'
 import { load as loadState, save as saveState } from './lib/state'
@@ -1083,26 +1083,25 @@ export const register: Register = on => {
                   <Button key="leg" label={mark} {...hk('n')}
                     onPress={() => $.prompt.submit({ text: legPrompt, asUser: true })} />
                 ) : <Text color={st.kind === 'done' ? PALETTE.success : PALETTE.dim}>{mark}</Text>
-                // Side panel: one cut line per step with one state word; only the step the press
-                // does shows its full text and its ticket.
+                // Side panel: every step is one cut line with one tag at the right. The step
+                // the press does is the bright one; its tag is its ticket.
                 return narrow ? (
-                  <Box key={`rl-${i}`} flexDirection="column" marginLeft={2}>
-                    <Box flexDirection="row">
-                      <Box flexShrink={0}>{head}</Box>
-                      <Box flexGrow={1} flexShrink={1} marginLeft={1}>
-                        <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap={isLeg ? 'wrap' : 'truncate-end'}>{st.text}</Text>
-                      </Box>
-                      {isLeg || shortState(st.kind) === '' ? null : (
-                        <Box marginLeft={2} flexShrink={0}><Text color={PALETTE.dim}>{shortState(st.kind)}</Text></Box>
-                      )}
+                  <Box key={`rl-${i}`} flexDirection="row" marginLeft={2}>
+                    <Box flexShrink={0}>{head}</Box>
+                    <Box flexGrow={1} flexShrink={1} marginLeft={1}>
+                      <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{plainText(st.text)}</Text>
                     </Box>
-                    {isLeg ? <Box marginLeft={4}><Text color={stateColor(st.kind)} wrap="truncate-end">{tail}</Text></Box> : null}
+                    {stepTag(st, isLeg) === '' ? null : (
+                      <Box marginLeft={2} flexShrink={0}>
+                        <Text color={isLeg ? stateColor(st.kind) : PALETTE.dim}>{stepTag(st, isLeg)}</Text>
+                      </Box>
+                    )}
                   </Box>
                 ) : (
                   <Box key={`rl-${i}`} flexDirection="row" marginLeft={4}>
                     <Box flexShrink={0}>{head}</Box>
                     <Box flexGrow={1} flexShrink={1} marginLeft={1}>
-                      <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{st.text}</Text>
+                      <Text color={isLeg ? PALETTE.label : PALETTE.dim} wrap="truncate-end">{plainText(st.text)}</Text>
                     </Box>
                     <Box marginLeft={2} flexShrink={0}><Text color={stateColor(st.kind)}>{tail}</Text></Box>
                   </Box>

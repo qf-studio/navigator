@@ -911,8 +911,9 @@ test('(x2) the side panel (below 72 columns) is light: gauge, one line per step,
     expect(all).not.toContain('Each report and the pane') // no goal line
     expect(all).not.toContain('phase done') // the other phases are the hint above, not lines
     expect(all).toContain('● The pane')
-    // The pressed step: full text and its ticket. The other open steps: one line and one word.
-    expect(all).toContain('Install the plugin on the build machine.\nOperator step · Next')
+    // Every open step is one line with one tag: a state word, or the ticket on the pressed step.
+    expect(all).toContain('Install the plugin on the build machine.\nnext')
+    expect(all).not.toContain('Operator step · Next')
     expect(all).toContain('Show the route in the pane.\nqueue')
     expect(all).not.toContain('TASK-111 · PR #53')
     expect(all).toContain('Announce the release.\nblocked')
