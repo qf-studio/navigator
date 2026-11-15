@@ -22,3 +22,4 @@
 
 ### Waits for you
 - [ ] Check the pane in the desktop side panel.
+- [ ] Post the announcement from `.agent/marketing/2026-11-15-v8-6-0-posts.md`, then check step 6.
