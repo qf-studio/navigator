@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-11-15T20:55:49.502170+00:00",
+  "last_updated": "2026-11-16T10:34:44.820656+00:00",
   "stats": {
-    "total_nodes": 311,
-    "total_edges": 910,
-    "memory_count": 127
+    "total_nodes": 314,
+    "total_edges": 911,
+    "memory_count": 128
   },
   "nodes": {
     "tasks": {
@@ -2040,6 +2040,16 @@
         "name": "Development",
         "aliases": [],
         "domain": "general"
+      },
+      "judge": {
+        "name": "Judge",
+        "aliases": [],
+        "domain": "general"
+      },
+      "configuration": {
+        "name": "Configuration",
+        "aliases": [],
+        "domain": "general"
       }
     },
     "memories": {
@@ -3860,6 +3870,19 @@
         ],
         "created": "2026-11-15",
         "last_validated": "2026-11-15"
+      },
+      "mem-136": {
+        "type": "learning",
+        "summary": "No judge row and no j button in the /nav pane of a project means no verdict exists there: judge.enabled is a per-project setting that ships off (this repo has it on), or the first prompt of the session is not judged yet, or the call timed out. It is not a pane defect; check the session-start line 'Typed judge: on' and judge.py --check",
+        "path": "memories/learnings/mem-136.md",
+        "confidence": 0.9,
+        "concepts": [
+          "nav-pane",
+          "judge",
+          "configuration"
+        ],
+        "created": "2026-11-16",
+        "last_validated": "2026-11-16"
       }
     },
     "files": {}
@@ -8757,6 +8780,11 @@
       "from": "mem-135",
       "to": "TASK-111",
       "type": "learned-from"
+    },
+    {
+      "from": "mem-136",
+      "to": "TASK-111",
+      "type": "learned-from"
     }
   ],
   "concept_index": {
@@ -10165,7 +10193,8 @@
       "mem-118",
       "mem-131",
       "mem-133",
-      "mem-135"
+      "mem-135",
+      "mem-136"
     ],
     "ghostty": [
       "mem-090"
@@ -10309,6 +10338,12 @@
     ],
     "development": [
       "mem-135"
+    ],
+    "judge": [
+      "mem-136"
+    ],
+    "configuration": [
+      "mem-136"
     ]
   }
 }
