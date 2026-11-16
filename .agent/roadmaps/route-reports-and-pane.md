@@ -1,6 +1,6 @@
 # Route reports and the pane
 
-**Status**: 🚧 In Progress
+**Status**: ✅ Completed (v8.6.0, 2026-11-16: checked on the terminal and in the Claude app, announced)
 **Created**: 2026-11-15
 
 **Goal**: A person can follow long work without the task documents. Each report and the
@@ -21,5 +21,5 @@
 - [x] 6. Announce the route report and the pane on Threads and LinkedIn. (operator, needs 5)
 
 ### Waits for you
-- [ ] Check the pane in the desktop side panel.
+- [x] Check the pane in the desktop side panel.
 - [x] Post the announcement from `.agent/marketing/2026-11-15-v8-6-0-posts.md`, then check step 6.

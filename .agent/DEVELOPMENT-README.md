@@ -244,8 +244,8 @@ Other threads:
   files in a `roadmaps/` folder. Roadmap of record: `.agent/roadmaps/route-reports-and-pane.md`.
   Side panel after two owner rounds: one line per step, ticket only on the pressed step.
   File: `.agent/tasks/archive/TASK-111-nav-pane-roadmaps.md`.
-  Open: the check on the desktop side panel, a new pane screenshot for the docs site, and
-  the announcement of 8.5.0 and 8.6.0.
+  Checked by the owner on the terminal and in the Claude app (2026-11-16); announced
+  2026-11-15. Open: a new pane screenshot for the docs site.
 - **nav-roadmaps** ✅ (v8.4.13, 2026-11-09) — every roadmap doc under `.agent/` as one table
   (kind, last date, status, stale flag) plus per-section ticket counts; `--also` for sibling
   repos (161b749, 12 tests).

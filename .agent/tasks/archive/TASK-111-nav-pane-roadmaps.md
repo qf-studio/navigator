@@ -61,7 +61,7 @@ queue, and what waits for the owner. It stays readable in the narrow side panel.
 
 ### Waits for you
 - [x] Decide when the pane update is released.
-- [ ] Check the pane in the desktop side panel.
+- [x] Check the pane in the desktop side panel.
 
 ---
 
@@ -107,7 +107,7 @@ python3 skills/nav-route/functions/route_render.py
 - [x] `hooks/mod/ui/roadmap.ts` and the pane cards exist with tests.
 - [x] `make test`, `make mod-test` and `make mod-typecheck` pass.
 - [x] The pane is checked in a real session on the terminal (two layout rounds with the owner).
-- [ ] The pane is checked in the desktop side panel.
+- [x] The pane is checked in the desktop side panel (owner, 2026-11-16: "Looks fine on the Claude app").
 
 ---
 
